@@ -1,0 +1,22 @@
+[Unit]
+Description=Hacker Analytics Scanner Server
+After=network.target
+
+[Service]
+Type=simple
+User=scanner
+WorkingDirectory=/opt/scanner
+EnvironmentFile=/opt/scanner/.env
+ExecStart=/opt/scanner/venv/bin/python scanner_server.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=scanner-server
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

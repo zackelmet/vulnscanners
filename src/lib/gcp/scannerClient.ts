@@ -1,87 +1,47 @@
 export interface ScanJob {
   scanId: string;
   userId: string;
-  type: "nmap" | "openvas" | "zap" | "hybrid";
+  type: "nmap" | "openvas" | "zap";
   target: string;
   options?: any;
   callbackUrl: string;
 }
 
 /**
- * Enqueues a scan job by sending a POST request to the specific scanner function.
+ * Enqueues a scan job by POSTing to the unified scanner VM at GCP_SCANNER_URL.
+ * The VM runs a Flask server with a thread-safe job queue. It handles all
+ * scanner types (nmap, openvas, zap) and POSTs results back via webhook.
  */
 export async function enqueueScanJob(job: ScanJob): Promise<void> {
-  const { type } = job;
-  let functionUrl = "";
+  const baseUrl = (process.env.GCP_SCANNER_URL || "").trim().replace(/\/$/, "");
 
-  // Select the appropriate scanner URL based on the job type
-  switch (type) {
-    case "nmap":
-      functionUrl = process.env.GCP_NMAP_SCANNER_URL || "";
-      break;
-    case "openvas":
-      // Placeholder for OpenVAS scanner URL
-      functionUrl = process.env.GCP_OPENVAS_SCANNER_URL || "";
-      break;
-    case "zap":
-      functionUrl = process.env.GCP_ZAP_SCANNER_URL || "";
-      break;
-    default:
-      console.error(`Unsupported scan type: ${type}`);
-      throw new Error(`Unsupported scan type: ${type}`);
+  if (!baseUrl) {
+    throw new Error("GCP_SCANNER_URL is not configured.");
   }
 
-  // Trim and remove accidental surrounding quotes
-  functionUrl = String(functionUrl || "")
-    .trim()
-    .replace(/^"|"$/g, "");
+  const scannerToken = process.env.GCP_WEBHOOK_SECRET || "";
+  const endpoint = `${baseUrl}/scan`;
 
-  // Ensure the function URL includes a scheme.
-  if (functionUrl && !/^https?:\/\//i.test(functionUrl)) {
-    functionUrl = `https://${functionUrl}`;
-  }
+  const payload = {
+    scanId: job.scanId,
+    scanner: job.type,
+    target: job.target,
+    options: job.options || {},
+    userId: job.userId,
+  };
 
-  if (!functionUrl || functionUrl === "https://") {
-    throw new Error(
-      `Scanner URL for type '${type}' is not configured in environment variables.`,
-    );
-  }
+  console.log(`Dispatching scan job ${job.scanId} (${job.type}) → ${endpoint}`);
 
-  // Validate the final URL to prevent common errors
-  try {
-    new URL(functionUrl);
-  } catch (err) {
-    console.error(`Invalid URL for scanner type '${type}':`, functionUrl);
-    throw new Error(
-      `Invalid URL for ${type} scanner. Ensure the corresponding environment variable is a valid https:// URL.`,
-    );
-  }
-
-  console.log(
-    `Dispatching scan job ${job.scanId} of type '${type}' to ${functionUrl}`,
-  );
-
-  // Transform job payload based on scanner type
-  // ZAP expects 'webhookUrl' instead of 'callbackUrl'
-  const payload =
-    type === "zap"
-      ? {
-          scanId: job.scanId,
-          userId: job.userId,
-          target: job.target,
-          scanType: job.options?.scanProfile || "active",
-          webhookUrl: job.callbackUrl,
-        }
-      : job;
-
-  // Fire-and-forget: don't await the fetch so the API returns immediately
-  // Use AbortController for a longer timeout (30 seconds for Cloud Run cold starts)
+  // Fire-and-forget with 30s timeout
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-  fetch(functionUrl, {
+  fetch(endpoint, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "X-Scanner-Token": scannerToken,
+    },
     body: JSON.stringify(payload),
     signal: controller.signal,
   })
@@ -90,22 +50,25 @@ export async function enqueueScanJob(job: ScanJob): Promise<void> {
       if (!resp.ok) {
         const body = await resp.text().catch(() => "");
         console.error(
-          `Failed to invoke scanner '${type}' at ${functionUrl}:`,
+          `Scanner VM rejected job ${job.scanId}:`,
           resp.status,
           body,
         );
       } else {
-        console.log(`✅ Dispatched scan job ${job.scanId} to ${functionUrl}`);
+        const data = await resp.json().catch(() => ({}));
+        console.log(
+          `✅ Queued scan job ${job.scanId} on VM (position: ${data.queue_position ?? "?"})`,
+        );
       }
     })
     .catch((err) => {
       clearTimeout(timeoutId);
       if (err.name === "AbortError") {
         console.error(
-          `Timeout dispatching scan job to ${functionUrl} after 30s`,
+          `Timeout dispatching scan job ${job.scanId} to VM after 30s`,
         );
       } else {
-        console.error(`Error dispatching scan job to ${functionUrl}:`, err);
+        console.error(`Error dispatching scan job ${job.scanId}:`, err);
       }
     });
 }
