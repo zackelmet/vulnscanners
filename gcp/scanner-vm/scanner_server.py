@@ -107,7 +107,7 @@ def worker(worker_id: int):
             process_job(job)
         except Exception as e:
             log.error(f"Worker {worker_id} unhandled error on {job['scanId']}: {e}", exc_info=True)
-            notify_webapp(job["scanId"], job["scanner"], "failed", {}, str(e))
+            notify_webapp(job["scanId"], job["scanner"], "failed", {}, str(e), user_id=job.get("userId", ""))
         finally:
             job_queue.task_done()
 
@@ -115,6 +115,7 @@ def process_job(job: dict):
     scan_id = job["scanId"]
     scanner = job["scanner"]
     target  = job["target"]
+    user_id = job.get("userId", "")
     log.info(f"Processing {scan_id}: {scanner} → {target}")
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -138,14 +139,14 @@ def process_job(job: dict):
                 "xmlUrl":  xml_url,
                 "pdfUrl":  pdf_url,
                 "summary": summary,
-            })
+            }, user_id=user_id)
 
         except subprocess.TimeoutExpired:
             log.error(f"Timeout on {scan_id}")
-            notify_webapp(scan_id, scanner, "timeout", {}, "Scan timed out")
+            notify_webapp(scan_id, scanner, "timeout", {}, "Scan timed out", user_id=user_id)
         except Exception as e:
             log.error(f"Failed {scan_id}: {e}", exc_info=True)
-            notify_webapp(scan_id, scanner, "failed", {}, str(e))
+            notify_webapp(scan_id, scanner, "failed", {}, str(e), user_id=user_id)
 
 # ── Scanners ──────────────────────────────────────────────────────────────────
 def run_nmap(target: str, tmp: Path, options: dict) -> tuple[Path, dict]:
@@ -218,12 +219,13 @@ with Gmp(connection=conn, transform=transform) as gmp:
 """)
 
     result = subprocess.run(
-        ["gvm-script", "--gmp-username", "admin", "--gmp-password-file", "/etc/gvm/admin_password",
+        ["gvm-script", "--gmp-username", "admin", "--gmp-password",
+         open("/etc/gvm/admin_password").read().strip(),
          "socket", "--sockpath", "/run/gvmd/gvmd.sock", "--", str(script), str(xml_out)],
         capture_output=True, text=True, timeout=3600
     )
     if result.returncode != 0 and not xml_out.exists():
-        raise RuntimeError(f"OpenVAS failed: {result.stderr[:500]}")
+        raise RuntimeError(f"OpenVAS failed (rc={result.returncode}): {result.stderr[:500]}")
     summary = parse_openvas_summary(xml_out)
     return xml_out, summary
 
@@ -251,20 +253,112 @@ def parse_openvas_summary(xml_path: Path) -> dict:
 
 def run_zap(target: str, tmp: Path, options: dict) -> tuple[Path, dict]:
     """
-    Run OWASP ZAP in headless/daemon mode with API, perform spider + active scan.
+    Run OWASP ZAP via the snap zaproxy CLI in daemon mode with the Python ZAP API client.
+    Falls back to writing an empty report if the API client is unavailable.
     """
+    import socket
+    import time as _time
     xml_out = tmp / "zap.xml"
     scan_type = options.get("scan_type", "baseline")  # baseline | full
 
-    if scan_type == "baseline":
-        cmd = ["zap-baseline.py", "-t", target, "-x", str(xml_out), "-I"]
-    else:
-        cmd = ["zap-full-scan.py", "-t", target, "-x", str(xml_out), "-I"]
+    # ZAP is installed as snap → /snap/bin/zaproxy
+    zap_bin = "/snap/bin/zaproxy"
+    zap_port = 8090
+    api_key  = "hackeranalytics-zap-key"
 
-    log.info(f"ZAP cmd: {' '.join(cmd)}")
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
-    if not xml_out.exists():
-        xml_out.write_text(f'<?xml version="1.0"?><OWASPZAPReport version="2.14"><site host="{target}"><alerts></alerts></site></OWASPZAPReport>')
+    # Start ZAP in daemon mode
+    zap_cmd = [
+        zap_bin, "-daemon",
+        "-port", str(zap_port),
+        "-config", f"api.key={api_key}",
+        "-config", "api.addrs.addr.name=.*",
+        "-config", "api.addrs.addr.regex=true",
+        "-config", "connection.timeoutInSecs=60",
+        "-config", "scanner.threadPerHost=4",
+    ]
+    log.info(f"ZAP daemon cmd: {' '.join(zap_cmd)}")
+    zap_proc = subprocess.Popen(
+        zap_cmd,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        env={**os.environ, "HOME": "/home/scanner"}
+    )
+
+    try:
+        # Wait up to 120 s for ZAP to bind its port
+        deadline = _time.time() + 120
+        while _time.time() < deadline:
+            try:
+                with socket.create_connection(("127.0.0.1", zap_port), timeout=2):
+                    break
+            except OSError:
+                _time.sleep(2)
+        else:
+            raise RuntimeError("ZAP daemon did not start within 120 s")
+
+        log.info("ZAP daemon ready")
+
+        try:
+            from zapv2 import ZAPv2
+            zap = ZAPv2(apikey=api_key, proxies={"http": f"http://127.0.0.1:{zap_port}", "https": f"http://127.0.0.1:{zap_port}"})
+        except ImportError:
+            log.warning("zapv2 not installed — using requests fallback")
+            zap = None
+
+        base_url = f"http://127.0.0.1:{zap_port}/JSON"
+        headers  = {"Accept": "application/json"}
+
+        def zap_get(path, params=None):
+            p = {"apikey": api_key, **(params or {})}
+            r = requests.get(f"{base_url}/{path}", params=p, headers=headers, timeout=30)
+            r.raise_for_status()
+            return r.json()
+
+        # Spider the target
+        log.info(f"ZAP spider: {target}")
+        r = zap_get("spider/action/scan", {"url": target, "maxChildren": "20", "recurse": "true"})
+        spider_id = r.get("scan", "0")
+        timeout_spider = _time.time() + 600  # 10 min max
+        while _time.time() < timeout_spider:
+            r = zap_get("spider/view/status", {"scanId": spider_id})
+            pct = int(r.get("status", 100))
+            log.info(f"ZAP spider {pct}%")
+            if pct >= 100:
+                break
+            _time.sleep(5)
+
+        if scan_type == "full":
+            # Active scan
+            log.info(f"ZAP active scan: {target}")
+            r = zap_get("ascan/action/scan", {"url": target, "recurse": "true", "inScopeOnly": "false"})
+            ascan_id = r.get("scan", "0")
+            timeout_ascan = _time.time() + 1200  # 20 min max
+            while _time.time() < timeout_ascan:
+                r = zap_get("ascan/view/status", {"scanId": ascan_id})
+                pct = int(r.get("status", 100))
+                log.info(f"ZAP active scan {pct}%")
+                if pct >= 100:
+                    break
+                _time.sleep(10)
+
+        # Export XML report
+        report_url = f"http://127.0.0.1:{zap_port}/OTHER/core/other/xmlreport/"
+        rp = requests.get(report_url, params={"apikey": api_key}, timeout=30)
+        rp.raise_for_status()
+        xml_out.write_bytes(rp.content)
+        log.info(f"ZAP XML report saved ({len(rp.content)} bytes)")
+
+    finally:
+        zap_proc.terminate()
+        try:
+            zap_proc.wait(timeout=15)
+        except subprocess.TimeoutExpired:
+            zap_proc.kill()
+
+    if not xml_out.exists() or xml_out.stat().st_size < 50:
+        xml_out.write_text(
+            f'<?xml version="1.0"?><OWASPZAPReport version="2.14">'
+            f'<site host="{target}"><alerts></alerts></site></OWASPZAPReport>'
+        )
     summary = parse_zap_summary(xml_out)
     return xml_out, summary
 
@@ -483,17 +577,37 @@ def upload_to_gcs(scan_id: str, scanner: str, local_path: Path, ext: str) -> str
     return url
 
 # ── Webhook back to webapp ─────────────────────────────────────────────────────
-def notify_webapp(scan_id: str, scanner: str, status: str, results: dict, error: str = ""):
+def notify_webapp(scan_id: str, scanner: str, status: str, results: dict, error: str = "", user_id: str = ""):
+    """POST scan result back to webapp webhook.
+    Field names match what /api/scans/webhook/route.ts expects.
+    """
     if not WEBAPP_WEBHOOK:
         log.warning("WEBAPP_WEBHOOK_URL not set, skipping webhook")
         return
+
+    xml_url  = results.get("xmlUrl", "")
+    pdf_url  = results.get("pdfUrl", "")
+    summary  = results.get("summary", {})
+
     payload = {
-        "scanId":   scan_id,
-        "scanner":  scanner,
-        "status":   status,
-        "results":  results,
-        "error":    error,
-        "timestamp": datetime.utcnow().isoformat(),
+        # identity
+        "scanId":               scan_id,
+        "userId":               user_id,
+        "scannerType":          scanner,
+        # status
+        "status":               status,
+        "errorMessage":         error or None,
+        "timestamp":            datetime.utcnow().isoformat(),
+        # XML result (stored in GCS as public URL)
+        "gcpXmlStorageUrl":     xml_url or None,
+        # PDF report (stored in GCS as public URL)
+        "gcpReportStorageUrl":  pdf_url or None,
+        # summary dict → resultsSummary
+        "resultsSummary":       summary or None,
+        # legacy aliases — keep for backward compat
+        "gcpStorageUrl":        xml_url or None,
+        "summary":              summary or None,
+        "results":              results,
     }
     headers = {"Content-Type": "application/json"}
     if GCP_WEBHOOK_SECRET:
@@ -502,10 +616,12 @@ def notify_webapp(scan_id: str, scanner: str, status: str, results: dict, error:
         try:
             resp = requests.post(WEBAPP_WEBHOOK, json=payload, headers=headers, timeout=15)
             log.info(f"Webhook {scan_id}: HTTP {resp.status_code}")
-            return
+            if resp.status_code < 500:
+                return
+            log.warning(f"Webhook {scan_id} got {resp.status_code}: {resp.text[:200]}")
         except Exception as e:
             log.warning(f"Webhook attempt {attempt+1} failed: {e}")
-            time.sleep(2 ** attempt)
+        time.sleep(2 ** attempt)
     log.error(f"All webhook attempts failed for {scan_id}")
 
 # ── Startup ───────────────────────────────────────────────────────────────────
