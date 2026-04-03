@@ -161,7 +161,7 @@ export default function AuthForm() {
               fast, zero-maintenance scans.
             </p>
             <div className="flex flex-wrap gap-3 justify-center lg:justify-start text-sm text-[var(--text-muted)]">
-              <span className="neon-chip">OpenVAS vulnerability scanner</span>
+              <span className="neon-chip">Nuclei vulnerability scanner</span>
               <span className="neon-chip">Nmap port scanner</span>
               <span className="neon-chip">OWASP ZAP web scanner</span>
             </div>

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Unified Scanner Server
-Receives scan jobs via HTTP, queues them, runs nmap/openvas/zap,
-uploads XML + PDF results to GCS, then POSTs back to the webapp webhook.
+Receives scan jobs via HTTP, queues them, runs nmap/nuclei/zap,
+uploads XML/JSON + PDF results to GCS, then POSTs back to the webapp webhook.
 """
 
 import os
@@ -70,8 +70,8 @@ def enqueue_scan():
             return jsonify({"error": f"Missing field: {field}"}), 400
 
     scanner = data["scanner"].lower()
-    if scanner not in ("nmap", "openvas", "zap"):
-        return jsonify({"error": "scanner must be nmap, openvas, or zap"}), 400
+    if scanner not in ("nmap", "nuclei", "zap"):
+        return jsonify({"error": "scanner must be nmap, nuclei, or zap"}), 400
 
     job = {
         "scanId":   data["scanId"],
@@ -123,8 +123,8 @@ def process_job(job: dict):
         try:
             if scanner == "nmap":
                 xml_path, summary = run_nmap(target, tmp, job.get("options", {}))
-            elif scanner == "openvas":
-                xml_path, summary = run_openvas(target, tmp, job.get("options", {}))
+            elif scanner == "nuclei":
+                xml_path, summary = run_nuclei(target, tmp, job.get("options", {}))
             elif scanner == "zap":
                 xml_path, summary = run_zap(target, tmp, job.get("options", {}))
             else:
@@ -181,130 +181,144 @@ def parse_nmap_summary(xml_path: Path) -> dict:
     except Exception:
         return {}
 
-def run_openvas(target: str, tmp: Path, options: dict) -> tuple[Path, dict]:
+def run_nuclei(target: str, tmp: Path, options: dict) -> tuple[Path, dict]:
     """
-    Run OpenVAS (GVM) community scan via gvm-cli.
-    Requires gvm-cli and openvas/gvmd to be installed and running.
+    Run Nuclei vulnerability scanner.
+    Nuclei is a lightweight, template-based scanner by ProjectDiscovery.
     """
-    xml_out = tmp / "openvas.xml"
-    scan_config = options.get("scan_config", "daba56c8-73ec-11df-a475-002264764cea")  # Full and fast
-
-    script = tmp / "openvas_scan.gmp"
-    script.write_text(f"""
-from gvm.protocols.gmp import Gmp
-from gvm.connections import UnixSocketConnection
-from gvm.transforms import EtreeTransform
-import time, sys
-
-conn = UnixSocketConnection(path="/run/gvmd/gvmd.sock")
-transform = EtreeTransform()
-with Gmp(connection=conn, transform=transform) as gmp:
-    gmp.authenticate("admin", open("/etc/gvm/admin_password").read().strip())
-    res = gmp.create_target(name="scan-{target}-{int(time.time())}", hosts="{target}", port_list_id="33d0cd82-57c6-11e1-8ed1-406186ea4fc5")
-    target_id = res.get("id")
-    res = gmp.create_task(name="scan-{target}", config_id="{scan_config}", target_id=target_id, scanner_id="08b69003-5fc2-4037-a479-93b440211c73")
-    task_id = res.get("id")
-    gmp.start_task(task_id)
-    while True:
-        status = gmp.get_task(task_id)
-        progress = int(status.find("task/progress").text or 0)
-        task_status = status.find("task/status").text
-        if task_status in ("Done", "Stopped") or progress >= 100:
-            break
-        time.sleep(10)
-    report_id = status.find(".//last_report/report").get("id")
-    report = gmp.get_report(report_id, filter_string="apply_overrides=0 levels=hmlg rows=1000", report_format_id="a994b278-1f62-11e1-96ac-406186ea4fc5")
-    import xml.etree.ElementTree as ET
-    ET.ElementTree(report).write(sys.argv[1])
-""")
-
-    result = subprocess.run(
-        ["gvm-script", "--gmp-username", "admin", "--gmp-password",
-         open("/etc/gvm/admin_password").read().strip(),
-         "socket", "--sockpath", "/run/gvmd/gvmd.sock", "--", str(script), str(xml_out)],
-        capture_output=True, text=True, timeout=3600
-    )
-    if result.returncode != 0 and not xml_out.exists():
-        raise RuntimeError(f"OpenVAS failed (rc={result.returncode}): {result.stderr[:500]}")
-    summary = parse_openvas_summary(xml_out)
+    json_out = tmp / "nuclei.json"
+    xml_out = tmp / "nuclei.xml"
+    severity = options.get("severity", "critical,high,medium,low")
+    templates = options.get("templates", "")  # optional: specific template paths
+    cmd = ["nuclei", "-target", target, "-severity", severity, "-jsonl", "-o", str(json_out), "-silent"]
+    if templates:
+        cmd += ["-t", templates]
+    log.info(f"nuclei cmd: {' '.join(cmd)}")
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+    if result.returncode != 0 and not json_out.exists():
+        raise RuntimeError(f"Nuclei failed: {result.stderr}")
+    # Convert JSONL to a simple XML for consistent handling
+    findings = parse_nuclei_jsonl(json_out)
+    _write_nuclei_xml(findings, xml_out, target)
+    summary = summarize_nuclei(findings)
     return xml_out, summary
 
-def parse_openvas_summary(xml_path: Path) -> dict:
-    try:
-        tree = ET.parse(xml_path)
-        root = tree.getroot()
-        results = root.findall(".//result")
-        severity_counts = {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0}
-        findings = []
-        for r in results:
-            sev_el = r.find("severity")
-            sev = float(sev_el.text or 0) if sev_el is not None else 0
-            if sev >= 9.0:     bucket = "critical"
-            elif sev >= 7.0:   bucket = "high"
-            elif sev >= 4.0:   bucket = "medium"
-            elif sev > 0:      bucket = "low"
-            else:              bucket = "info"
-            severity_counts[bucket] += 1
-            name_el = r.find("name")
-            findings.append({"name": name_el.text if name_el is not None else "", "severity": sev, "bucket": bucket})
-        return {"total_findings": len(results), "severity_counts": severity_counts, "findings": findings[:20]}
-    except Exception:
-        return {}
+def parse_nuclei_jsonl(json_path: Path) -> list[dict]:
+    """Parse Nuclei JSONL output into a list of finding dicts."""
+    findings = []
+    if not json_path.exists():
+        return findings
+    for line in json_path.read_text().strip().splitlines():
+        try:
+            findings.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return findings
+
+def _write_nuclei_xml(findings: list[dict], xml_path: Path, target: str):
+    """Write Nuclei findings into a simple XML format for PDF generation."""
+    root = ET.Element("NucleiReport", target=target)
+    for f in findings:
+        item = ET.SubElement(root, "finding")
+        ET.SubElement(item, "template").text = f.get("template-id", "")
+        ET.SubElement(item, "name").text = f.get("info", {}).get("name", "")
+        ET.SubElement(item, "severity").text = f.get("info", {}).get("severity", "info")
+        ET.SubElement(item, "matched").text = f.get("matched-at", "")
+        ET.SubElement(item, "type").text = f.get("type", "")
+        desc = f.get("info", {}).get("description", "")
+        ET.SubElement(item, "description").text = desc[:500] if desc else ""
+        refs = f.get("info", {}).get("reference", [])
+        ET.SubElement(item, "references").text = ", ".join(refs) if isinstance(refs, list) else str(refs)
+    tree = ET.ElementTree(root)
+    tree.write(str(xml_path), encoding="unicode", xml_declaration=True)
+
+def summarize_nuclei(findings: list[dict]) -> dict:
+    severity_counts = {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0}
+    parsed = []
+    for f in findings:
+        sev = f.get("info", {}).get("severity", "info").lower()
+        if sev in severity_counts:
+            severity_counts[sev] += 1
+        else:
+            severity_counts["info"] += 1
+        parsed.append({
+            "name": f.get("info", {}).get("name", ""),
+            "severity": sev,
+            "template": f.get("template-id", ""),
+            "matched": f.get("matched-at", ""),
+        })
+    return {"total_findings": len(findings), "severity_counts": severity_counts, "findings": parsed[:20]}
 
 def run_zap(target: str, tmp: Path, options: dict) -> tuple[Path, dict]:
     """
-    Run OWASP ZAP via the snap zaproxy CLI in daemon mode with the Python ZAP API client.
-    Falls back to writing an empty report if the API client is unavailable.
+    Run OWASP ZAP via the snap zaproxy CLI in daemon mode with the ZAP REST API.
+    The snap wrapper needs a valid HOME with write permissions.
     """
     import socket
     import time as _time
     xml_out = tmp / "zap.xml"
     scan_type = options.get("scan_type", "baseline")  # baseline | full
 
-    # ZAP is installed as snap → /snap/bin/zaproxy
     zap_bin = "/snap/bin/zaproxy"
     zap_port = 8090
     api_key  = "hackeranalytics-zap-key"
+
+    # Ensure a writable HOME directory exists for ZAP/snap
+    zap_home = Path("/opt/scanner/zap-home")
+    zap_home.mkdir(parents=True, exist_ok=True)
+
+    # Build environment — snap zaproxy needs HOME, DISPLAY can be unset
+    zap_env = {**os.environ, "HOME": str(zap_home)}
+    zap_env.pop("DISPLAY", None)  # headless
+
+    # Kill any leftover ZAP processes
+    subprocess.run(["pkill", "-f", "zaproxy.*-daemon"], capture_output=True)
+    _time.sleep(2)
 
     # Start ZAP in daemon mode
     zap_cmd = [
         zap_bin, "-daemon",
         "-port", str(zap_port),
+        "-host", "127.0.0.1",
         "-config", f"api.key={api_key}",
         "-config", "api.addrs.addr.name=.*",
         "-config", "api.addrs.addr.regex=true",
-        "-config", "connection.timeoutInSecs=60",
-        "-config", "scanner.threadPerHost=4",
+        "-config", "connection.timeoutInSecs=120",
     ]
     log.info(f"ZAP daemon cmd: {' '.join(zap_cmd)}")
     zap_proc = subprocess.Popen(
         zap_cmd,
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        env={**os.environ, "HOME": "/home/scanner"}
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        env=zap_env,
     )
 
     try:
-        # Wait up to 120 s for ZAP to bind its port
-        deadline = _time.time() + 120
+        # Wait up to 180s for ZAP to bind its port (snap init is slow)
+        deadline = _time.time() + 180
         while _time.time() < deadline:
             try:
                 with socket.create_connection(("127.0.0.1", zap_port), timeout=2):
                     break
             except OSError:
-                _time.sleep(2)
+                # Check if process died
+                if zap_proc.poll() is not None:
+                    out = zap_proc.stdout.read().decode(errors="replace") if zap_proc.stdout else ""
+                    raise RuntimeError(f"ZAP daemon exited early (rc={zap_proc.returncode}): {out[-500:]}")
+                _time.sleep(3)
         else:
-            raise RuntimeError("ZAP daemon did not start within 120 s")
+            out = ""
+            try:
+                zap_proc.kill()
+                out = zap_proc.stdout.read().decode(errors="replace") if zap_proc.stdout else ""
+            except Exception:
+                pass
+            raise RuntimeError(f"ZAP daemon did not start within 180s. Output: {out[-500:]}")
 
-        log.info("ZAP daemon ready")
+        # Give ZAP a moment to finish internal init after port is open
+        _time.sleep(5)
+        log.info("ZAP daemon ready on port %d", zap_port)
 
-        try:
-            from zapv2 import ZAPv2
-            zap = ZAPv2(apikey=api_key, proxies={"http": f"http://127.0.0.1:{zap_port}", "https": f"http://127.0.0.1:{zap_port}"})
-        except ImportError:
-            log.warning("zapv2 not installed — using requests fallback")
-            zap = None
-
-        base_url = f"http://127.0.0.1:{zap_port}/JSON"
+        base_url = f"http://127.0.0.1:{zap_port}"
         headers  = {"Accept": "application/json"}
 
         def zap_get(path, params=None):
@@ -315,11 +329,11 @@ def run_zap(target: str, tmp: Path, options: dict) -> tuple[Path, dict]:
 
         # Spider the target
         log.info(f"ZAP spider: {target}")
-        r = zap_get("spider/action/scan", {"url": target, "maxChildren": "20", "recurse": "true"})
+        r = zap_get("JSON/spider/action/scan", {"url": target, "maxChildren": "20", "recurse": "true"})
         spider_id = r.get("scan", "0")
         timeout_spider = _time.time() + 600  # 10 min max
         while _time.time() < timeout_spider:
-            r = zap_get("spider/view/status", {"scanId": spider_id})
+            r = zap_get("JSON/spider/view/status", {"scanId": spider_id})
             pct = int(r.get("status", 100))
             log.info(f"ZAP spider {pct}%")
             if pct >= 100:
@@ -329,11 +343,11 @@ def run_zap(target: str, tmp: Path, options: dict) -> tuple[Path, dict]:
         if scan_type == "full":
             # Active scan
             log.info(f"ZAP active scan: {target}")
-            r = zap_get("ascan/action/scan", {"url": target, "recurse": "true", "inScopeOnly": "false"})
+            r = zap_get("JSON/ascan/action/scan", {"url": target, "recurse": "true", "inScopeOnly": "false"})
             ascan_id = r.get("scan", "0")
             timeout_ascan = _time.time() + 1200  # 20 min max
             while _time.time() < timeout_ascan:
-                r = zap_get("ascan/view/status", {"scanId": ascan_id})
+                r = zap_get("JSON/ascan/view/status", {"scanId": ascan_id})
                 pct = int(r.get("status", 100))
                 log.info(f"ZAP active scan {pct}%")
                 if pct >= 100:
@@ -341,8 +355,8 @@ def run_zap(target: str, tmp: Path, options: dict) -> tuple[Path, dict]:
                 _time.sleep(10)
 
         # Export XML report
-        report_url = f"http://127.0.0.1:{zap_port}/OTHER/core/other/xmlreport/"
-        rp = requests.get(report_url, params={"apikey": api_key}, timeout=30)
+        report_url = f"{base_url}/OTHER/core/other/xmlreport/"
+        rp = requests.get(report_url, params={"apikey": api_key}, timeout=60)
         rp.raise_for_status()
         xml_out.write_bytes(rp.content)
         log.info(f"ZAP XML report saved ({len(rp.content)} bytes)")
@@ -353,6 +367,8 @@ def run_zap(target: str, tmp: Path, options: dict) -> tuple[Path, dict]:
             zap_proc.wait(timeout=15)
         except subprocess.TimeoutExpired:
             zap_proc.kill()
+        # Clean up any orphan processes
+        subprocess.run(["pkill", "-f", "zaproxy.*-daemon"], capture_output=True)
 
     if not xml_out.exists() or xml_out.stat().st_size < 50:
         xml_out.write_text(
@@ -431,8 +447,8 @@ def generate_pdf(scan_id: str, scanner: str, target: str, xml_path: Path, tmp: P
     # Scanner-specific content
     if scanner == "nmap":
         _add_nmap_content(story, xml_path, h2_style, body_style, code_style)
-    elif scanner == "openvas":
-        _add_openvas_content(story, xml_path, h2_style, body_style)
+    elif scanner == "nuclei":
+        _add_nuclei_content(story, xml_path, h2_style, body_style)
     elif scanner == "zap":
         _add_zap_content(story, xml_path, h2_style, body_style)
 
@@ -492,33 +508,29 @@ def _add_nmap_content(story, xml_path, h2, body, code):
     except Exception as e:
         story.append(Paragraph(f"Could not parse XML: {e}", body))
 
-def _add_openvas_content(story, xml_path, h2, body):
-    story.append(Paragraph("Vulnerability Findings", h2))
-    risk_colors = {
-        "critical": colors.HexColor("#7b0000"),
-        "high":     colors.HexColor("#c0392b"),
-        "medium":   colors.HexColor("#e67e22"),
-        "low":      colors.HexColor("#2980b9"),
-        "info":     colors.HexColor("#7f8c8d"),
-    }
+def _add_nuclei_content(story, xml_path, h2, body):
+    story.append(Paragraph("Vulnerability Findings (Nuclei)", h2))
     try:
         tree = ET.parse(xml_path)
         root = tree.getroot()
-        results = root.findall(".//result")
-        if not results:
+        findings = root.findall(".//finding")
+        if not findings:
             story.append(Paragraph("No findings.", body))
             return
-        rows = [["Severity", "CVSS", "Finding", "Host"]]
-        for r in results[:50]:
-            sev_el  = r.find("severity")
-            name_el = r.find("name")
-            host_el = r.find("host")
-            sev = float(sev_el.text or 0) if sev_el is not None else 0
-            bucket = "critical" if sev >= 9 else "high" if sev >= 7 else "medium" if sev >= 4 else "low" if sev > 0 else "info"
-            rows.append([bucket.upper(), f"{sev:.1f}",
-                         (name_el.text or "")[:80] if name_el is not None else "",
-                         host_el.text if host_el is not None else ""])
-        t = Table(rows, colWidths=[0.9*inch, 0.7*inch, 4.4*inch, 1.2*inch])
+        rows = [["Severity", "Template", "Finding", "Matched URL"]]
+        for f in findings[:50]:
+            sev_el  = f.find("severity")
+            name_el = f.find("name")
+            tmpl_el = f.find("template")
+            match_el = f.find("matched")
+            sev = (sev_el.text or "info").upper() if sev_el is not None else "INFO"
+            rows.append([
+                sev,
+                (tmpl_el.text or "")[:30] if tmpl_el is not None else "",
+                (name_el.text or "")[:60] if name_el is not None else "",
+                (match_el.text or "")[:60] if match_el is not None else "",
+            ])
+        t = Table(rows, colWidths=[0.9*inch, 1.5*inch, 2.5*inch, 2.3*inch])
         t.setStyle(TableStyle([
             ("BACKGROUND",  (0, 0), (-1, 0), colors.HexColor("#1a1a2e")),
             ("TEXTCOLOR",   (0, 0), (-1, 0), colors.white),

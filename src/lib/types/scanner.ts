@@ -1,6 +1,6 @@
 import { Timestamp } from "firebase/firestore";
 
-export type ScanType = "nmap" | "openvas" | "zap";
+export type ScanType = "nmap" | "nuclei" | "zap";
 export type ScanStatus =
   | "queued"
   | "running"
@@ -14,8 +14,9 @@ export interface Scan {
   userId: string;
   type: ScanType;
   status: ScanStatus;
-  target: string;
-  options: NmapOptions | OpenVASOptions | ZapOptions;
+  targetId: string; // References Target.id
+  targetValue: string; // The snapshot of the target URL/IP at scan time
+  options: NmapOptions | NucleiOptions | ZapOptions;
   createdAt: Timestamp;
   startedAt?: Timestamp;
   completedAt?: Timestamp;
@@ -30,13 +31,9 @@ export interface NmapOptions {
   customFlags?: string;
 }
 
-export interface OpenVASOptions {
-  scanProfile: "discovery" | "full" | "web" | "system" | "custom";
-  portRange?: string;
-  targetCredentials?: {
-    username?: string;
-    password?: string;
-  };
+export interface NucleiOptions {
+  severity?: string; // e.g. "critical,high,medium,low"
+  templates?: string; // optional: specific template paths
 }
 
 export interface NiktoOptions {
@@ -113,8 +110,8 @@ export interface ScanSummary {
 
 export interface CreateScanRequest {
   type: ScanType;
-  target: string | string[]; // Support single or multiple targets
-  options: NmapOptions | OpenVASOptions | ZapOptions;
+  targetId: string;
+  options: NmapOptions | NucleiOptions | ZapOptions;
 }
 
 export interface ScanQueue {

@@ -1,40 +1,40 @@
 #!/usr/bin/env bash
-# deploy.sh — Copies scanner files to the VM and starts the service
+# deploy.sh — Copies scanner files to the Hetzner VPS and starts the service
 # Run from repo root: bash gcp/scanner-vm/deploy.sh
 set -euo pipefail
 
-VM_NAME="scanner-vm"
-ZONE="us-central1-a"
-PROJECT="hosted-scanners"
+# --- Configure these for your Hetzner VPS ---
+VPS_IP="${SCANNER_VPS_IP:?Set SCANNER_VPS_IP env var to your Hetzner VPS IP}"
+VPS_USER="${SCANNER_VPS_USER:-root}"
 REMOTE_DIR="/opt/scanner"
+SSH_KEY="${SCANNER_SSH_KEY:-$HOME/.ssh/id_ed25519}"
 
-echo "📦 Copying scanner files to $VM_NAME..."
-gcloud compute scp \
+echo "📦 Copying scanner files to $VPS_USER@$VPS_IP..."
+scp -i "$SSH_KEY" \
   gcp/scanner-vm/scanner_server.py \
   gcp/scanner-vm/requirements.txt \
   gcp/scanner-vm/scanner-server.service \
   gcp/scanner-vm/setup.sh \
-  "${VM_NAME}:/tmp/" \
-  --zone="$ZONE" --project="$PROJECT"
+  gcp/scanner-vm/finish_setup.sh \
+  "$VPS_USER@$VPS_IP:/tmp/"
 
 echo "⚙️  Running remote setup..."
-gcloud compute ssh "$VM_NAME" \
-  --zone="$ZONE" --project="$PROJECT" \
-  --command="
+ssh -i "$SSH_KEY" "$VPS_USER@$VPS_IP" "
     set -e
-    sudo mkdir -p $REMOTE_DIR
-    sudo cp /tmp/scanner_server.py $REMOTE_DIR/
-    sudo cp /tmp/requirements.txt $REMOTE_DIR/
-    sudo cp /tmp/scanner-server.service $REMOTE_DIR/
-    sudo cp /tmp/setup.sh $REMOTE_DIR/
-    sudo chmod +x $REMOTE_DIR/setup.sh
+    mkdir -p $REMOTE_DIR
+    cp /tmp/scanner_server.py $REMOTE_DIR/
+    cp /tmp/requirements.txt $REMOTE_DIR/
+    cp /tmp/scanner-server.service $REMOTE_DIR/
+    cp /tmp/setup.sh $REMOTE_DIR/
+    cp /tmp/finish_setup.sh $REMOTE_DIR/
+    chmod +x $REMOTE_DIR/setup.sh $REMOTE_DIR/finish_setup.sh
     echo 'Files copied to $REMOTE_DIR'
-  "
+"
 
 echo ""
-echo "✅ Files deployed. To finish setup, SSH in and run:"
-echo "   gcloud compute ssh $VM_NAME --zone=$ZONE --project=$PROJECT"
-echo "   sudo bash /opt/scanner/setup.sh"
+echo "✅ Files deployed to $VPS_IP. To finish setup, SSH in and run:"
+echo "   ssh -i $SSH_KEY $VPS_USER@$VPS_IP"
+echo "   bash /opt/scanner/setup.sh"
 echo ""
 echo "Then populate /opt/scanner/.env with:"
 echo "   SCANNER_TOKEN=<your_secret>"

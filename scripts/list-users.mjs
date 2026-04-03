@@ -66,6 +66,6 @@ console.log('UID                                  | EMAIL                       
 console.log('-------------------------------------+--------------------------------+-----------+-----------+--------');
 for (const doc of snap.docs) {
   const d = doc.data();
-  const credits = d.scannerLimits ? `nmap:${d.scannerLimits.nmap} openvas:${d.scannerLimits.openvas} zap:${d.scannerLimits.zap}` : 'N/A';
+  const credits = d.scannerLimits ? `nmap:${d.scannerLimits.nmap} nuclei:${d.scannerLimits.nuclei} zap:${d.scannerLimits.zap}` : 'N/A';
   console.log(`${doc.id} | ${(d.email || 'N/A').padEnd(30)} | ${(d.subscriptionStatus || 'N/A').padEnd(9)} | ${(d.currentPlan || 'N/A').padEnd(9)} | ${credits}`);
 }

@@ -16,18 +16,18 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { doc, updateDoc } from "firebase/firestore";
 import { SavedTarget } from "@/lib/types/user";
 
+import { Target } from "@/lib/types/target";
+
 type TabKey = "new" | "history";
-const CUSTOM_TARGET_ID = "__custom_target__";
 
 export default function ScansPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("new");
   const [selectedScanners, setSelectedScanners] = useState<
-    ("nmap" | "openvas" | "zap")[]
+    ("nmap" | "nuclei" | "zap")[]
   >(["nmap"]);
   const [zapProfile, setZapProfile] = useState<"quick" | "active" | "full">(
     "active",
   );
-  const [targetInput, setTargetInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
@@ -37,43 +37,38 @@ export default function ScansPage() {
   const { scans: userScans = [], loading: scansLoading } = useUserScans(
     currentUser?.uid ?? null,
   );
-  const savedTargets = useMemo(() => userData?.savedTargets ?? [], [userData]);
-  const [selectedTargetId, setSelectedTargetId] = useState(CUSTOM_TARGET_ID);
+
+  const [savedTargets, setSavedTargets] = useState<Target[]>([]);
+  const [selectedTargetId, setSelectedTargetId] = useState<string>("");
+
+  useEffect(() => {
+    const loadTargets = async () => {
+      if (!currentUser) return;
+      try {
+        const token = await currentUser.getIdToken();
+        const res = await fetch("/api/targets", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (data.success && data.targets) {
+          setSavedTargets(data.targets);
+          if (data.targets.length > 0) {
+            setSelectedTargetId(data.targets[0].id);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load targets", err);
+      }
+    };
+    loadTargets();
+  }, [currentUser]);
+
   const selectedTarget = useMemo(
     () => savedTargets.find((target) => target.id === selectedTargetId) ?? null,
     [savedTargets, selectedTargetId],
   );
-  const [saveTarget, setSaveTarget] = useState(false);
-  const [customTargetName, setCustomTargetName] = useState("");
-  const [customTargetTags, setCustomTargetTags] = useState("");
-  const [customTargetType, setCustomTargetType] =
-    useState<SavedTarget["type"]>("ip");
 
-  useEffect(() => {
-    if (selectedTarget) {
-      // Show first address or all addresses joined for groups
-      const addresses =
-        selectedTarget.addresses ||
-        (selectedTarget.address ? [selectedTarget.address] : []);
-      setTargetInput(addresses.join("\n"));
-    }
-  }, [selectedTarget]);
-
-  useEffect(() => {
-    if (selectedTargetId !== CUSTOM_TARGET_ID) {
-      setSaveTarget(false);
-    }
-  }, [selectedTargetId]);
-
-  useEffect(() => {
-    if (selectedTargetId === CUSTOM_TARGET_ID) {
-      // Set type based on selected scanners - if any scanner needs URL, use url, else ip
-      const needsUrl = selectedScanners.includes("zap");
-      setCustomTargetType(needsUrl ? "url" : "ip");
-    }
-  }, [selectedScanners, selectedTargetId]);
-
-  const toggleScanner = (scanner: "nmap" | "openvas" | "zap") => {
+  const toggleScanner = (scanner: "nmap" | "nuclei" | "zap") => {
     setSelectedScanners((prev) => {
       if (prev.includes(scanner)) {
         // Don't allow deselecting if it's the only one
@@ -87,25 +82,15 @@ export default function ScansPage() {
 
   const handleSavedTargetChange = (value: string) => {
     setSelectedTargetId(value);
-    if (value === CUSTOM_TARGET_ID) {
-      setTargetInput("");
-    } else {
-      const target = savedTargets.find((candidate) => candidate.id === value);
-      if (target) {
-        const addresses =
-          target.addresses || (target.address ? [target.address] : []);
-        setTargetInput(addresses.join("\n"));
-      }
-    }
   };
 
   const hasCredits = userData
     ? (userData.scanCredits?.nmap ?? 0) > 0 ||
-      (userData.scanCredits?.openvas ?? 0) > 0 ||
+      (userData.scanCredits?.nuclei ?? 0) > 0 ||
       (userData.scanCredits?.zap ?? 0) > 0
     : false;
 
-  const scannerRemaining = (scanner: "nmap" | "openvas" | "zap") => {
+  const scannerRemaining = (scanner: "nmap" | "nuclei" | "zap") => {
     if (!userData) return 0;
     return userData.scanCredits?.[scanner] ?? 0;
   };
@@ -136,52 +121,15 @@ export default function ScansPage() {
     return `${hours}h ${minutes % 60}m`;
   };
 
-  const persistCustomTarget = async (addresses: string[]) => {
-    if (!currentUser) return;
-    const userRef = doc(db, "users", currentUser.uid);
-    const parsedTags = customTargetTags
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter(Boolean);
-    const targetName =
-      customTargetName.trim() ||
-      (addresses.length === 1 ? addresses[0] : `${addresses.length} targets`);
-    const newTarget: SavedTarget = {
-      id:
-        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-          ? crypto.randomUUID()
-          : `${Date.now()}-${Math.random()}`,
-      name: targetName,
-      addresses,
-      type: addresses.length > 1 ? "group" : customTargetType,
-      tags: parsedTags,
-    };
-    const updatedTargets = [...savedTargets, newTarget];
-    await updateDoc(userRef, {
-      savedTargets: updatedTargets,
-    });
-    setSelectedTargetId(newTarget.id);
-    setCustomTargetName("");
-    setCustomTargetTags("");
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
     setSubmitSuccess(null);
     setSubmitting(true);
 
-    // Get targets - either from saved target or custom input
-    const targetAddresses =
-      selectedTarget?.addresses ??
-      targetInput
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean);
-
-    if (targetAddresses.length === 0) {
+    if (!selectedTargetId) {
       setSubmitError(
-        "Provide at least one IP address, domain, or URL before launching a scan.",
+        "Please select a target from your saved targets before launching a scan.",
       );
       setSubmitting(false);
       return;
@@ -193,20 +141,6 @@ export default function ScansPage() {
       return;
     }
 
-    // Calculate total scans that will be created
-    const totalScans = targetAddresses.length * selectedScanners.length;
-
-    // Show confirmation for large batches
-    if (totalScans > 10) {
-      const confirmed = window.confirm(
-        `This will create ${totalScans} scans (${targetAddresses.length} target(s) × ${selectedScanners.length} scanner(s)) and use ${totalScans} from your monthly quota. Continue?`,
-      );
-      if (!confirmed) {
-        setSubmitting(false);
-        return;
-      }
-    }
-
     try {
       const user = auth.currentUser;
       if (!user) throw new Error("Not authenticated");
@@ -215,7 +149,6 @@ export default function ScansPage() {
       const nmapOptions = { topPorts: 100 };
       const zapOptions = { scanProfile: zapProfile };
 
-      // Create scans for each selected scanner type
       const results = [];
       const errors = [];
 
@@ -229,7 +162,7 @@ export default function ScansPage() {
             },
             body: JSON.stringify({
               type: scannerType,
-              target: targetAddresses, // Send array
+              targetId: selectedTargetId,
               options:
                 scannerType === "nmap"
                   ? nmapOptions
@@ -275,19 +208,7 @@ export default function ScansPage() {
         );
       }
 
-      setTargetInput("");
       setTimeout(() => setActiveTab("history"), 2000);
-      if (
-        saveTarget &&
-        selectedTargetId === CUSTOM_TARGET_ID &&
-        results.length > 0
-      ) {
-        try {
-          await persistCustomTarget(targetAddresses);
-        } catch (error) {
-          console.error("Failed to save target after scan", error);
-        }
-      }
     } catch (err: any) {
       setSubmitError(err.message || "Unknown error");
     } finally {
@@ -345,8 +266,8 @@ export default function ScansPage() {
                   No Scan Credits
                 </h2>
                 <p className="text-gray-600 max-w-xl mx-auto mb-6">
-                  Purchase scan credits to start running Nmap, OpenVAS, and
-                  OWASP ZAP scans. Credits are shared across all scanner types.
+                  Purchase scan credits to start running Nmap, Nuclei, and OWASP
+                  ZAP scans. Credits are shared across all scanner types.
                 </p>
                 <a
                   href="/#pricing"
@@ -398,23 +319,23 @@ export default function ScansPage() {
                         </div>
                       </label>
 
-                      {/* OpenVAS Checkbox */}
+                      {/* Nuclei Checkbox */}
                       <label className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg hover:border-[#0A1128] cursor-pointer transition-colors">
                         <input
                           type="checkbox"
-                          checked={selectedScanners.includes("openvas")}
-                          onChange={() => toggleScanner("openvas")}
+                          checked={selectedScanners.includes("nuclei")}
+                          onChange={() => toggleScanner("nuclei")}
                           className="mt-1 h-4 w-4 text-[#0A1128] rounded focus:ring-[#0A1128]"
                         />
                         <div className="flex-1">
                           <div className="font-semibold text-[#0A1128]">
-                            OpenVAS - Vulnerability Assessment
+                            Nuclei - Vulnerability Assessment
                           </div>
                           <div className="text-xs text-gray-600">
                             CVE detection and security analysis
                           </div>
                           <div className="text-xs text-[#0A1128] mt-1 font-semibold">
-                            {scannerRemaining("openvas")} credits remaining
+                            {scannerRemaining("nuclei")} credits remaining
                           </div>
                         </div>
                       </label>
@@ -445,165 +366,38 @@ export default function ScansPage() {
                   {/* Saved Targets */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-[#0A1128] mb-2">
-                      Saved Targets
+                      Target to Scan
                     </label>
                     <div className="flex flex-wrap gap-3">
-                      <select
-                        className="min-w-[200px] px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A1128] focus:border-transparent"
-                        value={selectedTargetId}
-                        onChange={(event) =>
-                          handleSavedTargetChange(event.target.value)
-                        }
-                      >
-                        <option value={CUSTOM_TARGET_ID}>Enter manually</option>
-                        {savedTargets.map((target) => {
-                          const addresses =
-                            target.addresses ||
-                            (target.address ? [target.address] : []);
-                          return (
-                            <option key={target.id} value={target.id}>
-                              {target.name} ({addresses.length}{" "}
-                              {addresses.length === 1 ? "target" : "targets"})
-                            </option>
-                          );
-                        })}
-                      </select>
-                      {selectedTarget && (
-                        <button
-                          type="button"
-                          className="px-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-600 hover:border-[#0A1128]"
-                          onClick={() =>
-                            handleSavedTargetChange(CUSTOM_TARGET_ID)
-                          }
-                        >
-                          Use different target
-                        </button>
-                      )}
-                    </div>
-                    {selectedTarget && (
-                      <p className="text-xs text-gray-500">
-                        Using saved target:{" "}
-                        {selectedTarget.addresses.length === 1
-                          ? selectedTarget.addresses[0]
-                          : `${selectedTarget.addresses.length} addresses`}
-                        {selectedTarget.addresses.length > 1 && (
-                          <span className="block mt-1 font-mono text-xs">
-                            {selectedTarget.addresses.slice(0, 3).join(", ")}
-                            {selectedTarget.addresses.length > 3 &&
-                              ` ... +${selectedTarget.addresses.length - 3} more`}
-                          </span>
-                        )}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Target Input */}
-                  <div>
-                    <label className="block text-sm font-semibold text-[#0A1128] mb-2">
-                      {selectedScanners.includes("zap") &&
-                      selectedScanners.length === 1
-                        ? "Target URL(s)"
-                        : "Target IP/Domain/URL(s)"}
-                      <span className="text-xs text-gray-500 font-normal ml-2">
-                        (one per line for multiple targets)
-                      </span>
-                    </label>
-                    <textarea
-                      placeholder={
-                        selectedScanners.includes("zap") &&
-                        selectedScanners.length === 1
-                          ? "e.g., https://example.com\nhttps://test.com"
-                          : "e.g., 192.168.1.1\nexample.com\nhttps://test.com"
-                      }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00FED9] focus:border-transparent font-mono text-sm"
-                      value={targetInput}
-                      onChange={(e) => setTargetInput(e.target.value)}
-                      required
-                      disabled={Boolean(selectedTarget)}
-                      rows={4}
-                    />
-                    {selectedTarget && (
-                      <p className="mt-2 text-xs text-gray-500">
-                        {selectedTarget.name} will be used for this scan. Toggle
-                        back to manual input to use another target.
-                      </p>
-                    )}
-                    {!selectedTarget &&
-                      targetInput.split("\n").filter(Boolean).length > 1 && (
-                        <p className="mt-2 text-xs text-[#00FED9] font-semibold">
-                          ⚠️ This will create{" "}
-                          {targetInput.split("\n").filter(Boolean).length} scans
-                          and use that many from your monthly quota.
+                      {savedTargets.length === 0 ? (
+                        <p className="text-sm text-gray-500 py-2">
+                          You have no saved targets.{" "}
+                          <a
+                            href="/app/targets"
+                            className="text-[#00FED9] underline"
+                          >
+                            Add a target
+                          </a>{" "}
+                          first.
                         </p>
-                      )}
-                  </div>
-
-                  {/* Save Target Option */}
-                  {selectedTargetId === CUSTOM_TARGET_ID && (
-                    <div className="space-y-3">
-                      <label className="flex items-center gap-2 text-sm font-semibold text-[#0A1128]">
-                        <input
-                          type="checkbox"
-                          checked={saveTarget}
-                          onChange={(event) =>
-                            setSaveTarget(event.target.checked)
-                          }
-                          className="h-4 w-4"
-                        />
-                        Save this target for future scans
-                      </label>
-                      {saveTarget && (
-                        <div className="space-y-3">
-                          <div>
-                            <label className="text-xs text-gray-700 font-semibold">
-                              Target name
-                            </label>
-                            <input
-                              type="text"
-                              value={customTargetName}
-                              onChange={(event) =>
-                                setCustomTargetName(event.target.value)
-                              }
-                              placeholder="Optional friendly name"
-                              className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#00FED9]"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-xs text-gray-700 font-semibold">
-                              Tags (comma separated)
-                            </label>
-                            <input
-                              type="text"
-                              value={customTargetTags}
-                              onChange={(event) =>
-                                setCustomTargetTags(event.target.value)
-                              }
-                              placeholder="production, api"
-                              className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#00FED9]"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-xs text-gray-700 font-semibold">
-                              Target type
-                            </label>
-                            <select
-                              value={customTargetType}
-                              onChange={(event) =>
-                                setCustomTargetType(
-                                  event.target.value as SavedTarget["type"],
-                                )
-                              }
-                              className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#00FED9]"
-                            >
-                              <option value="ip">IP</option>
-                              <option value="domain">Domain</option>
-                              <option value="url">URL</option>
-                            </select>
-                          </div>
-                        </div>
+                      ) : (
+                        <select
+                          className="min-w-[200px] px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A1128] focus:border-transparent"
+                          value={selectedTargetId}
+                          onChange={(e) => setSelectedTargetId(e.target.value)}
+                        >
+                          <option value="" disabled>
+                            Select a target...
+                          </option>
+                          {savedTargets.map((target) => (
+                            <option key={target.id} value={target.id}>
+                              {target.name} ({target.value})
+                            </option>
+                          ))}
+                        </select>
                       )}
                     </div>
-                  )}
+                  </div>
 
                   {/* ZAP Profile */}
                   {selectedScanners.includes("zap") && (

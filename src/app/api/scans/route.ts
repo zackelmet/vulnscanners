@@ -46,21 +46,29 @@ export async function POST(request: NextRequest) {
 
     // Parse the request body
     const body: CreateScanRequest = await request.json();
-    const { type, target, options } = body;
+    const { type, targetId, options } = body;
 
     // Debug logging
-    console.log("Scan request received:", { userId, type, target, options });
+    console.log("Scan request received:", { userId, type, targetId, options });
 
-    // Normalize target to array
-    const targetArray = Array.isArray(target) ? target : [target];
-
-    // Validate we have at least one target
-    if (targetArray.length === 0 || !targetArray[0]) {
+    if (!targetId) {
       return NextResponse.json(
-        { error: "Missing required field: target" },
+        { error: "Missing required field: targetId" },
         { status: 400 },
       );
     }
+
+    // Fetch Target from Firestore
+    const targetDoc = await firestore.collection("targets").doc(targetId).get();
+    if (!targetDoc.exists || targetDoc.data()?.userId !== userId) {
+      return NextResponse.json(
+        { error: "Target not found or unauthorized" },
+        { status: 404 },
+      );
+    }
+
+    const targetValue = targetDoc.data()?.value;
+    const targetArray = [targetValue]; // Wrapping it in array to minimize downstream changes
 
     // Normalize options (client may send empty string or null)
     const normalizedOptions =
@@ -80,11 +88,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate scan type
-    if (type !== "nmap" && type !== "openvas" && type !== "zap") {
+    if (type !== "nmap" && type !== "nuclei" && type !== "zap") {
       console.log("Invalid scan type requested:", type);
       return NextResponse.json(
         {
-          error: "Invalid scan type. Must be 'nmap', 'openvas', or 'zap'",
+          error: "Invalid scan type. Must be 'nmap', 'nuclei', or 'zap'",
         },
         { status: 400 },
       );
@@ -109,7 +117,7 @@ export async function POST(request: NextRequest) {
           return null;
         }
       } else {
-        // OpenVAS and Nmap need just the hostname/IP (no protocol, no path)
+        // Nuclei and Nmap need just the hostname/IP (no protocol, no path)
         normalized = normalized.replace(/^https?:\/\//i, "");
         normalized = normalized.replace(/:\d+.*$/, "");
         normalized = normalized.replace(/\/.*$/, "");
@@ -153,12 +161,12 @@ export async function POST(request: NextRequest) {
 
     const userData = userDoc.data() as UserDocument;
 
-    const scanner = type as "nmap" | "openvas" | "zap";
+    const scanner = type as "nmap" | "nuclei" | "zap";
     const scansNeeded = normalizedTargets.length;
 
     // Ensure credit fields exist (safety net for legacy docs)
-    const scanCredits = userData.scanCredits || { nmap: 0, openvas: 0, zap: 0 };
-    const scansUsed = userData.scansUsed || { nmap: 0, openvas: 0, zap: 0 };
+    const scanCredits = userData.scanCredits || { nmap: 0, nuclei: 0, zap: 0 };
+    const scansUsed = userData.scansUsed || { nmap: 0, nuclei: 0, zap: 0 };
 
     const creditsAvailable = scanCredits[scanner] ?? 0;
 
@@ -196,7 +204,7 @@ export async function POST(request: NextRequest) {
         // Re-check credits inside transaction to prevent race conditions
         const freshCredits = freshUser.scanCredits || {
           nmap: 0,
-          openvas: 0,
+          nuclei: 0,
           zap: 0,
         };
         const freshAvailable = (freshCredits[scanner] as number) ?? 0;
@@ -213,7 +221,8 @@ export async function POST(request: NextRequest) {
           const scanData: any = {
             userId,
             type,
-            target: normalizedTarget,
+            targetId,
+            targetValue: normalizedTarget,
             options: normalizedOptions,
             status: "queued",
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -274,7 +283,8 @@ export async function POST(request: NextRequest) {
           scanId: scanRef.id,
           status: "queued",
           type,
-          target: normalizedTarget,
+          targetId,
+          targetValue: normalizedTarget,
           startTime: admin.firestore.FieldValue.serverTimestamp(),
           resultsSummary: null,
           gcpStorageUrl: null,

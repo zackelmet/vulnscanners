@@ -17,6 +17,7 @@ import {
   faCog,
   faChevronUp,
   faRobot,
+  faShieldHalved,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "@/lib/context/AuthContext";
 import signout from "@/lib/firebase/signout";
@@ -63,6 +64,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { href: "/app/dashboard", label: "Dashboard", icon: faHome },
     { href: "/app/targets", label: "Targets", icon: faBullseye },
     { href: "/app/scans", label: "Scans", icon: faSatelliteDish },
+    {
+      href: "/app/vulnerabilities",
+      label: "Vulnerabilities",
+      icon: faShieldHalved,
+    },
     { href: "/app/pentests", label: "Pentests", icon: faRobot },
   ];
 

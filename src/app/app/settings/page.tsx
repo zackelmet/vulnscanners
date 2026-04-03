@@ -97,9 +97,9 @@ export default function SettingsPage() {
                       </span>
                     </div>
                     <div>
-                      OpenVAS:{" "}
+                      Nuclei:{" "}
                       <span className="font-bold">
-                        {userData?.scanCredits?.openvas ?? 0}
+                        {userData?.scanCredits?.nuclei ?? 0}
                       </span>
                     </div>
                     <div>

@@ -241,7 +241,7 @@ export async function POST(request: NextRequest) {
       //   counter by 1 (bounded to >= 0).
       try {
         if (scannerType) {
-          const scanner = scannerType as "nmap" | "openvas" | "zap";
+          const scanner = scannerType as "nmap" | "nuclei" | "zap";
           const units =
             typeof billingUnits === "number" && billingUnits > 0
               ? billingUnits

@@ -14,7 +14,7 @@ export default function Home() {
       features: [
         "10 scan credits",
         "Each credit = 1 complete scan",
-        "Nmap, OpenVAS & OWASP ZAP included",
+        "Nmap, Nuclei & OWASP ZAP included",
         "Zero setup - instant deployment",
         "30-day data retention",
         "Email support",

@@ -1,6 +1,6 @@
 # Hacker Analytics — Hosted Security Scanners
 
-SaaS platform for cloud-hosted vulnerability scanners (e.g., Nmap, OpenVAS) with a Next.js frontend and serverless backend.
+SaaS platform for cloud-hosted vulnerability scanners (e.g., Nmap, Nuclei) with a Next.js frontend and serverless backend.
 
 ## Quick Start (local)
 

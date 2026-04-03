@@ -11,12 +11,12 @@ config.autoAddCss = false;
 export const metadata: Metadata = {
   title: "Hacker Analytics - Hosted Security Scanners",
   description:
-    "Vulnerability Scanning: Zero Install. Maximum Impact. Hosted Nmap and OpenVAS services on fast, optimized servers.",
+    "Vulnerability Scanning: Zero Install. Maximum Impact. Hosted Nmap and Nuclei services on fast, optimized servers.",
   metadataBase: new URL("https://hackeranalytics.com"),
   openGraph: {
     title: "Hacker Analytics - Hosted Security Scanners",
     description:
-      "Vulnerability Scanning: Zero Install. Maximum Impact. Hosted Nmap and OpenVAS services on fast, optimized servers.",
+      "Vulnerability Scanning: Zero Install. Maximum Impact. Hosted Nmap and Nuclei services on fast, optimized servers.",
     url: "https://hackeranalytics.com",
     siteName: "Hacker Analytics",
   },
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Hacker Analytics - Hosted Security Scanners",
     description:
-      "Vulnerability Scanning: Zero Install. Maximum Impact. Hosted Nmap and OpenVAS services on fast, optimized servers.",
+      "Vulnerability Scanning: Zero Install. Maximum Impact. Hosted Nmap and Nuclei services on fast, optimized servers.",
   },
   icons: {
     icon: [

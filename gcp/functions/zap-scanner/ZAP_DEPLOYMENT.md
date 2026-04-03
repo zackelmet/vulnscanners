@@ -1,7 +1,7 @@
 # OWASP ZAP Scanner Deployment
 
 ## Overview
-Successfully deployed OWASP ZAP web vulnerability scanner on Google Cloud Platform VM to replace OpenVAS for web application scanning.
+Successfully deployed OWASP ZAP web vulnerability scanner as part of the unified scanner VM. Now runs alongside Nmap and Nuclei on a single Hetzner VPS.
 
 ## Infrastructure
 
@@ -167,28 +167,27 @@ When scan completes, the following payload is sent to the webhook URL:
   - Port: 5000
   - Source: 0.0.0.0/0 (public)
 
-## Advantages Over OpenVAS
+## Advantages Over Legacy OpenVAS Setup
 
 1. **Web Application Focus**: ZAP is specifically designed for web vulnerability scanning
 2. **Modern & Maintained**: Actively developed by OWASP with frequent updates
-3. **Fast Scans**: Completes in seconds vs minutes for OpenVAS
+3. **Fast Scans**: Completes in seconds vs minutes for legacy scanners
 4. **Better Web Coverage**: Includes AJAX spider, DOM-based XSS, modern web tech
 5. **No Limitations**: Full capabilities in free/open-source version
 6. **Easy Integration**: Simple REST API, no complex protocols
 
-## Original OpenVAS VM
+## Current Architecture
 
-**Preserved and untouched**:
-- **Name**: `openvas-scanner-vm`
-- **IP**: `136.115.155.198`
-- **Purpose**: Local security checks (OS package vulnerabilities)
-- **Status**: Still operational for authenticated scans
+**All scanners (Nmap, Nuclei, OWASP ZAP) now run on a single unified scanner VM.**
+- **Deployment**: Hetzner CX22 VPS (4GB RAM, 2 CPU)
+- **Server**: `scanner_server.py` (Flask) on port 5000
+- **Nuclei**: Replaced OpenVAS for lightweight vulnerability assessment
 
 ## Next Steps
 
 ### Integration with Main Application
-1. Update scan API routes to call ZAP VM instead of OpenVAS for web scans
-2. Add scanner type selection in UI (OpenVAS for hosts, ZAP for web apps)
+1. Scan API routes call the unified scanner VM for all scan types
+2. Scanner type selection in UI (Nmap for ports, Nuclei for vulns, ZAP for web apps)
 3. Configure webhook secret in environment
 4. Test end-to-end flow from production app
 
