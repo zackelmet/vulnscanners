@@ -7,7 +7,13 @@ const admin = initializeAdmin();
 
 export async function POST(req: NextRequest) {
   try {
-    const { uid, secretCode, name, email } = await req.json();
+    const {
+      uid,
+      secretCode,
+      name,
+      email,
+      provider = "firebase",
+    } = await req.json();
 
     if (!uid) {
       return NextResponse.json({ error: "UID is required" }, { status: 400 });
@@ -37,10 +43,12 @@ export async function POST(req: NextRequest) {
       }
 
       // Create a new user document - minimal fields only
-      const newUser: Partial<UserDocument> = {
+      const newUser: any = {
         uid,
         name: name || "",
         email: email || "",
+        // record provider (e.g. 'google' or 'email')
+        provider: provider || "firebase",
         stripeCustomerId: stripeCustomerId,
         // Zero credits until they purchase a package
         scanCredits: { nmap: 0, nuclei: 0, zap: 0 },
