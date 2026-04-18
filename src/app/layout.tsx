@@ -6,6 +6,7 @@ import ClientProviders from "@/lib/context/ClientProviders";
 import ConditionalNav from "@/components/nav/ConditionalNav";
 import { config } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
+import { Analytics } from "@vercel/analytics/next";
 config.autoAddCss = false;
 
 export const metadata: Metadata = {
@@ -49,6 +50,7 @@ export default function RootLayout({
         <ClientProviders>
           <ConditionalNav>{children}</ConditionalNav>
         </ClientProviders>
+        <Analytics />
       </body>
     </html>
   );
