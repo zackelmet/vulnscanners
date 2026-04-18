@@ -49,28 +49,50 @@ const workflow = [
 
 const sellingPoints = [
   {
-    title: "Trusted scanner stack",
-    copy: "Run established tools your team already knows: Nmap, Nuclei, and OWASP ZAP in one hosted workflow.",
+    title: "Executive-ready reporting",
+    copy: "Deliver clear summaries for leadership with technical depth your engineering team can action immediately.",
+  },
+  {
+    title: "Evidence for remediation",
+    copy: "Each scan produces concrete findings and context you can use in fix tickets and verification runs.",
+  },
+  {
+    title: "Compliance-friendly output",
+    copy: "Generate deliverables that support recurring security reviews and customer or audit conversations.",
   },
   {
     title: "No install or maintenance",
     copy: "Launch scans without maintaining scanner servers, container images, or update pipelines.",
   },
   {
-    title: "Attack-surface visibility",
-    copy: "Map exposed services and web risk quickly so teams can prioritize what is reachable first.",
-  },
-  {
-    title: "Attacker-perspective testing",
-    copy: "Assess external posture the way an internet-based adversary sees it, then validate fixes fast.",
-  },
-  {
-    title: "Actionable remediation flow",
-    copy: "Move from finding to fix with clear output your engineering and security teams can triage together.",
+    title: "Trusted scanner stack",
+    copy: "Run established tools your team already knows: Nmap, Nuclei, and OWASP ZAP in one hosted workflow.",
   },
   {
     title: "Built for recurring scans",
-    copy: "Use repeatable runs to verify remediation and keep pace with infrastructure and application changes.",
+    copy: "Re-run scans to prove fixes and keep reports current as infrastructure and applications change.",
+  },
+];
+
+const reportDeliverables = [
+  "Executive summary with risk-focused highlights",
+  "Technical findings with reproducible evidence",
+  "Prioritized remediation guidance for teams",
+  "Re-test tracking for fix verification",
+];
+
+const reportShowcase = [
+  {
+    title: "External Attack Surface Report",
+    subtitle: "Placeholder: replace with your real sample report",
+  },
+  {
+    title: "Web Application Findings Report",
+    subtitle: "Placeholder: replace with your real sample report",
+  },
+  {
+    title: "Remediation Verification Report",
+    subtitle: "Placeholder: replace with your real sample report",
   },
 ];
 
@@ -89,13 +111,13 @@ export default function Home() {
           </div>
 
           <h1 className="text-4xl lg:text-6xl font-black tracking-tight neon-hero-title leading-tight text-balance">
-            Hosted Vulnerability Scanning Without The Operational Overhead
+            Deliver Security Reports That Teams Can Actually Use
           </h1>
 
           <p className="text-base lg:text-xl neon-subtle max-w-3xl mx-auto leading-relaxed text-pretty">
-            Simplify security assessments with hosted scanners. Run Nmap,
-            Nuclei, and OWASP ZAP from one console to discover exposure,
-            identify vulnerabilities, and re-test quickly.
+            VulnScanners helps you move from raw scan output to clear,
+            actionable deliverables. Run Nmap, Nuclei, and OWASP ZAP from one
+            console and share report-ready findings with confidence.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
@@ -103,7 +125,7 @@ export default function Home() {
               href="/login"
               className="neon-primary-btn px-6 py-3 font-semibold text-sm w-full sm:w-auto text-center"
             >
-              Start Scanning
+              Generate My First Report
             </Link>
             <Link
               href="/app/scans"
@@ -157,7 +179,7 @@ export default function Home() {
           <div className="text-center space-y-2">
             <span className="neon-chip">How it works</span>
             <h2 className="text-3xl lg:text-4xl font-bold neon-section-title">
-              From Target To Findings In Minutes
+              From Target To Deliverable Report In Minutes
             </h2>
           </div>
 
@@ -175,6 +197,50 @@ export default function Home() {
                   {step.copy}
                 </p>
               </div>
+            ))}
+          </div>
+        </section>
+
+        <section
+          className="neon-card landing-fade-up p-6 lg:p-8 space-y-6"
+          id="reports"
+        >
+          <div className="text-center space-y-2">
+            <span className="neon-chip">Report deliverables</span>
+            <h2 className="text-3xl lg:text-4xl font-bold neon-section-title">
+              Built Around The Output, Not Just The Scan
+            </h2>
+            <p className="max-w-3xl mx-auto neon-subtle text-sm lg:text-base leading-relaxed">
+              Your team needs more than raw scanner logs. VulnScanners focuses
+              on evidence-backed reports that are easy to review, assign, and
+              verify.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {reportDeliverables.map((item) => (
+              <div
+                key={item}
+                className="neon-border landing-card p-4 rounded-xl bg-[rgba(255,255,255,0.02)] text-sm lg:text-base"
+              >
+                {item}
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {reportShowcase.map((report) => (
+              <article
+                key={report.title}
+                className="neon-card landing-card p-5 lg:p-6 space-y-2"
+              >
+                <h3 className="text-lg font-bold tracking-tight">
+                  {report.title}
+                </h3>
+                <p className="neon-subtle text-sm leading-relaxed">
+                  {report.subtitle}
+                </p>
+              </article>
             ))}
           </div>
         </section>
@@ -210,11 +276,11 @@ export default function Home() {
         >
           <span className="neon-chip">Ready to run your first scan?</span>
           <h2 className="text-3xl lg:text-4xl font-black tracking-tight neon-hero-title">
-            Launch VulnScanners Today
+            Start Delivering Better Security Reports
           </h2>
           <p className="max-w-2xl mx-auto neon-subtle text-sm lg:text-base">
-            Unified web app. Three scanners. Real backend execution. Zero local
-            setup.
+            Unified web app. Three scanners. Evidence-backed output your team
+            can triage, fix, and verify.
           </p>
           <div className="pt-2 flex flex-col sm:flex-row gap-3 items-center justify-center">
             <Link
