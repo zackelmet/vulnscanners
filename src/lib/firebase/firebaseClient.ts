@@ -17,6 +17,13 @@ const clientCredentials = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
+const hasClientFirebaseConfig = Boolean(
+  clientCredentials.apiKey &&
+  clientCredentials.authDomain &&
+  clientCredentials.projectId &&
+  clientCredentials.appId,
+);
+
 let firebase_app: FirebaseApp | null = null;
 let _db: ReturnType<typeof getFirestore> | undefined;
 let _auth: ReturnType<typeof getAuth> | undefined;
@@ -29,15 +36,21 @@ let _functions: ReturnType<typeof getFunctions> | undefined;
 // "auth/invalid-api-key" during the build. Guard initialization to the
 // browser environment to avoid build-time failures.
 if (typeof window !== "undefined") {
-  if (!getApps().length) {
-    firebase_app = initializeApp(clientCredentials);
-  } else {
-    firebase_app = getApps()[0];
-  }
+  if (hasClientFirebaseConfig) {
+    if (!getApps().length) {
+      firebase_app = initializeApp(clientCredentials);
+    } else {
+      firebase_app = getApps()[0];
+    }
 
-  _db = getFirestore(firebase_app);
-  _auth = getAuth(firebase_app);
-  _functions = getFunctions(firebase_app);
+    _db = getFirestore(firebase_app);
+    _auth = getAuth(firebase_app);
+    _functions = getFunctions(firebase_app);
+  } else {
+    console.warn(
+      "Firebase client SDK not initialized: missing NEXT_PUBLIC_FIREBASE_* environment variables.",
+    );
+  }
 }
 
 // Exports: on the server these will be `undefined` which prevents the client

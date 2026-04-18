@@ -73,7 +73,7 @@ export default function Home() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <Link
-              href="/auth/login"
+              href="/login"
               className="neon-primary-btn px-6 py-3 font-semibold text-sm w-full sm:w-auto text-center"
             >
               Start Scanning
@@ -191,7 +191,7 @@ export default function Home() {
           </p>
           <div className="pt-2 flex flex-col sm:flex-row gap-3 items-center justify-center">
             <Link
-              href="/auth/login"
+              href="/login"
               className="neon-primary-btn px-6 py-3 font-semibold text-sm w-full sm:w-auto text-center"
             >
               Create Account
