@@ -17,7 +17,7 @@ VulnScanners is a SaaS vulnerability scanning platform with:
 - Firestore project: `vulnscanners`
 
 ## Backend Contract
-- Dispatch: scanner jobs sent to `${GCP_SCANNER_URL}/scan` with `X-Scanner-Token`
+- Dispatch: scanner jobs sent to `${HETZNER_SCANNER_URL}/scan` with `X-Scanner-Token`
 - Callback webhook: `POST /api/scans/webhook`
 - Canonical payload + required fields: see `docs/API_CONTRACT.md`
 

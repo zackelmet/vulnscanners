@@ -2,10 +2,10 @@
 
 ## Dispatch (Web App -> Scanner Worker)
 - Method: `POST`
-- URL: `${GCP_SCANNER_URL}/scan`
+- URL: `${HETZNER_SCANNER_URL}/scan`
 - Headers:
   - `Content-Type: application/json`
-  - `X-Scanner-Token: ${GCP_WEBHOOK_SECRET}`
+  - `X-Scanner-Token: ${HETZNER_SCANNER_AUTH_TOKEN}`
 - Body:
   - `scanId` (string)
   - `scanner` (`nmap | nuclei | zap`)
@@ -19,8 +19,9 @@
 - Accepted auth headers (any one):
   - `x-webhook-signature`
   - `x-gcp-webhook-secret`
+  - `x-hetzner-webhook-secret`
   - `x-webhook-secret`
-- Secret value: `${GCP_WEBHOOK_SECRET}`
+- Secret value: `${HETZNER_WEBHOOK_SECRET}`
 
 ## Canonical Payload (Callback)
 Required fields to enforce:

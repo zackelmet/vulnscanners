@@ -44,10 +44,12 @@ export async function POST(request: NextRequest) {
 
     // Verify webhook signature. Accept either header name so workers and
     // functions with different header naming conventions both work.
-    const webhookSecret = process.env.GCP_WEBHOOK_SECRET;
+    const webhookSecret =
+      process.env.HETZNER_WEBHOOK_SECRET || process.env.GCP_WEBHOOK_SECRET;
     const sig1 = request.headers.get("x-webhook-signature");
     const sig2 = request.headers.get("x-gcp-webhook-secret");
     const sig3 = request.headers.get("x-webhook-secret");
+    const sig4 = request.headers.get("x-hetzner-webhook-secret");
 
     // Debug logging for webhook auth issues
     console.log("🔐 Webhook auth check:", {
@@ -58,14 +60,15 @@ export async function POST(request: NextRequest) {
       sig1: sig1 ? `${sig1.slice(0, 4)}...` : null,
       sig2: sig2 ? `${sig2.slice(0, 4)}...` : null,
       sig3: sig3 ? `${sig3.slice(0, 4)}...` : null,
+      sig4: sig4 ? `${sig4.slice(0, 4)}...` : null,
     });
 
-    if (webhookSecret && webhookSecret !== (sig1 || sig2 || sig3)) {
+    if (webhookSecret && webhookSecret !== (sig1 || sig2 || sig3 || sig4)) {
       console.error(
         "❌ Webhook signature mismatch - expected:",
         webhookSecret?.slice(0, 4),
         "got:",
-        (sig1 || sig2)?.slice(0, 4),
+        (sig1 || sig2 || sig3 || sig4)?.slice(0, 4),
       );
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }

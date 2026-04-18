@@ -33,6 +33,13 @@ body {
 		"Segoe UI", sans-serif;
 }
 
+button,
+input,
+select,
+textarea {
+	font: inherit;
+}
+
 h1,
 h2,
 h3,
@@ -193,4 +200,39 @@ body[data-theme="cupcake"] {
 	background: linear-gradient(120deg, var(--primary), var(--secondary));
 	-webkit-background-clip: text;
 	color: transparent;
+}
+
+.landing-fade-up {
+	animation: landingFadeUp 520ms ease both;
+}
+
+.landing-card {
+	transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.landing-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 20px 45px rgba(0, 0, 0, 0.42), 0 0 28px rgba(0, 254, 217, 0.2);
+	border-color: rgba(0, 254, 217, 0.32);
+}
+
+@keyframes landingFadeUp {
+	0% {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.landing-fade-up,
+	.landing-card,
+	.neon-primary-btn,
+	.neon-outline-btn {
+		animation: none !important;
+		transition: none !important;
+	}
 }

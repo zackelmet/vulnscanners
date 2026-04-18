@@ -1,157 +1,210 @@
-"use client";
+import Link from "next/link";
 
-import PricingCard from "@/components/pricing/PricingCard";
-import { useState } from "react";
+const scanners = [
+  {
+    name: "Nmap",
+    summary:
+      "Fast external port and service visibility for attack-surface mapping.",
+    highlights: [
+      "Internet-facing service inventory",
+      "Open port verification",
+      "Fast baseline checks",
+    ],
+  },
+  {
+    name: "Nuclei",
+    summary:
+      "Template-based vulnerability detection mapped to current CVE intelligence.",
+    highlights: [
+      "Continuously updated checks",
+      "Actionable finding output",
+      "Great for frequent re-testing",
+    ],
+  },
+  {
+    name: "OWASP ZAP",
+    summary: "Automated web-layer security baseline for common app-level risk.",
+    highlights: [
+      "Automated web security baseline",
+      "Crawler + passive analysis",
+      "Easy report handoff",
+    ],
+  },
+];
+
+const workflow = [
+  {
+    title: "Pick scanner + target",
+    copy: "Choose Nmap, Nuclei, or ZAP and run against approved assets.",
+  },
+  {
+    title: "Run in hosted infrastructure",
+    copy: "Scans execute in our hosted backend so your team skips scanner setup and maintenance.",
+  },
+  {
+    title: "Review results + re-test",
+    copy: "Confirm findings quickly, fix issues, and rerun scans in minutes.",
+  },
+];
 
 export default function Home() {
-  // Hardcode price IDs - they're public and safe to expose
-  const pricingPlans = [
-    {
-      name: "Starter Pack",
-      price: "$10",
-      priceId: "price_1Ss5HlP4RsXsKxGc6Oq727mP", // 10 credits (LIVE)
-      label: "Perfect for testing",
-      features: [
-        "10 scan credits",
-        "Each credit = 1 complete scan",
-        "Nmap, Nuclei & OWASP ZAP included",
-        "Zero setup - instant deployment",
-        "30-day data retention",
-        "Email support",
-      ],
-    },
-    {
-      name: "Pro Pack",
-      price: "$50",
-      priceId: "price_1Ss5HqP4RsXsKxGcVC4GK8jQ", // 75 credits (LIVE)
-      label: "Best for teams",
-      features: [
-        "75 scan credits",
-        "Each credit = 1 complete scan",
-        "All 3 scanners per credit",
-        "CSV/JSON export capabilities",
-        "Priority email support",
-        "60-day data retention",
-      ],
-      popular: true,
-    },
-    {
-      name: "Enterprise Pack",
-      price: "$500",
-      priceId: "price_1Ss5HwP4RsXsKxGc0Hs42FUk", // 1000 credits (LIVE)
-      label: "For large organizations",
-      features: [
-        "1,000 scan credits",
-        "Each credit = 1 complete scan",
-        "Full scanner suite access",
-        "Unlimited data retention",
-        "Executive summary reports",
-        "24/7 priority support",
-      ],
-    },
-  ];
-
   return (
     <main className="min-h-screen w-full bg-[rgba(10,10,35,0.92)] text-[--text] relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none opacity-70">
         <div className="absolute inset-8 neon-grid" />
       </div>
 
-      <div className="relative w-full max-w-6xl mx-auto px-6 lg:px-10 py-16 lg:py-20">
-        <div className="text-center mb-14 space-y-4">
-          <div className="flex items-center justify-center gap-3">
-            <span className="neon-chip">Pricing</span>
-            <span className="neon-badge-muted">
-              No subscriptions • Pay as you go
-            </span>
+      <div className="relative w-full max-w-6xl mx-auto px-5 sm:px-6 lg:px-10 py-12 lg:py-20 space-y-14 lg:space-y-20">
+        <section className="text-center space-y-6 landing-fade-up">
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <span className="neon-chip">Hosted vulnerability scanning</span>
+            <span className="neon-badge-muted">Nmap • Nuclei • OWASP ZAP</span>
           </div>
-          <h1 className="text-4xl lg:text-5xl font-black tracking-tight neon-hero-title">
-            Buy Scan Credits
+
+          <h1 className="text-4xl lg:text-6xl font-black tracking-tight neon-hero-title leading-tight text-balance">
+            Unified Security Scanning For Fast-Moving Teams
           </h1>
-          <p className="text-lg lg:text-xl neon-subtle max-w-2xl mx-auto">
-            One credit = one complete security scan with all 3 tools. No monthly
-            fees, credits never expire.
+
+          <p className="text-base lg:text-xl neon-subtle max-w-3xl mx-auto leading-relaxed text-pretty">
+            Run Nmap, Nuclei, and OWASP ZAP in one web app. Launch scans, review
+            findings, and re-test quickly without managing scanner
+            infrastructure.
           </p>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-          {pricingPlans.map((plan) => (
-            <PricingCard key={plan.name} {...plan} />
-          ))}
-        </div>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <Link
+              href="/auth/login"
+              className="neon-primary-btn px-6 py-3 font-semibold text-sm w-full sm:w-auto text-center"
+            >
+              Start Scanning
+            </Link>
+            <Link
+              href="/app/scans"
+              className="neon-outline-btn px-6 py-3 font-semibold text-sm w-full sm:w-auto text-center"
+            >
+              Open Scanner Console
+            </Link>
+          </div>
+        </section>
 
-        <div className="mt-16 lg:mt-20">
-          <div className="text-center mb-8 space-y-2">
-            <span className="neon-chip">FAQs</span>
-            <h2 className="text-3xl font-bold">Questions Teams Often Ask</h2>
+        <section className="space-y-6 landing-fade-up" id="scanners">
+          <div className="text-center space-y-2">
+            <span className="neon-chip">Three scanners. One workflow.</span>
+            <h2 className="text-3xl lg:text-4xl font-bold neon-section-title">
+              Built For Real Security Work
+            </h2>
           </div>
 
-          <div className="neon-card divide-y divide-[var(--border)]">
-            {faqs.map((item, idx) => (
-              <FaqItem key={idx} {...item} defaultOpen={idx === 0} />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {scanners.map((scanner) => (
+              <article
+                key={scanner.name}
+                className="neon-card landing-card p-5 lg:p-6 space-y-4"
+              >
+                <div>
+                  <h3 className="text-xl font-bold tracking-tight">
+                    {scanner.name}
+                  </h3>
+                  <p className="mt-2 text-sm neon-subtle leading-relaxed">
+                    {scanner.summary}
+                  </p>
+                </div>
+
+                <ul className="space-y-2 text-sm">
+                  {scanner.highlights.map((item) => (
+                    <li key={item} className="flex items-start gap-2">
+                      <span className="text-[var(--primary)] mt-[2px]">•</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
             ))}
           </div>
-        </div>
+        </section>
+
+        <section
+          className="neon-card landing-fade-up p-6 lg:p-8 space-y-6"
+          id="how-it-works"
+        >
+          <div className="text-center space-y-2">
+            <span className="neon-chip">How it works</span>
+            <h2 className="text-3xl lg:text-4xl font-bold neon-section-title">
+              From Target To Findings In Minutes
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {workflow.map((step, index) => (
+              <div
+                key={step.title}
+                className="neon-border landing-card p-4 rounded-xl bg-[rgba(255,255,255,0.02)]"
+              >
+                <div className="text-xs uppercase tracking-wider text-[var(--primary)] mb-2">
+                  Step {index + 1}
+                </div>
+                <h3 className="text-lg font-semibold mb-2">{step.title}</h3>
+                <p className="text-sm neon-subtle leading-relaxed">
+                  {step.copy}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-5 landing-fade-up">
+          <div className="neon-card landing-card p-6 space-y-3">
+            <span className="neon-chip">Why teams switch</span>
+            <h2 className="text-2xl lg:text-3xl font-bold">
+              No scanner maintenance burden
+            </h2>
+            <p className="neon-subtle text-sm lg:text-base leading-relaxed">
+              Keep your security process simple: no scanner fleet to maintain,
+              no local dependency drift, no custom runner scripts to babysit.
+            </p>
+          </div>
+
+          <div className="neon-card landing-card p-6 space-y-3">
+            <span className="neon-chip">Evidence-ready output</span>
+            <h2 className="text-2xl lg:text-3xl font-bold">
+              Clear results for remediation
+            </h2>
+            <p className="neon-subtle text-sm lg:text-base leading-relaxed">
+              Review findings quickly and loop them into your fix-and-verify
+              process with scanner outputs your engineering and security teams
+              can actually use.
+            </p>
+          </div>
+        </section>
+
+        <section
+          className="text-center neon-card landing-fade-up p-7 lg:p-10 space-y-4"
+          id="cta"
+        >
+          <span className="neon-chip">Ready to run your first scan?</span>
+          <h2 className="text-3xl lg:text-4xl font-black tracking-tight neon-hero-title">
+            Launch VulnScanners Today
+          </h2>
+          <p className="max-w-2xl mx-auto neon-subtle text-sm lg:text-base">
+            Unified web app. Three scanners. Real backend execution. Zero local
+            setup.
+          </p>
+          <div className="pt-2 flex flex-col sm:flex-row gap-3 items-center justify-center">
+            <Link
+              href="/auth/login"
+              className="neon-primary-btn px-6 py-3 font-semibold text-sm w-full sm:w-auto text-center"
+            >
+              Create Account
+            </Link>
+            <Link
+              href="/app/scans"
+              className="neon-outline-btn px-6 py-3 font-semibold text-sm w-full sm:w-auto text-center"
+            >
+              Go To Scanner Dashboard
+            </Link>
+          </div>
+        </section>
       </div>
     </main>
-  );
-}
-
-type Faq = { question: string; answer: string };
-
-const faqs: Faq[] = [
-  {
-    question: "How often are your vulnerability databases updated?",
-    answer:
-      "Our threat intelligence is updated continuously—multiple times per day—not weekly or monthly. This means you are always scanning against the absolute latest CVEs and zero-day threat intelligence, eliminating the risk of operating with an outdated vulnerability definition file.",
-  },
-  {
-    question: "Will using a hosted scanner slow down or impact my targets?",
-    answer:
-      "Our scanners are engineered to be efficient and respectful of your network's capacity. You have granular control over scan intensity and scheduling, ensuring you can run comprehensive security checks without causing performance degradation to live production assets.",
-  },
-  {
-    question: "Can I get my data out of the platform?",
-    answer:
-      "Yes. Every scan generates a machine-readable XML file and a presentation-ready PDF. You own your data and can export it to use in your own internal tools or spreadsheets.",
-  },
-  {
-    question: "How quickly can I get my first scan results?",
-    answer:
-      "Because our platform is hosted and requires zero local installation, you can configure your target and launch your first basic scan immediately after sign-up. Depending on the complexity of the target, you will typically see preliminary, actionable results within 5 to 30 minutes.",
-  },
-  {
-    question: "Where is my scanning data and report information stored?",
-    answer:
-      "All scan data is stored securely in encrypted cloud storage (using AES-256 encryption) within our certified cloud region. We provide signed URLs for report access and robust access controls to ensure only authorized users on your team can view the reports.",
-  },
-];
-
-function FaqItem({
-  question,
-  answer,
-  defaultOpen = false,
-}: Faq & { defaultOpen?: boolean }) {
-  const [open, setOpen] = useState(defaultOpen);
-
-  return (
-    <div className="px-5 lg:px-6 py-4">
-      <button
-        className="w-full flex items-start justify-between gap-4 text-left"
-        onClick={() => setOpen((v) => !v)}
-      >
-        <div>
-          <div className="text-base font-semibold text-[var(--text)]">
-            {question}
-          </div>
-          {open && (
-            <p className="mt-2 text-sm neon-subtle leading-relaxed">{answer}</p>
-          )}
-        </div>
-        <span className="text-[var(--primary)] text-lg">
-          {open ? "–" : "+"}
-        </span>
-      </button>
-    </div>
   );
 }

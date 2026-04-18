@@ -8,18 +8,29 @@ export interface ScanJob {
 }
 
 /**
- * Enqueues a scan job by POSTing to the unified scanner VM at GCP_SCANNER_URL.
- * The VM runs a Flask server with a thread-safe job queue. It handles all
- * scanner types (nmap, nuclei, zap) and POSTs results back via webhook.
+ * Enqueues a scan job by POSTing to the unified scanner VM.
+ * Prefers HETZNER_* env vars and falls back to legacy GCP_* names.
  */
 export async function enqueueScanJob(job: ScanJob): Promise<void> {
-  const baseUrl = (process.env.GCP_SCANNER_URL || "").trim().replace(/\/$/, "");
+  const baseUrl = (
+    process.env.HETZNER_SCANNER_URL ||
+    process.env.GCP_SCANNER_URL ||
+    ""
+  )
+    .trim()
+    .replace(/\/$/, "");
 
   if (!baseUrl) {
-    throw new Error("GCP_SCANNER_URL is not configured.");
+    throw new Error(
+      "HETZNER_SCANNER_URL (or legacy GCP_SCANNER_URL) is not configured.",
+    );
   }
 
-  const scannerToken = process.env.GCP_WEBHOOK_SECRET || "";
+  const scannerToken =
+    process.env.HETZNER_SCANNER_AUTH_TOKEN ||
+    process.env.GCP_SCANNER_AUTH_TOKEN ||
+    process.env.GCP_WEBHOOK_SECRET ||
+    "";
   const endpoint = `${baseUrl}/scan`;
 
   const payload = {

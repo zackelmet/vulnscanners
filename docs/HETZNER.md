@@ -7,7 +7,7 @@
 ## Runtime Targets
 - Scanner worker API path: `/scan`
 - Shared auth header: `X-Scanner-Token`
-- Shared auth secret source: `GCP_WEBHOOK_SECRET`
+- Shared auth secret source: `HETZNER_SCANNER_AUTH_TOKEN`
 
 ## Network & TLS
 - Expose scanner service behind reverse proxy (Caddy recommended).
@@ -15,8 +15,9 @@
 - Public scanner API domain should terminate HTTPS at proxy.
 
 ## Required Env (Worker + Web App)
-- `GCP_SCANNER_URL`
-- `GCP_WEBHOOK_SECRET`
+- `HETZNER_SCANNER_URL`
+- `HETZNER_SCANNER_AUTH_TOKEN`
+- `HETZNER_WEBHOOK_SECRET`
 - `VERCEL_WEBHOOK_URL`
 - `FIREBASE_ADMIN_PROJECT_ID`
 - `FIREBASE_ADMIN_CLIENT_EMAIL`

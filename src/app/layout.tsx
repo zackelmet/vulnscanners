@@ -11,12 +11,12 @@ config.autoAddCss = false;
 export const metadata: Metadata = {
   title: "VulnScanners - Hosted Security Scanners",
   description:
-    "Vulnerability Scanning: Zero Install. Maximum Impact. Hosted Nmap and Nuclei services on fast, optimized servers.",
+    "Vulnerability Scanning: Zero Install. Maximum Impact. Hosted Nmap, Nuclei, and OWASP ZAP in one unified web app.",
   metadataBase: new URL("https://vulnscanners.com"),
   openGraph: {
     title: "VulnScanners - Hosted Security Scanners",
     description:
-      "Vulnerability Scanning: Zero Install. Maximum Impact. Hosted Nmap and Nuclei services on fast, optimized servers.",
+      "Vulnerability Scanning: Zero Install. Maximum Impact. Hosted Nmap, Nuclei, and OWASP ZAP in one unified web app.",
     url: "https://vulnscanners.com",
     siteName: "VulnScanners",
   },
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "VulnScanners - Hosted Security Scanners",
     description:
-      "Vulnerability Scanning: Zero Install. Maximum Impact. Hosted Nmap and Nuclei services on fast, optimized servers.",
+      "Vulnerability Scanning: Zero Install. Maximum Impact. Hosted Nmap, Nuclei, and OWASP ZAP in one unified web app.",
   },
   icons: {
     icon: [
