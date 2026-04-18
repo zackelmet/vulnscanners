@@ -139,11 +139,8 @@ export async function POST(request: NextRequest) {
     clearTimeout(timeoutId);
 
     if (!workerResp.ok) {
-      const body = await workerResp.text().catch(() => "");
       console.error(
-        `Scanner worker rejected job ${scanId}:`,
-        workerResp.status,
-        body,
+        `Scanner worker rejected job ${scanId} with status ${workerResp.status}`,
       );
       return NextResponse.json(
         {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { initializeAdmin } from "@/lib/firebase/firebaseAdmin";
+import type { Timestamp } from "firebase-admin/firestore";
 
 const VALID_SCAN_TYPES = ["nmap", "nuclei", "zap"] as const;
 const VALID_STATUSES = [
@@ -13,7 +14,7 @@ const VALID_STATUSES = [
 ] as const;
 
 /** Convert an ISO string or millisecond epoch number to a Firestore Timestamp. */
-function toFirestoreTimestamp(value: string | number): any | null {
+function toFirestoreTimestamp(value: string | number): Timestamp | null {
   if (value == null) return null;
   try {
     const admin = initializeAdmin();
