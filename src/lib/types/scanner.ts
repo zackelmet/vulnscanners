@@ -6,7 +6,9 @@ export type ScanStatus =
   | "running"
   | "completed"
   | "failed"
-  | "cancelled";
+  | "cancelled"
+  | "canceled"
+  | "timeout";
 export type VulnerabilitySeverity = "low" | "medium" | "high" | "critical";
 
 export interface Scan {

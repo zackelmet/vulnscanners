@@ -8,9 +8,10 @@ export interface ScanJob {
 }
 
 /**
- * Enqueues a scan job by POSTing to the unified scanner VM at GCP_SCANNER_URL.
- * The VM runs a Flask server with a thread-safe job queue. It handles all
- * scanner types (nmap, nuclei, zap) and POSTs results back via webhook.
+ * Enqueues a scan job by POSTing to the Hetzner scanner worker at GCP_SCANNER_URL.
+ * The worker validates the X-Scanner-Token header against the same shared secret
+ * used for webhook auth (GCP_WEBHOOK_SECRET).
+ * Returns immediately — the worker processes the job asynchronously.
  */
 export async function enqueueScanJob(job: ScanJob): Promise<void> {
   const baseUrl = (process.env.GCP_SCANNER_URL || "").trim().replace(/\/$/, "");
@@ -24,13 +25,13 @@ export async function enqueueScanJob(job: ScanJob): Promise<void> {
 
   const payload = {
     scanId: job.scanId,
-    scanner: job.type,
+    scanType: job.type,
     target: job.target,
     options: job.options || {},
     userId: job.userId,
   };
 
-  console.log(`Dispatching scan job ${job.scanId} (${job.type}) → ${endpoint}`);
+  console.log(`Dispatching scan job ${job.scanId} (${job.type})`);
 
   // Fire-and-forget with 30s timeout
   const controller = new AbortController();
@@ -50,14 +51,14 @@ export async function enqueueScanJob(job: ScanJob): Promise<void> {
       if (!resp.ok) {
         const body = await resp.text().catch(() => "");
         console.error(
-          `Scanner VM rejected job ${job.scanId}:`,
+          `Scanner worker rejected job ${job.scanId}:`,
           resp.status,
           body,
         );
       } else {
         const data = await resp.json().catch(() => ({}));
         console.log(
-          `✅ Queued scan job ${job.scanId} on VM (position: ${data.queue_position ?? "?"})`,
+          `Queued scan job ${job.scanId} on worker (position: ${data.queue_position ?? "?"})`,
         );
       }
     })
@@ -65,7 +66,7 @@ export async function enqueueScanJob(job: ScanJob): Promise<void> {
       clearTimeout(timeoutId);
       if (err.name === "AbortError") {
         console.error(
-          `Timeout dispatching scan job ${job.scanId} to VM after 30s`,
+          `Timeout dispatching scan job ${job.scanId} to worker after 30s`,
         );
       } else {
         console.error(`Error dispatching scan job ${job.scanId}:`, err);
