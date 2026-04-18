@@ -20,7 +20,7 @@ python3.12 --version
 echo "=== [2/4] Install Redis ==="
 apt-get install -y redis-server
 # Bind Redis to localhost only (never expose to internet)
-sed -i 's/^bind .*/bind 127.0.0.1 ::1/' /etc/redis/redis.conf
+sed -i 's/^bind[[:space:]].*/bind 127.0.0.1 ::1/' /etc/redis/redis.conf
 # Disable dangerous commands
 cat >> /etc/redis/redis.conf <<'EOF'
 

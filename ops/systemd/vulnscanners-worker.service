@@ -25,7 +25,7 @@ ExecStart=/opt/scanner/venv/bin/celery \
 # Graceful shutdown — send SIGTERM, Celery drains in-flight tasks
 ExecStop=/bin/kill -s TERM $MAINPID
 KillMode=mixed
-TimeoutStopSec=120
+TimeoutStopSec=60
 
 # Restart policy
 Restart=on-failure

@@ -19,8 +19,7 @@ ExecStart=/opt/scanner/venv/bin/uvicorn \
     --host 127.0.0.1 \
     --port 8080 \
     --workers 2 \
-    --log-level info \
-    --no-access-log
+    --log-level info
 
 # Graceful shutdown
 ExecStop=/bin/kill -s TERM $MAINPID

@@ -46,6 +46,7 @@ api.vulnscanners.com {
         # Health check / circuit breaker
         health_uri     /health
         health_interval 10s
+        fail_duration   30s
     }
 
     # Access logs — written to journald via systemd

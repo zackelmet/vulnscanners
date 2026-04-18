@@ -87,7 +87,7 @@ CADDYFILE_SRC="$SCRIPT_DIR/caddy/Caddyfile"
 if [[ -f "$CADDYFILE_SRC" ]]; then
   cp "$CADDYFILE_SRC" /etc/caddy/Caddyfile
   caddy validate --config /etc/caddy/Caddyfile
-  systemctl reload-or-restart caddy
+  caddy reload --config /etc/caddy/Caddyfile || systemctl restart caddy
   echo "Caddy config installed and reloaded."
 else
   echo "WARNING: $CADDYFILE_SRC not found — skipping Caddy config."
