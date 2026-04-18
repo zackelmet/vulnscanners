@@ -2,6 +2,8 @@
 
 SaaS platform for cloud-hosted vulnerability scanners (e.g., Nmap, Nuclei) with a Next.js frontend and serverless backend.
 
+Note: The repository contains a legacy `Landing page/` directory. We are deprecating that directory and will not use it going forward; the main product is the `SaaS/` app (now branded `VulnScanners`).
+
 ## Quick Start (local)
 
 1) Install deps: `npm install`
