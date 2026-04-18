@@ -47,6 +47,33 @@ const workflow = [
   },
 ];
 
+const sellingPoints = [
+  {
+    title: "Trusted scanner stack",
+    copy: "Run established tools your team already knows: Nmap, Nuclei, and OWASP ZAP in one hosted workflow.",
+  },
+  {
+    title: "No install or maintenance",
+    copy: "Launch scans without maintaining scanner servers, container images, or update pipelines.",
+  },
+  {
+    title: "Attack-surface visibility",
+    copy: "Map exposed services and web risk quickly so teams can prioritize what is reachable first.",
+  },
+  {
+    title: "Attacker-perspective testing",
+    copy: "Assess external posture the way an internet-based adversary sees it, then validate fixes fast.",
+  },
+  {
+    title: "Actionable remediation flow",
+    copy: "Move from finding to fix with clear output your engineering and security teams can triage together.",
+  },
+  {
+    title: "Built for recurring scans",
+    copy: "Use repeatable runs to verify remediation and keep pace with infrastructure and application changes.",
+  },
+];
+
 export default function Home() {
   return (
     <main className="min-h-screen w-full bg-[rgba(10,10,35,0.92)] text-[--text] relative overflow-hidden">
@@ -62,13 +89,13 @@ export default function Home() {
           </div>
 
           <h1 className="text-4xl lg:text-6xl font-black tracking-tight neon-hero-title leading-tight text-balance">
-            Unified Security Scanning For Fast-Moving Teams
+            Hosted Vulnerability Scanning Without The Operational Overhead
           </h1>
 
           <p className="text-base lg:text-xl neon-subtle max-w-3xl mx-auto leading-relaxed text-pretty">
-            Run Nmap, Nuclei, and OWASP ZAP in one web app. Launch scans, review
-            findings, and re-test quickly without managing scanner
-            infrastructure.
+            Simplify security assessments with hosted scanners. Run Nmap,
+            Nuclei, and OWASP ZAP from one console to discover exposure,
+            identify vulnerabilities, and re-test quickly.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
@@ -152,28 +179,28 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-5 landing-fade-up">
-          <div className="neon-card landing-card p-6 space-y-3">
-            <span className="neon-chip">Why teams switch</span>
-            <h2 className="text-2xl lg:text-3xl font-bold">
-              No scanner maintenance burden
+        <section className="space-y-6 landing-fade-up" id="why-vulnscanners">
+          <div className="text-center space-y-2">
+            <span className="neon-chip">Why security teams choose us</span>
+            <h2 className="text-3xl lg:text-4xl font-bold neon-section-title">
+              Selling Points That Matter In Daily Operations
             </h2>
-            <p className="neon-subtle text-sm lg:text-base leading-relaxed">
-              Keep your security process simple: no scanner fleet to maintain,
-              no local dependency drift, no custom runner scripts to babysit.
-            </p>
           </div>
 
-          <div className="neon-card landing-card p-6 space-y-3">
-            <span className="neon-chip">Evidence-ready output</span>
-            <h2 className="text-2xl lg:text-3xl font-bold">
-              Clear results for remediation
-            </h2>
-            <p className="neon-subtle text-sm lg:text-base leading-relaxed">
-              Review findings quickly and loop them into your fix-and-verify
-              process with scanner outputs your engineering and security teams
-              can actually use.
-            </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {sellingPoints.map((point) => (
+              <article
+                key={point.title}
+                className="neon-card landing-card p-5 lg:p-6 space-y-3"
+              >
+                <h3 className="text-lg lg:text-xl font-bold tracking-tight">
+                  {point.title}
+                </h3>
+                <p className="neon-subtle text-sm lg:text-base leading-relaxed">
+                  {point.copy}
+                </p>
+              </article>
+            ))}
           </div>
         </section>
 
