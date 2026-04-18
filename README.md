@@ -1,21 +1,28 @@
-# VulnScanners — Hosted Security Scanners
+# VulnScanners
 
-SaaS platform for cloud-hosted vulnerability scanners (e.g., Nmap, Nuclei) with a Next.js frontend and serverless backend.
+VulnScanners is a SaaS vulnerability scanning platform with:
+- Next.js web app + API routes
+- Firebase Auth + Firestore
+- Stripe credit billing
+- Scanner backend migration to Hetzner (in progress)
 
-Note: The repository contains a legacy `Landing page/` directory. We are deprecating that directory and will not use it going forward; the main product is the `SaaS/` app (now branded `VulnScanners`).
+## Local Dev
+1. `npm install`
+2. Create `/.env.local` (gitignored) with required Firebase/Stripe vars
+3. `npm run dev`
 
-## Quick Start (local)
+## Production
+- Web app: Vercel project `vulnscanners`
+- Domain: `vulnscanners.vercel.app` / `vulnscanners.com`
+- Firestore project: `vulnscanners`
 
-1) Install deps: `npm install`
-2) Copy `.env.example` to `.env.local` and fill Firebase/Stripe creds. For production, set variables in Vercel for `vulnscanners.com`.
-3) Run dev server: `npm run dev` → http://localhost:3000
+## Backend Contract
+- Dispatch: scanner jobs sent to `${GCP_SCANNER_URL}/scan` with `X-Scanner-Token`
+- Callback webhook: `POST /api/scans/webhook`
+- Canonical payload + required fields: see `docs/API_CONTRACT.md`
 
-## Deploying
-- Frontend: Vercel (Next.js 14)
-- Backend: Dedicated per-scanner services (Cloud Run / Cloud Functions) for Nmap and Nikto, each receiving scan jobs directly from the web app's backend and sending completion webhooks back to the app. (The legacy centralized `process-scan` forwarder is deprecated.)
-- Storage: GCS bucket for scan results
+## Hetzner Migration
+Use `docs/HETZNER.md` as the source of truth for runtime/deploy decisions.
 
-## One More Thing
-This project is for authorized security testing only. Ensure you have permission before scanning any target.
-
-Last updated: December 14, 2025
+## Security Notice
+Run scans only against assets you own or are explicitly authorized to test.
