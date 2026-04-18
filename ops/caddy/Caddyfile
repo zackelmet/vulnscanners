@@ -1,0 +1,57 @@
+# /etc/caddy/Caddyfile
+# Caddy reverse proxy for api.vulnscanners.com → FastAPI on localhost:8080
+#
+# Requirements:
+#   - DNS A record: api.vulnscanners.com → <VPS public IP>
+#   - Caddy manages TLS automatically via Let's Encrypt (ACME HTTP-01)
+#   - Ports 80 and 443 must be open (see ops/bootstrap.sh UFW rules)
+#
+# Install:
+#   sudo cp ops/caddy/Caddyfile /etc/caddy/Caddyfile
+#   sudo caddy validate --config /etc/caddy/Caddyfile
+#   sudo systemctl reload-or-restart caddy
+
+api.vulnscanners.com {
+    # Automatic HTTPS via Let's Encrypt
+    tls {
+        protocols tls1.2 tls1.3
+    }
+
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options    "nosniff"
+        X-Frame-Options           "DENY"
+        Referrer-Policy           "strict-origin-when-cross-origin"
+        -Server
+    }
+
+    # Rate limit: 60 requests/min per IP (requires caddy-ratelimit plugin)
+    # If you don't have the plugin, remove the rate_limit block.
+    # rate_limit {
+    #     zone api_zone {
+    #         key    {remote_host}
+    #         events 60
+    #         window 1m
+    #     }
+    # }
+
+    # Reverse proxy to FastAPI
+    reverse_proxy localhost:8080 {
+        # Pass real client IP
+        header_up X-Real-IP        {remote_host}
+        header_up X-Forwarded-For  {remote_host}
+        header_up X-Forwarded-Proto https
+
+        # Health check / circuit breaker
+        health_uri     /health
+        health_interval 10s
+    }
+
+    # Access logs — written to journald via systemd
+    log {
+        output stderr
+        format json
+        level  INFO
+    }
+}
