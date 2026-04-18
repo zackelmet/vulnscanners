@@ -11,6 +11,7 @@ jest.mock("firebase/auth", () => ({
 jest.mock("../../../lib/firebase/firebaseClient", () => ({
   __esModule: true,
   default: {},
+  auth: {},
 }));
 
 describe("signUp function", () => {
@@ -21,7 +22,7 @@ describe("signUp function", () => {
   it("should sign up a user successfully", async () => {
     const mockUserCredential = { user: { uid: "123" } } as UserCredential;
     (createUserWithEmailAndPassword as jest.Mock).mockResolvedValue(
-      mockUserCredential
+      mockUserCredential,
     );
 
     const result = await signUp("test@example.com", "password123");
@@ -29,7 +30,7 @@ describe("signUp function", () => {
     expect(createUserWithEmailAndPassword).toHaveBeenCalledWith(
       expect.anything(),
       "test@example.com",
-      "password123"
+      "password123",
     );
     expect(result).toEqual({ user: mockUserCredential, error: null });
   });
@@ -37,7 +38,7 @@ describe("signUp function", () => {
   it("should call the signupCallback if provided", async () => {
     const mockUserCredential = { user: { uid: "123" } } as UserCredential;
     (createUserWithEmailAndPassword as jest.Mock).mockResolvedValue(
-      mockUserCredential
+      mockUserCredential,
     );
 
     const mockSignupCallback = jest.fn().mockResolvedValue(undefined);
@@ -57,7 +58,7 @@ describe("signUp function", () => {
 
   it("should handle non-Error objects", async () => {
     (createUserWithEmailAndPassword as jest.Mock).mockRejectedValue(
-      "String error"
+      "String error",
     );
 
     const result = await signUp("test@example.com", "password123");

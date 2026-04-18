@@ -1,15 +1,12 @@
 import {
   signInWithEmailAndPassword,
-  getAuth,
   signInWithPopup,
   GoogleAuthProvider,
   UserCredential,
 } from "firebase/auth";
-import firebase_app from "./firebaseClient";
+import { auth } from "./firebaseClient";
 import { FirebaseError } from "firebase/app";
 import { getAuthErrorMessage } from "./getAuthErrorMessage";
-
-const auth = getAuth(firebase_app);
 
 /**
  * Represents the result of a sign-in operation
@@ -65,22 +62,30 @@ export async function signIn(
   options?: {
     credentials?: { email: string; password: string };
     signupCallback?: (user: UserCredential) => Promise<void>;
-  }
+  },
 ): Promise<SignInResult> {
   try {
+    if (!auth) {
+      return {
+        user: null,
+        error:
+          "Authentication is not configured. Missing NEXT_PUBLIC_FIREBASE_* variables.",
+      };
+    }
+
     let userCredential: UserCredential;
 
     switch (method) {
       case SignInMethod.EmailPassword:
         if (!options?.credentials) {
           throw new Error(
-            "Email and password are required for email/password sign-in"
+            "Email and password are required for email/password sign-in",
           );
         }
         userCredential = await signInWithEmailAndPassword(
           auth,
           options.credentials.email,
-          options.credentials.password
+          options.credentials.password,
         );
         break;
 
@@ -89,7 +94,7 @@ export async function signIn(
         userCredential = await signInWithPopup(auth, googleProvider);
 
         const creationTime = new Date(
-          userCredential.user.metadata.creationTime || 0
+          userCredential.user.metadata.creationTime || 0,
         );
         const now = new Date();
         const timeDifference = now.getTime() - creationTime.getTime();

@@ -19,6 +19,18 @@ export default function AuthForm() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+
+    if (formMode === FormMode.Login) {
+      await handleLogin();
+      return;
+    }
+
+    await handleRegister();
+  };
+
   const handleGoogleAuth = async () => {
     try {
       const signInModule = await import("@/lib/firebase/signin");
@@ -200,7 +212,7 @@ export default function AuthForm() {
                 <div className="text-[var(--danger)] text-sm">{error}</div>
               )}
 
-              <div className="space-y-4">
+              <form className="space-y-4" onSubmit={handleSubmit}>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-[var(--text)]">
                     Email
@@ -245,6 +257,7 @@ export default function AuthForm() {
                 {formMode === FormMode.Login && (
                   <div className="flex justify-end">
                     <button
+                      type="button"
                       className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] underline"
                       onClick={handleForgotPassword}
                     >
@@ -252,35 +265,36 @@ export default function AuthForm() {
                     </button>
                   </div>
                 )}
-              </div>
 
-              <div className="space-y-3">
-                {formMode === FormMode.Login ? (
-                  <button
-                    disabled={!email || !password || error !== null}
-                    onClick={handleLogin}
-                    className="neon-primary-btn w-full py-3 font-semibold disabled:opacity-60"
-                  >
-                    Sign in
-                  </button>
-                ) : (
-                  <button
-                    disabled={!email || !password || !confirmPassword}
-                    onClick={handleRegister}
-                    className="neon-primary-btn w-full py-3 font-semibold disabled:opacity-60"
-                  >
-                    Create account
-                  </button>
-                )}
+                <div className="space-y-3">
+                  {formMode === FormMode.Login ? (
+                    <button
+                      type="submit"
+                      disabled={!email || !password || error !== null}
+                      className="neon-primary-btn w-full py-3 font-semibold disabled:opacity-60"
+                    >
+                      Sign in
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={!email || !password || !confirmPassword}
+                      className="neon-primary-btn w-full py-3 font-semibold disabled:opacity-60"
+                    >
+                      Create account
+                    </button>
+                  )}
 
-                <button
-                  className="neon-outline-btn w-full py-3 font-semibold flex items-center justify-center gap-2"
-                  onClick={handleGoogleAuth}
-                >
-                  <FontAwesomeIcon icon={faGoogle} className="text-lg" />{" "}
-                  Continue with Google
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    className="neon-outline-btn w-full py-3 font-semibold flex items-center justify-center gap-2"
+                    onClick={handleGoogleAuth}
+                  >
+                    <FontAwesomeIcon icon={faGoogle} className="text-lg" />{" "}
+                    Continue with Google
+                  </button>
+                </div>
+              </form>
 
               <div className="text-xs neon-subtle text-center">
                 SSO coming soon. By continuing you agree to our Terms and

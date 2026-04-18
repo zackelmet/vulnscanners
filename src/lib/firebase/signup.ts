@@ -1,11 +1,5 @@
-import {
-  createUserWithEmailAndPassword,
-  getAuth,
-  UserCredential,
-} from "firebase/auth";
-import firebase_app from "./firebaseClient";
-
-const auth = getAuth(firebase_app);
+import { createUserWithEmailAndPassword, UserCredential } from "firebase/auth";
+import { auth } from "./firebaseClient";
 
 /**
  * Interface for the sign-up result
@@ -58,13 +52,22 @@ interface SignUpResult {
 export default async function signUp(
   email: string,
   password: string,
-  signupCallback?: (userCredential: UserCredential) => Promise<void>
+  signupCallback?: (userCredential: UserCredential) => Promise<void>,
 ): Promise<SignUpResult> {
   try {
+    if (!auth) {
+      return {
+        user: null,
+        error: new Error(
+          "Authentication is not configured. Missing NEXT_PUBLIC_FIREBASE_* variables.",
+        ),
+      };
+    }
+
     const userCredential = await createUserWithEmailAndPassword(
       auth,
       email,
-      password
+      password,
     );
 
     if (signupCallback) {
