@@ -8,33 +8,49 @@ export interface ScanJob {
 }
 
 /**
- * Enqueues a scan job by POSTing to the unified scanner VM at GCP_SCANNER_URL.
- * The VM runs a Flask server with a thread-safe job queue. It handles all
- * scanner types (nmap, nuclei, zap) and POSTs results back via webhook.
+ * Dispatches a scan job to the Hetzner worker at GCP_SCANNER_URL (default:
+ * https://api.vulnscanners.com).  The same secret (GCP_WEBHOOK_SECRET) is
+ * used here as the X-Scanner-Token and by the Hetzner worker when it calls
+ * back via the webhook.
+ *
+ * This function is intentionally fire-and-forget: the worker accepts the job
+ * and POSTs results back asynchronously via POST /api/scans/webhook.
  */
 export async function enqueueScanJob(job: ScanJob): Promise<void> {
-  const baseUrl = (process.env.GCP_SCANNER_URL || "").trim().replace(/\/$/, "");
+  const baseUrl = (
+    process.env.GCP_SCANNER_URL || "https://api.vulnscanners.com"
+  )
+    .trim()
+    .replace(/\/$/, "");
 
-  if (!baseUrl) {
-    throw new Error("GCP_SCANNER_URL is not configured.");
+  // GCP_WEBHOOK_SECRET is a server-only env var (no NEXT_PUBLIC_ prefix).
+  // It is also used as X-Scanner-Token so the worker can authenticate
+  // requests from this app, and as the webhook auth secret when the worker
+  // calls back.
+  const scannerToken = process.env.GCP_WEBHOOK_SECRET || "";
+  if (!scannerToken) {
+    throw new Error("GCP_WEBHOOK_SECRET is not configured.");
   }
 
-  const scannerToken = process.env.GCP_WEBHOOK_SECRET || "";
   const endpoint = `${baseUrl}/scan`;
 
   const payload = {
     scanId: job.scanId,
-    scanner: job.type,
+    scanType: job.type,
     target: job.target,
     options: job.options || {},
     userId: job.userId,
   };
 
-  console.log(`Dispatching scan job ${job.scanId} (${job.type}) → ${endpoint}`);
+  console.log("Dispatching scan job:", {
+    scanId: job.scanId,
+    scanType: job.type,
+    endpoint,
+  });
 
-  // Fire-and-forget with 30s timeout
+  // Fire-and-forget with 30 s timeout
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  const timeoutId = setTimeout(() => controller.abort(), 30_000);
 
   fetch(endpoint, {
     method: "POST",
@@ -48,27 +64,27 @@ export async function enqueueScanJob(job: ScanJob): Promise<void> {
     .then(async (resp) => {
       clearTimeout(timeoutId);
       if (!resp.ok) {
-        const body = await resp.text().catch(() => "");
-        console.error(
-          `Scanner VM rejected job ${job.scanId}:`,
-          resp.status,
-          body,
-        );
+        console.error("Scanner worker rejected job:", {
+          scanId: job.scanId,
+          httpStatus: resp.status,
+        });
       } else {
         const data = await resp.json().catch(() => ({}));
-        console.log(
-          `✅ Queued scan job ${job.scanId} on VM (position: ${data.queue_position ?? "?"})`,
-        );
+        console.log("Scan job dispatched to worker:", {
+          scanId: job.scanId,
+          queuePosition: data.queue_position ?? "unknown",
+        });
       }
     })
     .catch((err) => {
       clearTimeout(timeoutId);
       if (err.name === "AbortError") {
-        console.error(
-          `Timeout dispatching scan job ${job.scanId} to VM after 30s`,
-        );
+        console.error("Dispatch timeout for scan job:", { scanId: job.scanId });
       } else {
-        console.error(`Error dispatching scan job ${job.scanId}:`, err);
+        console.error("Error dispatching scan job:", {
+          scanId: job.scanId,
+          error: err?.message,
+        });
       }
     });
 }
