@@ -1,20 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
 import { initializeAdmin } from "@/lib/firebase/firebaseAdmin";
-import { ScanMetadata } from "@/lib/types/user";
+
+const VALID_SCAN_TYPES = ["nmap", "nuclei", "zap"] as const;
+const VALID_STATUSES = [
+  "queued",
+  "running",
+  "completed",
+  "failed",
+  "canceled",
+  "cancelled",
+  "timeout",
+] as const;
+
+/** Convert an ISO string or millisecond epoch number to a Firestore Timestamp. */
+function toFirestoreTimestamp(value: string | number): any | null {
+  if (value == null) return null;
+  try {
+    const admin = initializeAdmin();
+    if (typeof value === "number") {
+      return admin.firestore.Timestamp.fromMillis(value);
+    }
+    return admin.firestore.Timestamp.fromDate(new Date(value));
+  } catch {
+    return null;
+  }
+}
 
 /**
- * Generate a signed URL for a GCS path (gs://bucket/path)
- * Valid for 7 days
+ * Generate a signed URL for a GCS path (gs://bucket/path).
+ * Valid for 7 days.
  */
 async function generateSignedUrl(gcsUrl: string): Promise<string | null> {
   try {
     const admin = initializeAdmin();
     const storage = admin.storage();
 
-    // Parse gs://bucket/path format
-    const match = gcsUrl.match(/^gs:\/\/([^\/]+)\/(.+)$/);
+    const match = gcsUrl.match(/^gs:\/\/([^/]+)\/(.+)$/);
     if (!match) {
-      console.error("Invalid GCS URL format:", gcsUrl);
+      console.error("Invalid GCS URL format supplied to generateSignedUrl");
       return null;
     }
 
@@ -22,14 +45,13 @@ async function generateSignedUrl(gcsUrl: string): Promise<string | null> {
     const bucket = storage.bucket(bucketName);
     const file = bucket.file(filePath);
 
-    // Generate signed URL valid for 7 days
     const [signedUrl] = await file.getSignedUrl({
       version: "v4",
       action: "read",
-      expires: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
+      expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
     });
 
-    console.log(`✅ Generated signed URL for ${gcsUrl}`);
+    console.log("Generated signed URL for GCS object");
     return signedUrl;
   } catch (error) {
     console.error("Failed to generate signed URL:", error);
@@ -42,270 +64,312 @@ export async function POST(request: NextRequest) {
     const admin = initializeAdmin();
     const firestore = admin.firestore();
 
-    // Verify webhook signature. Accept either header name so workers and
-    // functions with different header naming conventions both work.
+    // ── Auth ──────────────────────────────────────────────────────────────────
+    // Accept any of three header names; compare to GCP_WEBHOOK_SECRET.
     const webhookSecret = process.env.GCP_WEBHOOK_SECRET;
-    const sig1 = request.headers.get("x-webhook-signature");
-    const sig2 = request.headers.get("x-gcp-webhook-secret");
-    const sig3 = request.headers.get("x-webhook-secret");
+    const receivedSecret =
+      request.headers.get("x-webhook-signature") ||
+      request.headers.get("x-gcp-webhook-secret") ||
+      request.headers.get("x-webhook-secret");
 
-    // Debug logging for webhook auth issues
-    console.log("🔐 Webhook auth check:", {
+    console.log("Webhook auth check:", {
       hasEnvSecret: !!webhookSecret,
-      envSecretPreview: webhookSecret
-        ? `${webhookSecret.slice(0, 4)}...`
-        : "NOT SET",
-      sig1: sig1 ? `${sig1.slice(0, 4)}...` : null,
-      sig2: sig2 ? `${sig2.slice(0, 4)}...` : null,
-      sig3: sig3 ? `${sig3.slice(0, 4)}...` : null,
+      hasReceivedSecret: !!receivedSecret,
     });
 
-    if (webhookSecret && webhookSecret !== (sig1 || sig2 || sig3)) {
-      console.error(
-        "❌ Webhook signature mismatch - expected:",
-        webhookSecret?.slice(0, 4),
-        "got:",
-        (sig1 || sig2)?.slice(0, 4),
-      );
+    if (webhookSecret && webhookSecret !== receivedSecret) {
+      console.error("Webhook signature mismatch");
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
-    // Parse scan result from Cloud Function
-    const result = await request.json();
-    const {
-      scanId,
-      userId,
-      status,
-      resultsSummary,
-      gcpStorageUrl,
-      // optional signed URL and expiry sent by worker
-      gcpSignedUrl,
-      gcpSignedUrlExpires,
-      // XML results
-      gcpXmlStorageUrl,
-      gcpXmlSignedUrl,
-      gcpXmlSignedUrlExpires,
-      // optional PDF report links
-      gcpReportStorageUrl,
-      gcpReportSignedUrl,
-      gcpReportSignedUrlExpires,
-      errorMessage,
-      // optional scanner metadata
-      scannerType,
-      billingUnits,
-      // legacy/alternate keys some workers may send:
-      gcsPath,
-      summary,
-    } = result;
+    // ── Parse body ────────────────────────────────────────────────────────────
+    let body: Record<string, unknown>;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
 
-    console.log(`📥 Webhook received for scan ${scanId}:`, status);
-    console.log(`📦 Webhook payload URLs:`, {
-      gcpStorageUrl: gcpStorageUrl || "NOT PROVIDED",
-      gcpSignedUrl: gcpSignedUrl
-        ? `${gcpSignedUrl.slice(0, 60)}...`
-        : "NOT PROVIDED",
-      gcpReportSignedUrl: gcpReportSignedUrl
-        ? `${gcpReportSignedUrl.slice(0, 60)}...`
-        : "NOT PROVIDED",
-    });
+    // ── Required field validation ──────────────────────────────────────────────
+    const eventId = body.eventId as string | undefined;
+    if (!eventId || typeof eventId !== "string") {
+      return NextResponse.json(
+        { error: "Missing required field: eventId" },
+        { status: 400 },
+      );
+    }
 
-    // Update per-user subcollection document for this scan (preferred)
-    const userScanRef = firestore
-      .collection("users")
-      .doc(userId)
-      .collection("completedScans")
-      .doc(scanId);
+    const scanId = body.scanId as string | undefined;
+    if (!scanId || typeof scanId !== "string") {
+      return NextResponse.json(
+        { error: "Missing required field: scanId" },
+        { status: 400 },
+      );
+    }
+
+    const userId = body.userId as string | undefined;
+    if (!userId || typeof userId !== "string") {
+      return NextResponse.json(
+        { error: "Missing required field: userId" },
+        { status: 400 },
+      );
+    }
+
+    // Accept both new `scanType` and legacy `scannerType`
+    const rawScanType = (body.scanType || body.scannerType) as
+      | string
+      | undefined;
+    if (!rawScanType || !VALID_SCAN_TYPES.includes(rawScanType as any)) {
+      return NextResponse.json(
+        {
+          error: `Missing or invalid scanType. Must be one of: ${VALID_SCAN_TYPES.join(", ")}`,
+        },
+        { status: 400 },
+      );
+    }
+    const scanType = rawScanType as (typeof VALID_SCAN_TYPES)[number];
+
+    const rawStatus = body.status as string | undefined;
+    if (!rawStatus || !VALID_STATUSES.includes(rawStatus as any)) {
+      return NextResponse.json(
+        {
+          error: `Missing or invalid status. Must be one of: ${VALID_STATUSES.join(", ")}`,
+        },
+        { status: 400 },
+      );
+    }
+    const status = rawStatus as (typeof VALID_STATUSES)[number];
+
+    const rawStartedAt = body.startedAt as string | number | undefined;
+    if (rawStartedAt == null) {
+      return NextResponse.json(
+        { error: "Missing required field: startedAt" },
+        { status: 400 },
+      );
+    }
+    const startedAtTs = toFirestoreTimestamp(rawStartedAt);
+    if (!startedAtTs) {
+      return NextResponse.json(
+        { error: "Invalid startedAt: must be ISO string or ms number" },
+        { status: 400 },
+      );
+    }
+
+    const rawCompletedAt = body.completedAt as string | number | undefined;
+    if (rawCompletedAt == null) {
+      return NextResponse.json(
+        { error: "Missing required field: completedAt" },
+        { status: 400 },
+      );
+    }
+    const completedAtTs = toFirestoreTimestamp(rawCompletedAt);
+    if (!completedAtTs) {
+      return NextResponse.json(
+        { error: "Invalid completedAt: must be ISO string or ms number" },
+        { status: 400 },
+      );
+    }
+
+    const durationSec = body.durationSec;
+    if (typeof durationSec !== "number") {
+      return NextResponse.json(
+        { error: "Missing or invalid durationSec: must be a number" },
+        { status: 400 },
+      );
+    }
+
+    // Accept new `resultUrl` / `resultPath`, falling back to legacy field names
+    const resultUrl =
+      (body.resultUrl as string | undefined) ||
+      (body.gcpStorageUrl as string | undefined) ||
+      (body.gcsPath as string | undefined) ||
+      null;
+    const resultPath = (body.resultPath as string | undefined) || null;
+
+    if (!resultUrl && !resultPath) {
+      return NextResponse.json(
+        { error: "Missing required field: provide resultUrl or resultPath" },
+        { status: 400 },
+      );
+    }
+
+    // Conditional: error string required when status is failed
+    const errorMsg =
+      (body.error as string | undefined) ||
+      (body.errorMessage as string | undefined) ||
+      null;
+
+    if (status === "failed" && !errorMsg) {
+      return NextResponse.json(
+        { error: "Field 'error' is required when status is 'failed'" },
+        { status: 400 },
+      );
+    }
+
+    // Optional fields
+    const summary =
+      (body.summary as Record<string, unknown> | undefined) ||
+      (body.resultsSummary as Record<string, unknown> | undefined) ||
+      null;
+    const billingUnits =
+      typeof body.billingUnits === "number" ? body.billingUnits : null;
+
+    // ── Idempotency: create event doc first ───────────────────────────────────
+    // If the event already exists, skip re-processing and return 200 OK.
+    const eventRef = firestore
+      .collection("scans")
+      .doc(scanId)
+      .collection("events")
+      .doc(eventId);
 
     try {
-      const now = admin.firestore.Timestamp.now();
-
-      // Normalize fields and support alternate worker payloads (gcsPath, summary, 'done')
-      const normalizedStatus =
-        (status === "done" ? "completed" : status) || "completed";
-      const normalizedGcsUrl = gcpStorageUrl || gcsPath || null;
-      const normalizedSummary = resultsSummary || summary || null;
-
-      // Generate signed URLs if GCS URL provided but signed URL missing
-      let normalizedSignedUrl = gcpSignedUrl || null;
-      let normalizedSignedUrlExpires = gcpSignedUrlExpires || null;
-
-      if (normalizedGcsUrl && !normalizedSignedUrl) {
-        console.log("🔗 Generating signed URL for:", normalizedGcsUrl);
-        normalizedSignedUrl = await generateSignedUrl(normalizedGcsUrl);
-        if (normalizedSignedUrl) {
-          normalizedSignedUrlExpires = new Date(
-            Date.now() + 7 * 24 * 60 * 60 * 1000,
-          ).toISOString();
-        }
+      await eventRef.create({
+        eventId,
+        status,
+        receivedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    } catch (err: any) {
+      if (err.code === 6 || err.code === "already-exists") {
+        console.log(`Webhook event ${eventId} already processed — skipping`);
+        return NextResponse.json({
+          success: true,
+          message: "Event already processed",
+        });
       }
+      throw err;
+    }
 
-      // Handle XML results
-      const normalizedXmlUrl = gcpXmlStorageUrl || null;
-      let normalizedXmlSignedUrl = gcpXmlSignedUrl || null;
-      let normalizedXmlSignedUrlExpires = gcpXmlSignedUrlExpires || null;
+    // ── Signed URL generation (for GCS paths) ────────────────────────────────
+    const gcsPath = resultPath || resultUrl || null;
+    let resolvedSignedUrl: string | null =
+      (body.gcpSignedUrl as string | undefined) || null;
+    let signedUrlExpires: string | null =
+      (body.gcpSignedUrlExpires as string | undefined) || null;
 
-      if (normalizedXmlUrl && !normalizedXmlSignedUrl) {
-        console.log("🔗 Generating signed URL for XML:", normalizedXmlUrl);
-        normalizedXmlSignedUrl = await generateSignedUrl(normalizedXmlUrl);
-        if (normalizedXmlSignedUrl) {
-          normalizedXmlSignedUrlExpires = new Date(
-            Date.now() + 7 * 24 * 60 * 60 * 1000,
-          ).toISOString();
-        }
+    if (gcsPath && gcsPath.startsWith("gs://") && !resolvedSignedUrl) {
+      console.log("Generating signed URL for result artifact");
+      resolvedSignedUrl = await generateSignedUrl(gcsPath);
+      if (resolvedSignedUrl) {
+        signedUrlExpires = new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000,
+        ).toISOString();
       }
+    }
 
-      const normalizedReportUrl = gcpReportStorageUrl || null;
-      let normalizedReportSignedUrl = gcpReportSignedUrl || null;
-      let normalizedReportSignedUrlExpires = gcpReportSignedUrlExpires || null;
+    // ── rawPayload: entire incoming body (stored only on scans/{scanId}) ──────
+    const rawPayload = body;
 
-      if (normalizedReportUrl && !normalizedReportSignedUrl) {
-        console.log(
-          "🔗 Generating signed URL for report:",
-          normalizedReportUrl,
-        );
-        normalizedReportSignedUrl =
-          await generateSignedUrl(normalizedReportUrl);
-        if (normalizedReportSignedUrl) {
-          normalizedReportSignedUrlExpires = new Date(
-            Date.now() + 7 * 24 * 60 * 60 * 1000,
-          ).toISOString();
-        }
-      }
+    // ── Shared update fields (mirror-safe; no rawPayload) ────────────────────
+    const sharedFields: Record<string, unknown> = {
+      status,
+      scanType,
+      startedAt: startedAtTs,
+      completedAt: completedAtTs,
+      durationSec,
+      resultUrl: resultUrl || resolvedSignedUrl || null,
+      resultPath: resultPath || gcsPath || null,
+      summary,
+      error: errorMsg,
+      gcpSignedUrl: resolvedSignedUrl,
+      gcpSignedUrlExpires: signedUrlExpires,
+      billingUnits,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
 
-      // Merge the update into the user's scan doc (create if missing)
-      await userScanRef.set(
-        {
-          status: normalizedStatus,
-          endTime: now,
-          resultsSummary: normalizedSummary,
-          gcpStorageUrl: normalizedGcsUrl,
-          // store worker-provided signed urls and their expiry if present
-          gcpSignedUrl: normalizedSignedUrl,
-          gcpSignedUrlExpires: normalizedSignedUrlExpires,
-          // XML results
-          gcpXmlStorageUrl: normalizedXmlUrl,
-          gcpXmlSignedUrl: normalizedXmlSignedUrl,
-          gcpXmlSignedUrlExpires: normalizedXmlSignedUrlExpires,
-          // PDF reports
-          gcpReportStorageUrl: normalizedReportUrl,
-          gcpReportSignedUrl: normalizedReportSignedUrl,
-          gcpReportSignedUrlExpires: normalizedReportSignedUrlExpires,
-          errorMessage: errorMessage || null,
-          // scanner metadata for usage/billing
-          scannerType: scannerType || null,
-          billingUnits: typeof billingUnits === "number" ? billingUnits : null,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        },
-        { merge: true },
-      );
-
-      // Also update (or create) the global scan document for audit
+    // ── Firestore: update scans/{scanId} (with rawPayload) ───────────────────
+    try {
       const globalScanRef = firestore.collection("scans").doc(scanId);
       await globalScanRef.set(
         {
+          ...sharedFields,
           scanId,
           userId,
-          status: normalizedStatus,
-          resultsSummary: normalizedSummary,
-          gcpStorageUrl: normalizedGcsUrl,
-          // store signed urls on global doc too for convenience (may expire)
-          gcpSignedUrl: normalizedSignedUrl,
-          gcpSignedUrlExpires: normalizedSignedUrlExpires,
-          // XML results
-          gcpXmlStorageUrl: normalizedXmlUrl,
-          gcpXmlSignedUrl: normalizedXmlSignedUrl,
-          gcpXmlSignedUrlExpires: normalizedXmlSignedUrlExpires,
-          // PDF reports
-          gcpReportStorageUrl: normalizedReportUrl,
-          gcpReportSignedUrl: normalizedReportSignedUrl,
-          gcpReportSignedUrlExpires: normalizedReportSignedUrlExpires,
-          errorMessage: errorMessage || null,
-          scannerType: scannerType || null,
-          billingUnits: typeof billingUnits === "number" ? billingUnits : null,
-          endTime: now,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          rawPayload,
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
         },
         { merge: true },
       );
-
-      // NOTE: usage counters are incremented at scan creation time to enforce
-      // per-scanner quotas immediately. The worker webhook writes scan
-      // metadata but does not increment usage to avoid double-counting.
-
-      // Reconcile actual billing units from the worker:
-      // - If the scan completed and the worker reports `billingUnits` > 1,
-      //   increment the user's scanner counter by (billingUnits - 1).
-      // - If the scan did NOT complete (failed/cancelled), rollback the
-      //   reserved unit from scan creation by decrementing the scanner
-      //   counter by 1 (bounded to >= 0).
-      try {
-        if (scannerType) {
-          const scanner = scannerType as "nmap" | "nuclei" | "zap";
-          const units =
-            typeof billingUnits === "number" && billingUnits > 0
-              ? billingUnits
-              : 1;
-
-          const userRef = firestore.collection("users").doc(userId);
-
-          await firestore.runTransaction(async (tx) => {
-            const usrSnap = await tx.get(userRef);
-            if (!usrSnap.exists) return;
-            const usr = usrSnap.data() as any;
-            const currentUsed =
-              (usr.scannersUsedThisMonth &&
-                usr.scannersUsedThisMonth[scanner]) ||
-              0;
-
-            if (normalizedStatus === "completed") {
-              const extra = units - 1;
-              if (extra > 0) {
-                tx.update(userRef, {
-                  [`scannersUsedThisMonth.${scanner}`]:
-                    admin.firestore.FieldValue.increment(extra),
-                  scansThisMonth: admin.firestore.FieldValue.increment(extra),
-                  totalScansAllTime:
-                    admin.firestore.FieldValue.increment(extra),
-                  updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-                });
-              }
-            } else {
-              // rollback the reserved unit from creation
-              const dec = Math.min(1, currentUsed);
-              if (dec > 0) {
-                tx.update(userRef, {
-                  [`scannersUsedThisMonth.${scanner}`]:
-                    admin.firestore.FieldValue.increment(-dec),
-                  scansThisMonth: admin.firestore.FieldValue.increment(-dec),
-                  updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-                });
-              }
-            }
-          });
-        }
-      } catch (err: any) {
-        console.error("Failed to reconcile billing units on webhook:", err);
-      }
-
-      console.log(`✅ Updated scan ${scanId} status to ${status}`);
     } catch (err: any) {
-      console.error(
-        "Failed to update per-user scan doc or global scan doc:",
-        err,
-      );
+      console.error("Failed to update global scan doc:", err);
       return NextResponse.json(
         { error: "Failed to update scan metadata" },
         { status: 500 },
       );
     }
 
+    // ── Firestore: mirror update users/{userId}/completedScans/{scanId} ───────
+    // rawPayload is intentionally excluded from the mirror.
+    try {
+      const userScanRef = firestore
+        .collection("users")
+        .doc(userId)
+        .collection("completedScans")
+        .doc(scanId);
+
+      await userScanRef.set({ ...sharedFields, scanId }, { merge: true });
+    } catch (err: any) {
+      console.error("Failed to update user scan mirror:", err);
+      // Non-fatal: global doc already written; log and continue.
+    }
+
+    // ── Billing reconciliation ────────────────────────────────────────────────
+    // Usage counters are reserved at scan creation time. Here we:
+    //  - Adjust for extra billing units on completion (units > 1).
+    //  - Rollback the reserved unit for non-completed scans.
+    try {
+      const scanner = scanType as "nmap" | "nuclei" | "zap";
+      const units =
+        typeof billingUnits === "number" && billingUnits > 0 ? billingUnits : 1;
+      const userRef = firestore.collection("users").doc(userId);
+
+      await firestore.runTransaction(async (tx) => {
+        const usrSnap = await tx.get(userRef);
+        if (!usrSnap.exists) return;
+        const usr = usrSnap.data() as any;
+        const currentUsed =
+          (usr.scannersUsedThisMonth && usr.scannersUsedThisMonth[scanner]) ||
+          0;
+
+        if (status === "completed") {
+          const extra = units - 1;
+          if (extra > 0) {
+            tx.update(userRef, {
+              [`scannersUsedThisMonth.${scanner}`]:
+                admin.firestore.FieldValue.increment(extra),
+              scansThisMonth: admin.firestore.FieldValue.increment(extra),
+              totalScansAllTime: admin.firestore.FieldValue.increment(extra),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+          }
+        } else if (
+          status === "failed" ||
+          status === "canceled" ||
+          status === "cancelled" ||
+          status === "timeout"
+        ) {
+          const dec = Math.min(1, currentUsed);
+          if (dec > 0) {
+            tx.update(userRef, {
+              [`scannersUsedThisMonth.${scanner}`]:
+                admin.firestore.FieldValue.increment(-dec),
+              scansThisMonth: admin.firestore.FieldValue.increment(-dec),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+          }
+        }
+      });
+    } catch (err: any) {
+      console.error("Failed to reconcile billing units on webhook:", err);
+    }
+
+    console.log(`Webhook processed: scanId=${scanId} status=${status}`);
+
     return NextResponse.json({
       success: true,
       message: "Scan result processed",
     });
   } catch (error: any) {
-    console.error("❌ Error processing scan webhook:", error);
+    console.error("Error processing scan webhook:", error?.message);
     return NextResponse.json(
       { error: error.message || "Internal server error" },
       { status: 500 },
