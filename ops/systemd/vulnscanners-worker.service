@@ -1,0 +1,48 @@
+[Unit]
+Description=VulnScanners Celery worker
+Documentation=https://github.com/zackelmet/vulnscanners
+After=network.target redis.service
+Requires=redis.service
+
+[Service]
+Type=exec
+User=scanner
+Group=scanner
+WorkingDirectory=/opt/scanner/app
+
+# Load secrets from the env file (chmod 600, owned by scanner)
+EnvironmentFile=/etc/vulnscanners/backend.env
+
+# Start Celery; adjust the app module and queue names as needed
+ExecStart=/opt/scanner/venv/bin/celery \
+    --app app.worker.celery_app \
+    worker \
+    --loglevel=info \
+    --concurrency=2 \
+    --queues=scans \
+    --hostname=worker@%h
+
+# Graceful shutdown — send SIGTERM, Celery drains in-flight tasks
+ExecStop=/bin/kill -s TERM $MAINPID
+KillMode=mixed
+TimeoutStopSec=60
+
+# Restart policy
+Restart=on-failure
+RestartSec=10s
+StartLimitIntervalSec=120s
+StartLimitBurst=3
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/scanner /tmp /var/log/vulnscanners
+
+# Logging goes to journald automatically via systemd
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=vulnscanners-worker
+
+[Install]
+WantedBy=multi-user.target

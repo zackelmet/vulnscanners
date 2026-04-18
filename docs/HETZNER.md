@@ -1,5 +1,8 @@
 # Hetzner Migration Notes
 
+> **Full provisioning guide:** see [`docs/hetzner-setup.md`](./hetzner-setup.md)  
+> **Ops scripts & configs:** see the [`ops/`](../ops/) directory
+
 ## Current Direction
 - Frontend/API remains on Vercel (`vulnscanners` project).
 - Scanner execution moves to Hetzner-managed worker service.

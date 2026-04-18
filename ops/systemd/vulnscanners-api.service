@@ -1,0 +1,47 @@
+[Unit]
+Description=VulnScanners FastAPI scanner worker API
+Documentation=https://github.com/zackelmet/vulnscanners
+After=network.target redis.service
+Requires=redis.service
+
+[Service]
+Type=exec
+User=scanner
+Group=scanner
+WorkingDirectory=/opt/scanner/app
+
+# Load secrets from the env file (chmod 600, owned by scanner)
+EnvironmentFile=/etc/vulnscanners/backend.env
+
+# Start FastAPI via uvicorn; adjust the module path to match your app entry point
+ExecStart=/opt/scanner/venv/bin/uvicorn \
+    app.main:app \
+    --host 127.0.0.1 \
+    --port 8080 \
+    --workers 2 \
+    --log-level info
+
+# Graceful shutdown
+ExecStop=/bin/kill -s TERM $MAINPID
+KillMode=mixed
+TimeoutStopSec=30
+
+# Restart policy
+Restart=on-failure
+RestartSec=5s
+StartLimitIntervalSec=60s
+StartLimitBurst=3
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/scanner /tmp /var/log/vulnscanners
+
+# Logging goes to journald automatically via systemd
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=vulnscanners-api
+
+[Install]
+WantedBy=multi-user.target
