@@ -7,14 +7,18 @@ import { getFunctions } from "firebase/functions";
  * Firebase configuration object.
  * These values are loaded from environment variables.
  */
+const _trim = (v?: string) => (typeof v === "string" ? v.trim() : v);
+
 const clientCredentials = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+  apiKey: _trim(process.env.NEXT_PUBLIC_FIREBASE_API_KEY),
+  authDomain: _trim(process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN),
+  projectId: _trim(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID),
+  storageBucket: _trim(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET),
+  messagingSenderId: _trim(
+    process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  ),
+  appId: _trim(process.env.NEXT_PUBLIC_FIREBASE_APP_ID),
+  measurementId: _trim(process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID),
 };
 
 const hasClientFirebaseConfig = Boolean(
