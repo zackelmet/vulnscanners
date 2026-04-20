@@ -1,11 +1,11 @@
 import Image from "next/image";
 
 export const metadata = {
-  title: "Trust + Safety Center — VulnScanners",
+  title: "A better vulnerability scanner — Trust + Safety",
   description: "Trust & Safety information for VulnScanners — coming soon.",
   metadataBase: new URL("https://vulnscanners.com/trust-safety"),
   openGraph: {
-    title: "Trust + Safety Center — VulnScanners",
+    title: "A better vulnerability scanner — Trust + Safety",
     description: "Trust & Safety information for VulnScanners — coming soon.",
     url: "https://vulnscanners.com/trust-safety",
     siteName: "VulnScanners",

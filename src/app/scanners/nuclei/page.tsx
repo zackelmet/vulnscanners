@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Nuclei CVE Scanner — VulnScanners",
+  title: "A better vulnerability scanner — Nuclei CVE Scanner",
   description:
     "Template-based vulnerability detection mapped to current CVE intelligence. Continuously updated community templates.",
 };

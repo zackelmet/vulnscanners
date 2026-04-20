@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Nmap Port Scanner — VulnScanners",
+  title: "A better vulnerability scanner — Nmap Port Scanner",
   description:
     "Internet-facing service inventory, open port verification, and attack surface mapping — hosted with zero local setup.",
 };

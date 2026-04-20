@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "OWASP ZAP Web Scanner — VulnScanners",
+  title: "A better vulnerability scanner — OWASP ZAP Web Scanner",
   description:
     "Automated web-layer security baseline for common app-level risk. Crawler-based passive analysis for web applications.",
 };

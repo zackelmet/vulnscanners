@@ -7,7 +7,6 @@ const scanners = [
   {
     name: "Nmap",
     logo: "/scanners/nmap.png",
-    logoAspect: "wide" as const,
     summary:
       "Fast external port and service visibility for attack-surface mapping.",
     highlights: [
@@ -19,7 +18,6 @@ const scanners = [
   {
     name: "Nuclei",
     logo: "/scanners/nuclei.png",
-    logoAspect: "square" as const,
     summary:
       "Template-based vulnerability detection mapped to current CVE intelligence.",
     highlights: [
@@ -31,7 +29,6 @@ const scanners = [
   {
     name: "OWASP ZAP",
     logo: "/scanners/zap.png",
-    logoAspect: "square" as const,
     summary: "Automated web-layer security baseline for common app-level risk.",
     highlights: [
       "Automated web security baseline",
@@ -134,7 +131,7 @@ export default function Home() {
                 <g key={i} transform={`translate(${p.x},${p.y})`}>
                   <circle
                     r="14"
-                    fill="rgba(0,254,217,0.06)"
+                    fill="rgba(3,102,214,0.10)"
                     stroke="var(--border-strong)"
                     strokeWidth="1.5"
                   />
@@ -146,7 +143,7 @@ export default function Home() {
 
           <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-6">
             <div className="inline-flex items-center gap-3 mb-6">
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-[rgba(0,254,217,0.06)] border border-[var(--border-strong)]">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-[rgba(3,102,214,0.10)] border border-[var(--border-strong)]">
                 <svg
                   className="w-5 h-5 text-[var(--primary)]"
                   viewBox="0 0 24 24"
@@ -158,7 +155,7 @@ export default function Home() {
                   <path d="M12 3v2M12 19v2M3 12h2M19 12h2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" />
                 </svg>
               </div>
-              <div className="badge badge-outline badge-lg gap-2 border-[var(--border-strong)] text-[var(--primary)] bg-[rgba(0,254,217,0.04)]">
+              <div className="badge badge-outline badge-lg gap-2 border-[var(--border-strong)] text-[var(--primary)] bg-[rgba(3,102,214,0.06)]">
                 Hosted vulnerability scanning
               </div>
             </div>
@@ -188,7 +185,7 @@ export default function Home() {
               </Link>
               <Link
                 href="/app/scans"
-                className="btn btn-lg btn-outline border-[var(--primary)] text-[var(--text)] hover:bg-[rgba(0,254,217,0.06)] gap-2 text-sm font-bold px-8 w-full sm:w-auto"
+                className="btn btn-lg btn-outline border-[var(--primary)] text-[var(--text)] hover:bg-[rgba(3,102,214,0.10)] gap-2 text-sm font-bold px-8 w-full sm:w-auto"
               >
                 Open Scanner Console
               </Link>
@@ -210,7 +207,7 @@ export default function Home() {
         {/* ── SCANNERS ───────────────────────────────────── */}
         <section className="space-y-8 landing-fade-up" id="scanners">
           <div className="text-center space-y-3">
-            <div className="badge badge-outline badge-sm border-[var(--border-strong)] text-[var(--primary)] bg-[rgba(0,254,217,0.06)] uppercase tracking-widest text-[0.65rem]">
+            <div className="badge badge-outline badge-sm border-[var(--border-strong)] text-[var(--primary)] bg-[rgba(3,102,214,0.10)] uppercase tracking-widest text-[0.65rem]">
               Three scanners · One workflow
             </div>
             <h2 className="text-3xl lg:text-4xl font-medium neon-section-title">
@@ -226,24 +223,19 @@ export default function Home() {
                 className="card border border-[var(--border-strong)] bg-[rgba(15,22,43,0.8)] shadow-xl landing-card group hover:border-[var(--primary)] transition-colors"
               >
                 <div className="card-body p-6 space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`flex items-center justify-center shrink-0 ${
-                        scanner.logoAspect === "wide" ? "w-16 h-8" : "w-9 h-9"
-                      }`}
-                    >
-                      <Image
-                        src={scanner.logo}
-                        alt={`${scanner.name} logo`}
-                        width={scanner.logoAspect === "wide" ? 64 : 36}
-                        height={scanner.logoAspect === "wide" ? 32 : 36}
-                        className="object-contain"
-                      />
-                    </div>
-                    <h3 className="card-title text-xl font-semibold tracking-tight text-[var(--text)]">
-                      {scanner.name}
-                    </h3>
+                  {/* Fixed-height logo zone — same for all cards */}
+                  <div className="h-10 flex items-center">
+                    <Image
+                      src={scanner.logo}
+                      alt={`${scanner.name} logo`}
+                      width={120}
+                      height={40}
+                      className="object-contain object-left max-h-9 w-auto"
+                    />
                   </div>
+                  <h3 className="text-lg font-semibold tracking-tight text-[var(--text)]">
+                    {scanner.name}
+                  </h3>
                   <p className="text-sm neon-subtle leading-relaxed">
                     {scanner.summary}
                   </p>
@@ -280,7 +272,7 @@ export default function Home() {
         {/* ── HOW IT WORKS ───────────────────────────────── */}
         <section className="space-y-8 landing-fade-up" id="how-it-works">
           <div className="text-center space-y-3">
-            <div className="badge badge-outline badge-sm border-[var(--border-strong)] text-[var(--primary)] bg-[rgba(0,254,217,0.06)] uppercase tracking-widest text-[0.65rem]">
+            <div className="badge badge-outline badge-sm border-[var(--border-strong)] text-[var(--primary)] bg-[rgba(3,102,214,0.10)] uppercase tracking-widest text-[0.65rem]">
               How it works
             </div>
             <h2 className="text-3xl lg:text-4xl font-medium neon-section-title">
@@ -297,7 +289,7 @@ export default function Home() {
                 {idx < workflow.length - 1 && (
                   <div className="hidden md:block absolute top-10 left-[calc(50%+28px)] w-[calc(100%-56px)] h-px bg-gradient-to-r from-[var(--primary)] to-[var(--border)]" />
                 )}
-                <div className="w-14 h-14 rounded-full border-2 border-[var(--primary)] bg-[rgba(0,254,217,0.08)] flex items-center justify-center text-[var(--primary)] font-black text-lg mb-4 shadow-[0_0_20px_rgba(0,254,217,0.15)] group-hover:shadow-[0_0_30px_rgba(0,254,217,0.3)] transition-shadow">
+                <div className="w-14 h-14 rounded-full border-2 border-[var(--primary)] bg-[rgba(3,102,214,0.12)] flex items-center justify-center text-[var(--primary)] font-black text-lg mb-4 shadow-[0_0_20px_rgba(3,102,214,0.25)] group-hover:shadow-[0_0_30px_rgba(3,102,214,0.45)] transition-shadow">
                   {item.step}
                 </div>
                 <h3 className="text-lg font-bold mb-2 text-[var(--text)]">
@@ -471,10 +463,10 @@ export default function Home() {
 
         {/* ── BOTTOM CTA ─────────────────────────────────── */}
         <section
-          className="landing-fade-up rounded-3xl border border-[var(--border-strong)] bg-gradient-to-br from-[rgba(0,254,217,0.04)] to-[rgba(0,140,255,0.04)] p-8 lg:p-14 text-center space-y-6 shadow-[0_0_60px_rgba(0,254,217,0.08)]"
+          className="landing-fade-up rounded-3xl border border-[var(--border-strong)] bg-gradient-to-br from-[rgba(3,102,214,0.06)] to-[rgba(37,99,235,0.06)] p-8 lg:p-14 text-center space-y-6 shadow-[0_0_60px_rgba(3,102,214,0.12)]"
           id="cta"
         >
-          <div className="badge badge-outline badge-sm border-[var(--border-strong)] text-[var(--primary)] bg-[rgba(0,254,217,0.06)] uppercase tracking-widest text-[0.65rem]">
+          <div className="badge badge-outline badge-sm border-[var(--border-strong)] text-[var(--primary)] bg-[rgba(3,102,214,0.10)] uppercase tracking-widest text-[0.65rem]">
             Ready to run your first scan?
           </div>
           <h2 className="text-3xl lg:text-4xl font-semibold tracking-tight neon-hero-title">
@@ -493,7 +485,7 @@ export default function Home() {
             </Link>
             <Link
               href="/app/scans"
-              className="btn btn-lg btn-outline border-[var(--primary)] text-[var(--text)] hover:bg-[rgba(0,254,217,0.08)] hover:border-[var(--primary)] gap-2 text-sm font-bold px-8 w-full sm:w-auto"
+              className="btn btn-lg btn-outline border-[var(--primary)] text-[var(--text)] hover:bg-[rgba(3,102,214,0.12)] hover:border-[var(--primary)] gap-2 text-sm font-bold px-8 w-full sm:w-auto"
             >
               Go To Scanner Dashboard
             </Link>

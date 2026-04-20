@@ -3,12 +3,12 @@ import Image from "next/image";
 import { getAllPosts } from "@/lib/blog/mdx";
 
 export const metadata = {
-  title: "Blog — VulnScanners",
+  title: "A better vulnerability scanner — Blog",
   description:
     "Security insights, vulnerability research, and scanner guides from the VulnScanners team.",
   metadataBase: new URL("https://vulnscanners.com"),
   openGraph: {
-    title: "Blog — VulnScanners",
+    title: "A better vulnerability scanner — Blog",
     description:
       "Security insights, vulnerability research, and scanner guides from the VulnScanners team.",
     url: "https://vulnscanners.com/blog",
@@ -16,7 +16,7 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Blog — VulnScanners",
+    title: "A better vulnerability scanner — Blog",
     description:
       "Security insights, vulnerability research, and scanner guides from the VulnScanners team.",
   },

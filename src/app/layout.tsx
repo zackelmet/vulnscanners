@@ -10,12 +10,12 @@ import "@fortawesome/fontawesome-svg-core/styles.css";
 config.autoAddCss = false;
 
 export const metadata: Metadata = {
-  title: "VulnScanners - Hosted Security Scanners",
+  title: "A better vulnerability scanner — VulnScanners",
   description:
     "Vulnerability Scanning: Zero Install. Maximum Impact. Hosted Nmap, Nuclei, and OWASP ZAP in one unified web app.",
   metadataBase: new URL("https://vulnscanners.com"),
   openGraph: {
-    title: "VulnScanners - Hosted Security Scanners",
+    title: "A better vulnerability scanner — VulnScanners",
     description:
       "Vulnerability Scanning: Zero Install. Maximum Impact. Hosted Nmap, Nuclei, and OWASP ZAP in one unified web app.",
     url: "https://vulnscanners.com",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "VulnScanners - Hosted Security Scanners",
+    title: "A better vulnerability scanner — VulnScanners",
     description:
       "Vulnerability Scanning: Zero Install. Maximum Impact. Hosted Nmap, Nuclei, and OWASP ZAP in one unified web app.",
   },
