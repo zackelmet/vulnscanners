@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { GeistSans } from "geist/font/sans";
 // ClientProviders and Navbar were temporarily disabled during prerender
 // diagnostics; restore them now.
 import ClientProviders from "@/lib/context/ClientProviders";
@@ -43,7 +44,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={GeistSans.variable}>
       {/* Change your theme HERE */}
       <body data-theme="cupcake">
         <ClientProviders>

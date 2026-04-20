@@ -33,6 +33,7 @@
     "@stripe/stripe-js": "^2.4.0",
     "firebase": "^10.7.2",
     "firebase-admin": "^12.0.0",
+    "geist": "^1.7.0",
     "gray-matter": "^4.0.3",
     "js-cookie": "^3.0.5",
     "next": "^14.2.15",
