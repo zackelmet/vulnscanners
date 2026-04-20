@@ -1,5 +1,72 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useAuth } from "@/lib/context/AuthContext";
+import toast from "react-hot-toast";
+
+/* ─── Pricing data ───────────────────────────────────────── */
+
+interface PricingTier {
+  id: string;
+  label: string;
+  price: string;
+  subtitle: string;
+  priceId: string;
+  features: string[];
+  popular?: boolean;
+  cta: string;
+}
+
+const PRICING_TIERS: PricingTier[] = [
+  {
+    id: "essential",
+    label: "Essential",
+    price: "$10",
+    subtitle: "1 scan credit",
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ESSENTIAL || "",
+    cta: "Get started",
+    features: [
+      "1 × Nmap, Nuclei, or ZAP scan",
+      "Hosted infrastructure",
+      "PDF report export",
+      "Email support",
+    ],
+  },
+  {
+    id: "pro",
+    label: "Pro",
+    price: "$50",
+    subtitle: "5 scan credits",
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO || "",
+    popular: true,
+    cta: "Get Pro",
+    features: [
+      "5 × Nmap, Nuclei, or ZAP scans",
+      "Hosted infrastructure",
+      "PDF report export",
+      "Priority email support",
+      "Mix scanner types freely",
+    ],
+  },
+  {
+    id: "scale",
+    label: "Scale",
+    price: "$200",
+    subtitle: "20 scan credits",
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_SCALE || "",
+    cta: "Get Scale",
+    features: [
+      "20 × Nmap, Nuclei, or ZAP scans",
+      "Hosted infrastructure",
+      "PDF report export",
+      "Dedicated support",
+      "Mix scanner types freely",
+      "Best value per scan",
+    ],
+  },
+];
 
 /* ─── Data ───────────────────────────────────────────────── */
 
@@ -59,6 +126,49 @@ const workflow = [
 /* ─── Page ───────────────────────────────────────────────── */
 
 export default function Home() {
+  const { currentUser } = useAuth();
+  const [loadingTier, setLoadingTier] = useState<string | null>(null);
+
+  const handleCheckout = async (tier: PricingTier) => {
+    if (!currentUser) {
+      window.location.href = `/login?returnUrl=${encodeURIComponent("/#pricing")}`;
+      return;
+    }
+
+    if (!tier.priceId) {
+      toast.error("Pricing not configured — please contact support.");
+      return;
+    }
+
+    setLoadingTier(tier.id);
+    try {
+      const response = await fetch("/api/stripe/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          priceId: tier.priceId,
+          userId: currentUser.uid,
+          email: currentUser.email,
+          quantity: 1,
+          metadata: { tier: tier.id },
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok)
+        throw new Error(data.error || "Failed to create checkout session");
+
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (error: any) {
+      console.error("Checkout error:", error);
+      toast.error(error.message || "Failed to start checkout");
+    } finally {
+      setLoadingTier(null);
+    }
+  };
+
   return (
     <main className="min-h-screen w-full bg-[rgba(10,10,35,0.92)] text-[--text] relative overflow-hidden">
       {/* Background grid */}
@@ -319,145 +429,68 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Essential */}
-            <div className="card border border-[var(--border-strong)] bg-[rgba(15,22,43,0.8)] shadow-xl landing-card">
-              <div className="card-body p-7 space-y-5">
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-[var(--text-muted)] mb-1">
-                    Essential
-                  </p>
-                  <p className="text-4xl font-black text-[var(--text)]">$10</p>
-                  <p className="text-sm neon-subtle mt-1">1 scan credit</p>
+            {PRICING_TIERS.map((tier) => (
+              <div
+                key={tier.id}
+                className={`card shadow-xl landing-card relative ${
+                  tier.popular
+                    ? "border-2 border-[var(--primary)] bg-[rgba(3,102,214,0.08)] shadow-2xl"
+                    : "border border-[var(--border-strong)] bg-[rgba(15,22,43,0.8)]"
+                }`}
+              >
+                {tier.popular && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="bg-[#0366d6] text-white text-xs font-bold px-3 py-1 rounded-full">
+                      Most popular
+                    </span>
+                  </div>
+                )}
+                <div className="card-body p-7 space-y-5">
+                  <div>
+                    <p
+                      className={`text-xs uppercase tracking-widest mb-1 ${tier.popular ? "text-[var(--primary)]" : "text-[var(--text-muted)]"}`}
+                    >
+                      {tier.label}
+                    </p>
+                    <p className="text-4xl font-black text-[var(--text)]">
+                      {tier.price}
+                    </p>
+                    <p className="text-sm neon-subtle mt-1">{tier.subtitle}</p>
+                  </div>
+                  <ul className="space-y-2 text-sm">
+                    {tier.features.map((f) => (
+                      <li key={f} className="flex items-center gap-2">
+                        <svg
+                          className="w-4 h-4 text-[var(--primary)] shrink-0"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2.5}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                        <span className="text-[var(--text-muted)]">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <button
+                    onClick={() => handleCheckout(tier)}
+                    disabled={loadingTier === tier.id}
+                    className={`btn w-full disabled:opacity-60 disabled:cursor-not-allowed ${
+                      tier.popular
+                        ? "neon-primary-btn border-0"
+                        : "btn-outline border-[var(--primary)] text-[var(--text)] hover:bg-[rgba(3,102,214,0.1)]"
+                    }`}
+                  >
+                    {loadingTier === tier.id ? "Loading…" : tier.cta}
+                  </button>
                 </div>
-                <ul className="space-y-2 text-sm">
-                  {[
-                    "1 × Nmap, Nuclei, or ZAP scan",
-                    "Hosted infrastructure",
-                    "PDF report export",
-                    "Email support",
-                  ].map((f) => (
-                    <li key={f} className="flex items-center gap-2">
-                      <svg
-                        className="w-4 h-4 text-[var(--primary)] shrink-0"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2.5}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      <span className="text-[var(--text-muted)]">{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <a
-                  href="/login"
-                  className="btn btn-outline border-[var(--primary)] text-[var(--text)] hover:bg-[rgba(3,102,214,0.1)] w-full"
-                >
-                  Get started
-                </a>
               </div>
-            </div>
-
-            {/* Pro — highlighted */}
-            <div className="card border-2 border-[var(--primary)] bg-[rgba(3,102,214,0.08)] shadow-2xl landing-card relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="bg-[#0366d6] text-white text-xs font-bold px-3 py-1 rounded-full">
-                  Most popular
-                </span>
-              </div>
-              <div className="card-body p-7 space-y-5">
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-[var(--primary)] mb-1">
-                    Pro
-                  </p>
-                  <p className="text-4xl font-black text-[var(--text)]">$50</p>
-                  <p className="text-sm neon-subtle mt-1">5 scan credits</p>
-                </div>
-                <ul className="space-y-2 text-sm">
-                  {[
-                    "5 × Nmap, Nuclei, or ZAP scans",
-                    "Hosted infrastructure",
-                    "PDF report export",
-                    "Priority email support",
-                    "Mix scanner types freely",
-                  ].map((f) => (
-                    <li key={f} className="flex items-center gap-2">
-                      <svg
-                        className="w-4 h-4 text-[var(--primary)] shrink-0"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2.5}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      <span className="text-[var(--text-muted)]">{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <a
-                  href="/login"
-                  className="btn neon-primary-btn border-0 w-full"
-                >
-                  Get Pro
-                </a>
-              </div>
-            </div>
-
-            {/* Scale */}
-            <div className="card border border-[var(--border-strong)] bg-[rgba(15,22,43,0.8)] shadow-xl landing-card">
-              <div className="card-body p-7 space-y-5">
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-[var(--text-muted)] mb-1">
-                    Scale
-                  </p>
-                  <p className="text-4xl font-black text-[var(--text)]">$200</p>
-                  <p className="text-sm neon-subtle mt-1">20 scan credits</p>
-                </div>
-                <ul className="space-y-2 text-sm">
-                  {[
-                    "20 × Nmap, Nuclei, or ZAP scans",
-                    "Hosted infrastructure",
-                    "PDF report export",
-                    "Dedicated support",
-                    "Mix scanner types freely",
-                    "Best value per scan",
-                  ].map((f) => (
-                    <li key={f} className="flex items-center gap-2">
-                      <svg
-                        className="w-4 h-4 text-[var(--primary)] shrink-0"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2.5}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      <span className="text-[var(--text-muted)]">{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <a
-                  href="/login"
-                  className="btn btn-outline border-[var(--primary)] text-[var(--text)] hover:bg-[rgba(3,102,214,0.1)] w-full"
-                >
-                  Get Scale
-                </a>
-              </div>
-            </div>
+            ))}
           </div>
         </section>
 

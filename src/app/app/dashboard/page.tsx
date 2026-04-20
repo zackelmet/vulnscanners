@@ -8,6 +8,7 @@ import {
   faChartLine,
   faBullseye,
   faSatelliteDish,
+  faCreditCard,
 } from "@fortawesome/free-solid-svg-icons";
 import Link from "next/link";
 import { useUserData } from "@/lib/hooks/useUserData";
@@ -15,6 +16,44 @@ import { useUserScans } from "@/lib/hooks/useUserScans";
 import { useAuth } from "@/lib/context/AuthContext";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Target } from "@/lib/types/target";
+import PricingCard from "@/components/pricing/PricingCard";
+
+const CREDIT_PACKS = [
+  {
+    name: "Essential",
+    price: "$10",
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ESSENTIAL || "",
+    features: [
+      "1 scan credit",
+      "Nmap, Nuclei, or ZAP",
+      "PDF report export",
+      "Email support",
+    ],
+  },
+  {
+    name: "Pro",
+    price: "$50",
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO || "",
+    popular: true,
+    features: [
+      "5 scan credits",
+      "Mix scanner types freely",
+      "PDF report export",
+      "Priority support",
+    ],
+  },
+  {
+    name: "Scale",
+    price: "$200",
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_SCALE || "",
+    features: [
+      "20 scan credits",
+      "Mix scanner types freely",
+      "PDF report export",
+      "Dedicated support",
+    ],
+  },
+];
 
 export default function DashboardPage() {
   const { userData, loading } = useUserData();
@@ -89,28 +128,30 @@ export default function DashboardPage() {
   return (
     <DashboardLayout>
       <div className="p-6 lg:p-8 space-y-6 max-w-full">
-        {/* No credits banner */}
+        {/* No credits — show purchase section */}
         {!hasCredits && (
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm">
-            <div className="flex items-start gap-4">
-              <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-[#0A1128]">
-                <FontAwesomeIcon icon={faRocket} className="text-2xl" />
+          <div className="space-y-6">
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-[#0A1128]">
+                  <FontAwesomeIcon icon={faRocket} className="text-2xl" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-xl text-[#0A1128]">
+                    Buy Credits to Start Scanning
+                  </h3>
+                  <p className="text-gray-600 mt-1">
+                    Purchase scan credits to unlock hosted Nmap, Nuclei, and
+                    OWASP ZAP scanning. Pick a pack below to go straight to
+                    checkout.
+                  </p>
+                </div>
               </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-xl text-[#0A1128]">
-                  Buy Credits to Start Scanning
-                </h3>
-                <p className="text-gray-600 mt-1">
-                  Purchase scan credits to unlock hosted Nmap, Nuclei, and OWASP
-                  ZAP scanning. Starting at $10 for 10 scans.
-                </p>
-                <Link
-                  href="/#pricing"
-                  className="inline-block mt-4 px-5 py-2.5 bg-[#00FED9] text-[#0A1128] font-semibold rounded-lg hover:bg-[#00D4B8] transition-colors"
-                >
-                  Buy Credits
-                </Link>
-              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {CREDIT_PACKS.map((pack) => (
+                <PricingCard key={pack.name} {...pack} />
+              ))}
             </div>
           </div>
         )}
@@ -248,6 +289,30 @@ export default function DashboardPage() {
                 </div>
                 <p className="text-xs text-gray-500">{stats.zap.used} used</p>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Top up credits */}
+        {hasCredits && (
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm space-y-5">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-[#0A1128]">
+                <FontAwesomeIcon icon={faCreditCard} className="text-lg" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-[#0A1128]">
+                  Top Up Credits
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Buy more scan credits — goes straight to checkout.
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {CREDIT_PACKS.map((pack) => (
+                <PricingCard key={pack.name} {...pack} />
+              ))}
             </div>
           </div>
         )}
