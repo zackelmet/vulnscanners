@@ -312,9 +312,10 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {scanners.map((scanner) => (
-              <div
+              <a
                 key={scanner.name}
-                className="card border border-[var(--border-strong)] bg-[rgba(15,22,43,0.8)] shadow-xl landing-card group"
+                href={`/scanners/${scanner.name.toLowerCase().replace("owasp ", "")}`}
+                className="card border border-[var(--border-strong)] bg-[rgba(15,22,43,0.8)] shadow-xl landing-card group hover:border-[var(--primary)] transition-colors"
               >
                 <div className="card-body p-6 space-y-4">
                   <div className="flex items-center gap-3">
@@ -347,8 +348,11 @@ export default function Home() {
                       </li>
                     ))}
                   </ul>
+                  <p className="text-xs text-[var(--primary)] mt-2">
+                    Learn more →
+                  </p>
                 </div>
-              </div>
+              </a>
             ))}
           </div>
         </section>
@@ -472,6 +476,164 @@ export default function Home() {
                 </div>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* ── PRICING ───────────────────────────────────── */}
+        <section className="space-y-10 landing-fade-up" id="pricing">
+          <div className="text-center space-y-3">
+            <div className="badge badge-outline badge-sm border-[var(--border-strong)] text-[var(--primary)] bg-[rgba(3,102,214,0.06)] uppercase tracking-widest text-[0.65rem]">
+              Simple pricing
+            </div>
+            <h2 className="text-3xl lg:text-4xl font-bold neon-section-title">
+              Pay Per Scan Credit
+            </h2>
+            <p className="max-w-xl mx-auto neon-subtle text-sm lg:text-base">
+              Buy credits, run scans. No subscriptions, no hidden fees. One
+              credit = one scan (Nmap, Nuclei, or ZAP).
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Essential */}
+            <div className="card border border-[var(--border-strong)] bg-[rgba(15,22,43,0.8)] shadow-xl landing-card">
+              <div className="card-body p-7 space-y-5">
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-[var(--text-muted)] mb-1">
+                    Essential
+                  </p>
+                  <p className="text-4xl font-black text-[var(--text)]">$10</p>
+                  <p className="text-sm neon-subtle mt-1">1 scan credit</p>
+                </div>
+                <ul className="space-y-2 text-sm">
+                  {[
+                    "1 × Nmap, Nuclei, or ZAP scan",
+                    "Hosted infrastructure",
+                    "PDF report export",
+                    "Email support",
+                  ].map((f) => (
+                    <li key={f} className="flex items-center gap-2">
+                      <svg
+                        className="w-4 h-4 text-[var(--primary)] shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2.5}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                      <span className="text-[var(--text-muted)]">{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <a
+                  href="/login"
+                  className="btn btn-outline border-[var(--primary)] text-[var(--text)] hover:bg-[rgba(3,102,214,0.1)] w-full"
+                >
+                  Get started
+                </a>
+              </div>
+            </div>
+
+            {/* Pro — highlighted */}
+            <div className="card border-2 border-[var(--primary)] bg-[rgba(3,102,214,0.08)] shadow-2xl landing-card relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <span className="bg-[#0366d6] text-white text-xs font-bold px-3 py-1 rounded-full">
+                  Most popular
+                </span>
+              </div>
+              <div className="card-body p-7 space-y-5">
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-[var(--primary)] mb-1">
+                    Pro
+                  </p>
+                  <p className="text-4xl font-black text-[var(--text)]">$50</p>
+                  <p className="text-sm neon-subtle mt-1">5 scan credits</p>
+                </div>
+                <ul className="space-y-2 text-sm">
+                  {[
+                    "5 × Nmap, Nuclei, or ZAP scans",
+                    "Hosted infrastructure",
+                    "PDF report export",
+                    "Priority email support",
+                    "Mix scanner types freely",
+                  ].map((f) => (
+                    <li key={f} className="flex items-center gap-2">
+                      <svg
+                        className="w-4 h-4 text-[var(--primary)] shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2.5}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                      <span className="text-[var(--text-muted)]">{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <a
+                  href="/login"
+                  className="btn neon-primary-btn border-0 w-full"
+                >
+                  Get Pro
+                </a>
+              </div>
+            </div>
+
+            {/* Scale */}
+            <div className="card border border-[var(--border-strong)] bg-[rgba(15,22,43,0.8)] shadow-xl landing-card">
+              <div className="card-body p-7 space-y-5">
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-[var(--text-muted)] mb-1">
+                    Scale
+                  </p>
+                  <p className="text-4xl font-black text-[var(--text)]">$200</p>
+                  <p className="text-sm neon-subtle mt-1">20 scan credits</p>
+                </div>
+                <ul className="space-y-2 text-sm">
+                  {[
+                    "20 × Nmap, Nuclei, or ZAP scans",
+                    "Hosted infrastructure",
+                    "PDF report export",
+                    "Dedicated support",
+                    "Mix scanner types freely",
+                    "Best value per scan",
+                  ].map((f) => (
+                    <li key={f} className="flex items-center gap-2">
+                      <svg
+                        className="w-4 h-4 text-[var(--primary)] shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2.5}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                      <span className="text-[var(--text-muted)]">{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <a
+                  href="/login"
+                  className="btn btn-outline border-[var(--primary)] text-[var(--text)] hover:bg-[rgba(3,102,214,0.1)] w-full"
+                >
+                  Get Scale
+                </a>
+              </div>
+            </div>
           </div>
         </section>
 

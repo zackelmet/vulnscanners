@@ -5,27 +5,27 @@
 @tailwind utilities;
 
 :root {
-	/* Flat blue / gray colorway */
-	--bg: #f4f6f8;
-	--panel: #ffffff;
-	--panel-soft: rgba(15, 23, 42, 0.02);
-	--border: #e6eef8;
-	--border-strong: rgba(3, 102, 214, 0.12);
-	--text: #0f1724;
-	--text-muted: #6b7280;
+	/* VulnScanners — dark blue palette */
+	--bg: #0a141f;
+	--panel: #0f1d2e;
+	--panel-soft: rgba(3, 102, 214, 0.04);
+	--border: #1a2d44;
+	--border-strong: rgba(3, 102, 214, 0.30);
+	--text: #f0f6ff;
+	--text-muted: #8fa8c8;
 	--primary: #0366d6;
 	--primary-strong: #034ea1;
-	--secondary: #0057b8;
-	--success: #16a34a;
+	--secondary: #2563eb;
+	--success: #22c55e;
 	--warning: #f59e0b;
 	--danger: #ef4444;
-	--info: #2563eb;
-	--shadow-glow: 0 8px 24px rgba(3, 102, 214, 0.06);
+	--info: #38bdf8;
+	--shadow-glow: 0 8px 28px rgba(3, 102, 214, 0.10);
 }
 
 body {
-	background: radial-gradient(circle at 20% 20%, rgba(3,102,214,0.03), transparent 18%),
-		radial-gradient(circle at 80% 10%, rgba(3,102,214,0.02), transparent 16%),
+	background: radial-gradient(circle at 20% 20%, rgba(3,102,214,0.07), transparent 25%),
+		radial-gradient(circle at 80% 10%, rgba(37,99,235,0.05), transparent 23%),
 		var(--bg);
 	color: var(--text);
 	min-height: 100vh;
@@ -52,20 +52,20 @@ h6 {
 
 /* DaisyUI override for the active theme (cupcake is set in layout) */
 body[data-theme="cupcake"] {
-	--p: 172 100% 50%;
-	--pf: 172 100% 50%;
-	--pc: 192 88% 96%;
-	--s: 210 100% 55%;
-	--sf: 210 100% 55%;
-	--sc: 192 88% 96%;
-	--a: 192 88% 60%;
-	--ac: 192 88% 96%;
-	--n: 226 33% 14%;
-	--nc: 220 30% 92%;
-	--b1: 230 40% 8%;
-	--b2: 230 38% 10%;
-	--b3: 230 36% 12%;
-	--bc: 220 30% 92%;
+	--p: 213 97% 43%;
+	--pf: 213 97% 35%;
+	--pc: 213 50% 95%;
+	--s: 217 91% 57%;
+	--sf: 217 91% 47%;
+	--sc: 213 50% 95%;
+	--a: 199 89% 48%;
+	--ac: 213 50% 95%;
+	--n: 217 32% 12%;
+	--nc: 213 30% 88%;
+	--b1: 213 40% 8%;
+	--b2: 213 38% 10%;
+	--b3: 213 36% 12%;
+	--bc: 213 30% 90%;
 }
 
 /* Utility skins for the neon dark system */
@@ -77,9 +77,9 @@ body[data-theme="cupcake"] {
 }
 
 .neon-card {
-	background: linear-gradient(180deg, var(--panel), #fbfdff);
-	border: 1px solid var(--border);
-	box-shadow: 0 10px 30px rgba(12, 18, 34, 0.06);
+	background: linear-gradient(135deg, rgba(15,29,46,0.95), rgba(10,20,31,0.92));
+	border: 1px solid var(--border-strong);
+	box-shadow: 0 10px 30px rgba(0,0,0,0.3), var(--shadow-glow);
 	border-radius: 12px;
 }
 
@@ -89,11 +89,11 @@ body[data-theme="cupcake"] {
 }
 
 .neon-grid {
-	background: linear-gradient(90deg, rgba(15, 23, 42, 0.03) 1px, transparent 1px),
-		linear-gradient(0deg, rgba(15, 23, 42, 0.03) 1px, transparent 1px);
+	background: linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px),
+		linear-gradient(0deg, rgba(255,255,255,0.03) 1px, transparent 1px);
 	background-size: 32px 32px;
 	border-radius: 12px;
-	border: 1px solid var(--border);
+	border: 1px solid rgba(255,255,255,0.04);
 }
 
 .neon-chip {
@@ -102,39 +102,40 @@ body[data-theme="cupcake"] {
 	gap: 0.4rem;
 	padding: 0.25rem 0.75rem;
 	border-radius: 9999px;
-	background: rgba(3,102,214,0.06);
-	color: var(--text);
+	background: rgba(3,102,214,0.12);
+	color: #93c5fd;
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
 	font-size: 0.72rem;
-	border: 1px solid var(--border);
+	border: 1px solid var(--border-strong);
 }
 
 .neon-primary-btn {
 	background: var(--primary);
 	color: #ffffff;
 	border: 0;
-	border-radius: 10px;
-	box-shadow: 0 8px 24px rgba(3, 102, 214, 0.08);
-	transition: transform 120ms ease, box-shadow 120ms ease;
+	border-radius: 8px;
+	box-shadow: 0 8px 24px rgba(3, 102, 214, 0.20);
+	transition: background 120ms ease, transform 120ms ease, box-shadow 120ms ease;
 }
 
 .neon-primary-btn:hover {
+	background: var(--primary-strong);
 	transform: translateY(-1px);
-	box-shadow: 0 12px 30px rgba(3, 102, 214, 0.12);
+	box-shadow: 0 12px 30px rgba(3, 102, 214, 0.28);
 }
 
 .neon-outline-btn {
-	border: 1px solid var(--primary);
-	color: var(--primary);
-	background: transparent;
-	border-radius: 10px;
-	transition: transform 120ms ease, box-shadow 120ms ease;
+	border: 1px solid rgba(255,255,255,0.20);
+	color: var(--text);
+	background: rgba(255,255,255,0.05);
+	border-radius: 8px;
+	transition: background 120ms ease, transform 120ms ease;
 }
 
 .neon-outline-btn:hover {
+	background: rgba(255,255,255,0.10);
 	transform: translateY(-1px);
-	box-shadow: 0 8px 20px rgba(3, 102, 214, 0.06);
 }
 
 .neon-divider {
@@ -146,7 +147,7 @@ body[data-theme="cupcake"] {
 }
 
 .neon-input {
-	background: var(--panel);
+	background: rgba(255,255,255,0.05);
 	border: 1px solid var(--border);
 	border-radius: 8px;
 	color: var(--text);
@@ -156,7 +157,7 @@ body[data-theme="cupcake"] {
 .neon-input:focus {
 	outline: none;
 	border-color: var(--primary);
-	box-shadow: 0 0 0 4px rgba(3, 102, 214, 0.06);
+	box-shadow: 0 0 0 3px rgba(3, 102, 214, 0.18);
 }
 
 .neon-table {
@@ -185,8 +186,8 @@ body[data-theme="cupcake"] {
 	gap: 0.35rem;
 	padding: 0.25rem 0.65rem;
 	border-radius: 8px;
-	background: rgba(15, 23, 42, 0.02);
-	border: 1px solid var(--border);
+	background: rgba(255,255,255,0.05);
+	border: 1px solid rgba(255,255,255,0.10);
 	color: var(--text-muted);
 	font-size: 0.78rem;
 }
@@ -197,7 +198,9 @@ body[data-theme="cupcake"] {
 }
 
 .neon-hero-title {
-	color: var(--primary);
+	background: linear-gradient(120deg, #60a5fa, #0366d6);
+	-webkit-background-clip: text;
+	color: transparent;
 }
 
 .landing-fade-up {
@@ -210,8 +213,8 @@ body[data-theme="cupcake"] {
 
 .landing-card:hover {
 	transform: translateY(-2px);
-	box-shadow: 0 14px 36px rgba(12, 18, 34, 0.06), 0 6px 18px rgba(3, 102, 214, 0.04);
-	border-color: rgba(3, 102, 214, 0.12);
+	box-shadow: 0 14px 36px rgba(0,0,0,0.3), 0 6px 18px rgba(3, 102, 214, 0.12);
+	border-color: rgba(3, 102, 214, 0.35);
 }
 
 @keyframes landingFadeUp {

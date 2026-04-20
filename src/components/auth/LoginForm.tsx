@@ -2,9 +2,8 @@
 
 import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGoogle } from "@fortawesome/free-brands-svg-icons";
-// Lazy-load react-hot-toast and Firebase auth at runtime to avoid DOM access during server prerender
-import { useRouter } from "next/navigation";
+import { faGoogle, faWindows } from "@fortawesome/free-brands-svg-icons";
+import { useRouter, useSearchParams } from "next/navigation";
 
 enum FormMode {
   Login,
@@ -17,18 +16,13 @@ export default function AuthForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [formMode, setFormMode] = useState<FormMode>(FormMode.Login);
   const [error, setError] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get("returnUrl") || "/app/dashboard";
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
-
-    if (formMode === FormMode.Login) {
-      await handleLogin();
-      return;
-    }
-
-    await handleRegister();
+  const clearErrorOnChange = () => {
+    if (error) setError(null);
   };
 
   const handleGoogleAuth = async () => {
@@ -37,9 +31,13 @@ export default function AuthForm() {
       const { signIn, SignInMethod } = signInModule as any;
       const { user, error } = await signIn(SignInMethod.Google, {
         signupCallback: async (userCredential: any) => {
-          // When a new user signs up, call the signup endpoint
+          const idToken = await userCredential.user.getIdToken();
           await fetch("/api/users/signup", {
             method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${idToken}`,
+            },
             body: JSON.stringify({
               uid: userCredential.user.uid,
               email: userCredential.user.email,
@@ -49,7 +47,7 @@ export default function AuthForm() {
         },
       });
       if (user) {
-        router.push("/app/dashboard");
+        router.push(returnUrl);
       } else if (error) {
         const { toast } = await import("react-hot-toast");
         toast.error(error);
@@ -57,23 +55,23 @@ export default function AuthForm() {
     } catch (err) {
       console.error("Google sign-in error:", err);
       const { toast } = await import("react-hot-toast");
-      toast.error("An unexpected error occurred during Google sign-in");
+      toast.error("Unexpected error during Google sign-in");
     }
   };
 
-  const handleLogin = async () => {
+  const handleMicrosoftAuth = async () => {
     try {
       const signInModule = await import("@/lib/firebase/signin");
       const { signIn, SignInMethod } = signInModule as any;
-      const { user, error } = await signIn(SignInMethod.EmailPassword, {
-        credentials: {
-          email,
-          password,
-        },
+      const { user, error } = await signIn(SignInMethod.Microsoft, {
         signupCallback: async (userCredential: any) => {
-          // When a new user signs up, call the signup endpoint
+          const idToken = await userCredential.user.getIdToken();
           await fetch("/api/users/signup", {
             method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${idToken}`,
+            },
             body: JSON.stringify({
               uid: userCredential.user.uid,
               email: userCredential.user.email,
@@ -83,24 +81,65 @@ export default function AuthForm() {
         },
       });
       if (user) {
-        router.push("/app/dashboard");
+        router.push(returnUrl);
       } else if (error) {
         const { toast } = await import("react-hot-toast");
         toast.error(error);
       }
     } catch (err) {
+      console.error("Microsoft sign-in error:", err);
+      const { toast } = await import("react-hot-toast");
+      toast.error("Unexpected error during Microsoft sign-in");
+    }
+  };
+
+  const handleLogin = async () => {
+    try {
+      setError(null);
+      setInfoMessage(null);
+      const signInModule = await import("@/lib/firebase/signin");
+      const { signIn, SignInMethod } = signInModule as any;
+      const { user, error } = await signIn(SignInMethod.EmailPassword, {
+        credentials: { email, password },
+        signupCallback: async (userCredential: any) => {
+          const idToken = await userCredential.user.getIdToken();
+          await fetch("/api/users/signup", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${idToken}`,
+            },
+            body: JSON.stringify({
+              uid: userCredential.user.uid,
+              email: userCredential.user.email,
+              name: userCredential.user.displayName,
+            }),
+          });
+        },
+      });
+      if (user) {
+        router.push(returnUrl);
+      } else if (error) {
+        const { toast } = await import("react-hot-toast");
+        toast.error(error);
+        if (error.toLowerCase().includes("verify your email")) {
+          setInfoMessage("Please verify your email first, then sign in again.");
+        }
+      }
+    } catch (err) {
       console.error("Login error:", err);
       const { toast } = await import("react-hot-toast");
-      toast.error("An unexpected error occurred during login");
+      toast.error("Unexpected error during login");
     }
   };
 
   const handleRegister = async () => {
+    setError(null);
+    setInfoMessage(null);
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
-
     try {
       const signUpModule = await import("@/lib/firebase/signup");
       const signUp = signUpModule.default as any;
@@ -108,10 +147,13 @@ export default function AuthForm() {
         email,
         password,
         async (userCredential: any) => {
-          // Ensure a Firestore user document is created for newly registered users
+          const idToken = await userCredential.user.getIdToken();
           await fetch("/api/users/signup", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${idToken}`,
+            },
             body: JSON.stringify({
               uid: userCredential.user.uid,
               email: userCredential.user.email,
@@ -121,66 +163,57 @@ export default function AuthForm() {
         },
       );
       if (user) {
-        router.push("/app/dashboard");
+        setFormMode(FormMode.Login);
+        setPassword("");
+        setConfirmPassword("");
+        setInfoMessage(
+          "Account created. Check your inbox for a verification email before signing in.",
+        );
       } else if (error) {
         setError(error.message);
       }
     } catch (err) {
       console.error("Registration error:", err);
-      setError("An unexpected error occurred during registration");
-    }
-  };
-
-  const handleForgotPassword = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (!email) {
-      const { toast } = await import("react-hot-toast");
-      toast.error("Please enter your email address.");
-      return;
-    }
-
-    try {
-      const authModule = await import("@/lib/firebase/firebaseClient");
-      const firebaseAuth = (authModule as any).auth;
-      const { sendPasswordResetEmail } = await import("firebase/auth");
-      await sendPasswordResetEmail(firebaseAuth, email);
-      const { toast } = await import("react-hot-toast");
-      toast.success("Password reset email sent.");
-    } catch (err) {
-      console.error(err);
-      const { toast } = await import("react-hot-toast");
-      toast.error("An error occurred. Please try again.");
+      setError("Unexpected error during registration");
     }
   };
 
   return (
-    <div className="relative min-h-screen bg-[var(--bg)] text-[--text] overflow-hidden">
+    <div
+      className="relative min-h-screen text-[--text] overflow-hidden"
+      style={{
+        background:
+          "linear-gradient(135deg, rgba(3,102,214,0.08) 0%, transparent 50%), #0a141f",
+      }}
+    >
       <div className="absolute inset-0 pointer-events-none opacity-60">
         <div className="absolute inset-6 neon-grid" />
       </div>
 
       <div className="relative w-full max-w-6xl mx-auto px-6 lg:px-12 py-12 lg:py-16">
         <div className="flex flex-col lg:flex-row gap-10 items-center">
+          {/* Left: marketing copy */}
           <div className="flex-1 space-y-4 text-center lg:text-left">
             <div className="inline-flex items-center gap-3 neon-badge-muted px-3 py-2 rounded-xl">
               Secure access
             </div>
-            <h1 className="text-3xl lg:text-5xl font-black leading-tight">
-              Start Scanning in 5 Minutes.
+            <h1 className="text-3xl lg:text-5xl font-light leading-tight">
+              Start Scanning in 5&nbsp;Minutes.
             </h1>
             <p className="text-base lg:text-lg neon-subtle max-w-xl">
-              Join the security teams that already trust VulnScanners to run
-              fast, zero-maintenance scans.
+              Join the security teams already trusting VulnScanners to run fast,
+              hosted scans with zero maintenance.
             </p>
-            <div className="flex flex-wrap gap-3 justify-center lg:justify-start text-sm text-[var(--text-muted)]">
-              <span className="neon-chip">Nuclei vulnerability scanner</span>
-              <span className="neon-chip">Nmap port scanner</span>
-              <span className="neon-chip">OWASP ZAP web scanner</span>
+            <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
+              <span className="neon-chip">Nmap Port Scanner</span>
+              <span className="neon-chip">Nuclei CVE Detection</span>
+              <span className="neon-chip">OWASP ZAP Web Scanner</span>
             </div>
           </div>
 
+          {/* Right: auth card */}
           <div className="flex-1 w-full max-w-xl">
-            <div className="neon-card p-6 lg:p-7 space-y-6">
+            <div className="p-6 lg:p-7 space-y-6 rounded-[18px] bg-white/5 border border-white/10 backdrop-blur-sm">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)] mb-1">
@@ -188,7 +221,7 @@ export default function AuthForm() {
                       ? "Welcome back"
                       : "Create account"}
                   </p>
-                  <h2 className="text-2xl font-bold">
+                  <h2 className="text-2xl font-light">
                     {formMode === FormMode.Login ? "Sign in" : "Sign up"}
                   </h2>
                 </div>
@@ -211,94 +244,107 @@ export default function AuthForm() {
               {error && (
                 <div className="text-[var(--danger)] text-sm">{error}</div>
               )}
+              {infoMessage && (
+                <div className="text-gray-300 text-sm">{infoMessage}</div>
+              )}
 
-              <form className="space-y-4" onSubmit={handleSubmit}>
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-[var(--text)]">
+                  <label className="text-sm font-normal text-[var(--text)]">
                     Email
                   </label>
                   <input
                     type="email"
                     placeholder="you@company.com"
-                    className="neon-input w-full py-3"
+                    className="neon-input w-full py-3 px-4"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      clearErrorOnChange();
+                    }}
                   />
                 </div>
-
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-[var(--text)]">
+                  <label className="text-sm font-normal text-[var(--text)]">
                     Password
                   </label>
                   <input
                     type="password"
                     placeholder="Enter password"
-                    className="neon-input w-full py-3"
+                    className="neon-input w-full py-3 px-4"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      clearErrorOnChange();
+                    }}
                   />
                 </div>
-
                 {formMode === FormMode.Register && (
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-[var(--text)]">
+                    <label className="text-sm font-normal text-[var(--text)]">
                       Confirm Password
                     </label>
                     <input
                       type="password"
                       placeholder="Repeat password"
-                      className="neon-input w-full py-3"
+                      className="neon-input w-full py-3 px-4"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                     />
                   </div>
                 )}
+              </div>
 
-                {formMode === FormMode.Login && (
-                  <div className="flex justify-end">
-                    <button
-                      type="button"
-                      className="text-sm text-[var(--text-muted)] hover:text-[var(--text)] underline"
-                      onClick={handleForgotPassword}
-                    >
-                      Forgot password?
-                    </button>
-                  </div>
-                )}
-
-                <div className="space-y-3">
-                  {formMode === FormMode.Login ? (
-                    <button
-                      type="submit"
-                      disabled={!email || !password || error !== null}
-                      className="neon-primary-btn w-full py-3 font-semibold disabled:opacity-60"
-                    >
-                      Sign in
-                    </button>
-                  ) : (
-                    <button
-                      type="submit"
-                      disabled={!email || !password || !confirmPassword}
-                      className="neon-primary-btn w-full py-3 font-semibold disabled:opacity-60"
-                    >
-                      Create account
-                    </button>
-                  )}
-
+              <div className="space-y-3">
+                {formMode === FormMode.Login ? (
                   <button
-                    type="button"
-                    className="neon-outline-btn w-full py-3 font-semibold flex items-center justify-center gap-2"
-                    onClick={handleGoogleAuth}
+                    disabled={!email || !password}
+                    onClick={handleLogin}
+                    className="neon-primary-btn w-full py-3 font-normal disabled:opacity-60"
                   >
-                    <FontAwesomeIcon icon={faGoogle} className="text-lg" />{" "}
-                    Continue with Google
+                    Sign in
                   </button>
-                </div>
-              </form>
+                ) : (
+                  <button
+                    disabled={!email || !password || !confirmPassword}
+                    onClick={handleRegister}
+                    className="neon-primary-btn w-full py-3 font-normal disabled:opacity-60"
+                  >
+                    Create account
+                  </button>
+                )}
+                <button
+                  className="neon-outline-btn w-full py-3 font-normal flex items-center justify-center gap-2"
+                  onClick={handleGoogleAuth}
+                >
+                  <FontAwesomeIcon icon={faGoogle} className="text-lg" />{" "}
+                  Continue with Google
+                </button>
+                <button
+                  className="neon-outline-btn w-full py-3 font-normal flex items-center justify-center gap-2"
+                  onClick={handleMicrosoftAuth}
+                >
+                  <FontAwesomeIcon icon={faWindows} className="text-lg" />{" "}
+                  Continue with Microsoft
+                </button>
+              </div>
 
               <div className="text-xs neon-subtle text-center">
-                SSO coming soon. By continuing you agree to our Terms and
-                Privacy.
+                By continuing you agree to our{" "}
+                <a
+                  href="/trust-safety#terms"
+                  className="underline hover:text-[#60a5fa] transition-colors"
+                >
+                  Terms of Service
+                </a>{" "}
+                and{" "}
+                <a
+                  href="/trust-safety#privacy"
+                  className="underline hover:text-[#60a5fa] transition-colors"
+                >
+                  Privacy Policy
+                </a>
+                .
               </div>
             </div>
           </div>

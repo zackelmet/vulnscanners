@@ -2,43 +2,63 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import UserAvatar from "./UserAvatar";
 import { useAuth } from "@/lib/context/AuthContext";
 
 export default function Navbar() {
   const { currentUser, isLoadingAuth } = useAuth();
 
   return (
-    <header className="w-full border-b border-[var(--border)] bg-[#0a0a23] text-[var(--text)] relative z-40">
+    <header className="w-full border-b border-[#0366d6]/30 bg-[#0a141f] text-white relative z-40">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-6 px-5 py-4">
-        <a
+        <Link
           href="https://vulnscanners.com"
           className="flex items-center gap-3 hover:opacity-90 transition"
         >
           <Image
-            src="/HA-logo.png"
-            alt="VulnScanners logo"
-            width={42}
-            height={42}
+            src="/vulnscanners-logo.png"
+            alt="VulnScanners Logo"
+            width={40}
+            height={40}
             className="h-10 w-auto"
             priority
           />
-          <span className="text-lg font-semibold tracking-tight">
+          <span className="text-white font-semibold text-lg tracking-wide leading-tight hidden sm:block">
             VulnScanners
           </span>
-        </a>
+        </Link>
 
         <div className="flex items-center gap-3">
           {!isLoadingAuth && !currentUser && (
-            <Link
-              href="/#pricing"
-              className="neon-outline-btn px-4 py-2 text-sm font-semibold"
-            >
-              Pricing
-            </Link>
+            <>
+              <Link
+                href="/blog"
+                className="text-sm font-medium text-gray-300 hover:text-[#0366d6] transition"
+              >
+                Blog
+              </Link>
+              <Link
+                href="/#pricing"
+                className="text-sm font-medium text-gray-300 hover:text-[#0366d6] transition"
+              >
+                Pricing
+              </Link>
+              <Link
+                href="/login"
+                className="px-4 py-2 text-sm font-semibold bg-[#0366d6] hover:bg-[#034ea1] text-white rounded-lg transition"
+              >
+                Sign In
+              </Link>
+            </>
           )}
 
-          <UserAvatar compact />
+          {!isLoadingAuth && currentUser && (
+            <Link
+              href="/app/dashboard"
+              className="px-4 py-2 text-sm font-semibold bg-[#0366d6] hover:bg-[#034ea1] text-white rounded-lg transition"
+            >
+              Dashboard
+            </Link>
+          )}
         </div>
       </div>
     </header>
