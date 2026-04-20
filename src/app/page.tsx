@@ -144,65 +144,139 @@ export default function Home() {
 
       <div className="relative w-full max-w-6xl mx-auto px-5 sm:px-6 lg:px-10 py-16 lg:py-24 space-y-20 lg:space-y-28">
         {/* ── HERO ───────────────────────────────────────── */}
-        <section className="text-center space-y-8 landing-fade-up">
-          <div className="flex items-center justify-center">
-            <div className="badge badge-outline badge-lg gap-2 border-[var(--border-strong)] text-[var(--primary)] bg-[rgba(0,254,217,0.06)]">
-              <span className="inline-block w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse" />
-              Hosted vulnerability scanning
-            </div>
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] text-balance">
-            <span className="neon-hero-title">Deliver Security Reports</span>
-            <br />
-            <span className="text-[var(--text)]">
-              That Teams Can Actually Use
-            </span>
-          </h1>
-
-          <p className="text-base lg:text-lg neon-subtle max-w-2xl mx-auto leading-relaxed text-pretty">
-            VulnScanners helps you move from raw scan output to clear,
-            actionable deliverables. Run Nmap, Nuclei, and OWASP ZAP from one
-            console and share report-ready findings with confidence.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-            <Link
-              href="/login"
-              className="btn btn-lg neon-primary-btn border-0 gap-2 text-sm font-bold px-8 w-full sm:w-auto"
+        <section className="relative text-center landing-fade-up pt-6">
+          <div className="absolute -top-12 left-1/2 -translate-x-1/2 pointer-events-none opacity-70">
+            {/* Symbolic geometric artwork (nodes + links) */}
+            <svg
+              width="680"
+              height="220"
+              viewBox="0 0 680 220"
+              fill="none"
+              aria-hidden
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M13 7l5 5m0 0l-5 5m5-5H6"
+              <defs>
+                <linearGradient id="g1" x1="0" x2="1">
+                  <stop offset="0" stopColor="var(--primary)" />
+                  <stop offset="1" stopColor="var(--secondary)" />
+                </linearGradient>
+                <filter id="f1" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="6" result="b" />
+                  <feMerge>
+                    <feMergeNode in="b" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+
+              <g filter="url(#f1)">
+                <line
+                  x1="80"
+                  y1="160"
+                  x2="240"
+                  y2="40"
+                  stroke="url(#g1)"
+                  strokeWidth="2.5"
+                  strokeOpacity="0.18"
                 />
-              </svg>
-              Generate My First Report
-            </Link>
-            <Link
-              href="/app/scans"
-              className="btn btn-lg btn-outline border-[var(--primary)] text-[var(--text)] hover:bg-[rgba(0,254,217,0.08)] hover:border-[var(--primary)] gap-2 text-sm font-bold px-8 w-full sm:w-auto"
-            >
-              Open Scanner Console
-            </Link>
+                <line
+                  x1="240"
+                  y1="40"
+                  x2="420"
+                  y2="110"
+                  stroke="url(#g1)"
+                  strokeWidth="2.5"
+                  strokeOpacity="0.18"
+                />
+                <line
+                  x1="420"
+                  y1="110"
+                  x2="560"
+                  y2="30"
+                  stroke="url(#g1)"
+                  strokeWidth="2.5"
+                  strokeOpacity="0.18"
+                />
+              </g>
+
+              {[
+                { x: 80, y: 160 },
+                { x: 240, y: 40 },
+                { x: 420, y: 110 },
+                { x: 560, y: 30 },
+              ].map((p, i) => (
+                <g key={i} transform={`translate(${p.x},${p.y})`}>
+                  <circle
+                    r="14"
+                    fill="rgba(0,254,217,0.06)"
+                    stroke="var(--border-strong)"
+                    strokeWidth="1.5"
+                  />
+                  <circle r="6" fill="var(--primary)" />
+                </g>
+              ))}
+            </svg>
           </div>
 
-          <div className="flex items-center justify-center gap-2 flex-wrap pt-2">
-            {["Nmap", "Nuclei", "OWASP ZAP"].map((name) => (
-              <div
-                key={name}
-                className="badge badge-ghost bg-[rgba(255,255,255,0.04)] border-[var(--border)] text-[var(--text-muted)] text-xs"
-              >
-                {name}
+          <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-6">
+            <div className="inline-flex items-center gap-3 mb-6">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-[rgba(0,254,217,0.06)] border border-[var(--border-strong)]">
+                <svg
+                  className="w-5 h-5 text-[var(--primary)]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                >
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M12 3v2M12 19v2M3 12h2M19 12h2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" />
+                </svg>
               </div>
-            ))}
+              <div className="badge badge-outline badge-lg gap-2 border-[var(--border-strong)] text-[var(--primary)] bg-[rgba(0,254,217,0.04)]">
+                Hosted vulnerability scanning
+              </div>
+            </div>
+
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
+              <span className="neon-hero-title block">
+                Deliver security reports
+              </span>
+              <span className="block text-[var(--text)] text-2xl sm:text-3xl mt-2">
+                Engineered for rapid triage and clear remediation
+              </span>
+            </h1>
+
+            <p className="mt-5 text-base lg:text-lg neon-subtle max-w-2xl mx-auto leading-relaxed">
+              Turn raw scanner output into prioritized, evidence-backed
+              deliverables — without the maintenance overhead. Run Nmap, Nuclei,
+              and ZAP in a single hosted workflow and ship clear reports your
+              teams will act on.
+            </p>
+
+            <div className="flex items-center justify-center gap-3 mt-6 flex-col sm:flex-row">
+              <Link
+                href="/login"
+                className="btn btn-lg neon-primary-btn border-0 gap-2 text-sm font-bold px-8 w-full sm:w-auto"
+              >
+                Generate My First Report
+              </Link>
+              <Link
+                href="/app/scans"
+                className="btn btn-lg btn-outline border-[var(--primary)] text-[var(--text)] hover:bg-[rgba(0,254,217,0.06)] gap-2 text-sm font-bold px-8 w-full sm:w-auto"
+              >
+                Open Scanner Console
+              </Link>
+            </div>
+
+            <div className="flex items-center justify-center gap-2 flex-wrap pt-4">
+              {["Nmap", "Nuclei", "OWASP ZAP"].map((n) => (
+                <div
+                  key={n}
+                  className="badge badge-ghost bg-[rgba(255,255,255,0.02)] border-[var(--border)] text-[var(--text-muted)] text-xs"
+                >
+                  {n}
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
