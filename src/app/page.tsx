@@ -1,11 +1,13 @@
 import Link from "next/link";
+import Image from "next/image";
 
 /* ─── Data ───────────────────────────────────────────────── */
 
 const scanners = [
   {
     name: "Nmap",
-    icon: "🔍",
+    logo: "/scanners/nmap.png",
+    logoAspect: "wide" as const,
     summary:
       "Fast external port and service visibility for attack-surface mapping.",
     highlights: [
@@ -16,7 +18,8 @@ const scanners = [
   },
   {
     name: "Nuclei",
-    icon: "⚡",
+    logo: "/scanners/nuclei.png",
+    logoAspect: "square" as const,
     summary:
       "Template-based vulnerability detection mapped to current CVE intelligence.",
     highlights: [
@@ -27,7 +30,8 @@ const scanners = [
   },
   {
     name: "OWASP ZAP",
-    icon: "🛡️",
+    logo: "/scanners/zap.png",
+    logoAspect: "square" as const,
     summary: "Automated web-layer security baseline for common app-level risk.",
     highlights: [
       "Automated web security baseline",
@@ -53,83 +57,6 @@ const workflow = [
     title: "Review results + re-test",
     copy: "Confirm findings quickly, fix issues, and rerun scans in minutes.",
   },
-];
-
-const sellingPoints = [
-  {
-    icon: "📊",
-    title: "Executive-ready reporting",
-    copy: "Deliver clear summaries for leadership with technical depth your engineering team can action immediately.",
-  },
-  {
-    icon: "🔬",
-    title: "Evidence for remediation",
-    copy: "Each scan produces concrete findings and context you can use in fix tickets and verification runs.",
-  },
-  {
-    icon: "✅",
-    title: "Compliance-friendly output",
-    copy: "Generate deliverables that support recurring security reviews and customer or audit conversations.",
-  },
-  {
-    icon: "☁️",
-    title: "No install or maintenance",
-    copy: "Launch scans without maintaining scanner servers, container images, or update pipelines.",
-  },
-  {
-    icon: "🔧",
-    title: "Trusted scanner stack",
-    copy: "Run established tools your team already knows: Nmap, Nuclei, and OWASP ZAP in one hosted workflow.",
-  },
-  {
-    icon: "🔁",
-    title: "Built for recurring scans",
-    copy: "Re-run scans to prove fixes and keep reports current as infrastructure and applications change.",
-  },
-];
-
-const reportDeliverables = [
-  {
-    label: "Executive summary",
-    detail: "Risk-focused highlights for leadership",
-    icon: "📋",
-  },
-  {
-    label: "Technical findings",
-    detail: "Reproducible evidence per vulnerability",
-    icon: "🧪",
-  },
-  {
-    label: "Remediation guidance",
-    detail: "Prioritized fixes your team can action",
-    icon: "🎯",
-  },
-  {
-    label: "Re-test tracking",
-    detail: "Verification that issues are resolved",
-    icon: "🔄",
-  },
-];
-
-const reportShowcase = [
-  {
-    title: "External Attack Surface Report",
-    subtitle: "Placeholder: replace with your real sample report",
-  },
-  {
-    title: "Web Application Findings Report",
-    subtitle: "Placeholder: replace with your real sample report",
-  },
-  {
-    title: "Remediation Verification Report",
-    subtitle: "Placeholder: replace with your real sample report",
-  },
-];
-
-const stats = [
-  { value: "3", label: "Industry scanners" },
-  { value: "<5 min", label: "Time to first scan" },
-  { value: "Zero", label: "Local setup required" },
 ];
 
 /* ─── Page ───────────────────────────────────────────────── */
@@ -280,32 +207,13 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── STATS BAR ──────────────────────────────────── */}
-        <section className="landing-fade-up">
-          <div className="stats stats-horizontal w-full bg-transparent border border-[var(--border-strong)] rounded-2xl shadow-[var(--shadow-glow)] overflow-hidden">
-            {stats.map((stat) => (
-              <div
-                key={stat.label}
-                className="stat place-items-center py-6 bg-[rgba(15,22,43,0.7)]"
-              >
-                <div className="stat-value text-[var(--primary)] text-2xl lg:text-3xl font-black">
-                  {stat.value}
-                </div>
-                <div className="stat-desc text-[var(--text-muted)] text-xs lg:text-sm mt-1 uppercase tracking-wider">
-                  {stat.label}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
         {/* ── SCANNERS ───────────────────────────────────── */}
         <section className="space-y-8 landing-fade-up" id="scanners">
           <div className="text-center space-y-3">
             <div className="badge badge-outline badge-sm border-[var(--border-strong)] text-[var(--primary)] bg-[rgba(0,254,217,0.06)] uppercase tracking-widest text-[0.65rem]">
               Three scanners · One workflow
             </div>
-            <h2 className="text-3xl lg:text-4xl font-bold neon-section-title">
+            <h2 className="text-3xl lg:text-4xl font-medium neon-section-title">
               Built For Real Security Work
             </h2>
           </div>
@@ -319,8 +227,20 @@ export default function Home() {
               >
                 <div className="card-body p-6 space-y-4">
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">{scanner.icon}</span>
-                    <h3 className="card-title text-xl tracking-tight text-[var(--text)]">
+                    <div
+                      className={`flex items-center justify-center shrink-0 ${
+                        scanner.logoAspect === "wide" ? "w-16 h-8" : "w-9 h-9"
+                      }`}
+                    >
+                      <Image
+                        src={scanner.logo}
+                        alt={`${scanner.name} logo`}
+                        width={scanner.logoAspect === "wide" ? 64 : 36}
+                        height={scanner.logoAspect === "wide" ? 32 : 36}
+                        className="object-contain"
+                      />
+                    </div>
+                    <h3 className="card-title text-xl font-semibold tracking-tight text-[var(--text)]">
                       {scanner.name}
                     </h3>
                   </div>
@@ -363,7 +283,7 @@ export default function Home() {
             <div className="badge badge-outline badge-sm border-[var(--border-strong)] text-[var(--primary)] bg-[rgba(0,254,217,0.06)] uppercase tracking-widest text-[0.65rem]">
               How it works
             </div>
-            <h2 className="text-3xl lg:text-4xl font-bold neon-section-title">
+            <h2 className="text-3xl lg:text-4xl font-medium neon-section-title">
               From Target To Deliverable Report In Minutes
             </h2>
           </div>
@@ -391,101 +311,13 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── REPORT DELIVERABLES ────────────────────────── */}
-        <section className="space-y-8 landing-fade-up" id="reports">
-          <div className="text-center space-y-3">
-            <div className="badge badge-outline badge-sm border-[var(--border-strong)] text-[var(--primary)] bg-[rgba(0,254,217,0.06)] uppercase tracking-widest text-[0.65rem]">
-              Report deliverables
-            </div>
-            <h2 className="text-3xl lg:text-4xl font-bold neon-section-title">
-              Built Around The Output, Not Just The Scan
-            </h2>
-            <p className="max-w-2xl mx-auto neon-subtle text-sm lg:text-base leading-relaxed">
-              Your team needs more than raw scanner logs. VulnScanners focuses
-              on evidence-backed reports that are easy to review, assign, and
-              verify.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {reportDeliverables.map((d) => (
-              <div
-                key={d.label}
-                className="card bg-[rgba(15,22,43,0.6)] border border-[var(--border)] hover:border-[var(--border-strong)] transition-colors landing-card"
-              >
-                <div className="card-body p-5 items-center text-center gap-3">
-                  <span className="text-3xl">{d.icon}</span>
-                  <h3 className="font-bold text-sm text-[var(--text)]">
-                    {d.label}
-                  </h3>
-                  <p className="text-xs neon-subtle leading-relaxed">
-                    {d.detail}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-4">
-            {reportShowcase.map((report) => (
-              <div
-                key={report.title}
-                className="card bg-[rgba(15,22,43,0.8)] border border-dashed border-[var(--border)] hover:border-[var(--primary)] transition-colors group landing-card"
-              >
-                <div className="card-body p-6 items-center text-center gap-3">
-                  <div className="w-16 h-16 rounded-xl bg-[rgba(0,254,217,0.06)] border border-[var(--border-strong)] flex items-center justify-center text-2xl group-hover:shadow-[0_0_20px_rgba(0,254,217,0.15)] transition-shadow">
-                    📄
-                  </div>
-                  <h3 className="font-bold text-base text-[var(--text)]">
-                    {report.title}
-                  </h3>
-                  <p className="text-xs neon-subtle">{report.subtitle}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ── WHY VULNSCANNERS ───────────────────────────── */}
-        <section className="space-y-8 landing-fade-up" id="why-vulnscanners">
-          <div className="text-center space-y-3">
-            <div className="badge badge-outline badge-sm border-[var(--border-strong)] text-[var(--primary)] bg-[rgba(0,254,217,0.06)] uppercase tracking-widest text-[0.65rem]">
-              Why security teams choose us
-            </div>
-            <h2 className="text-3xl lg:text-4xl font-bold neon-section-title">
-              Selling Points That Matter In Daily Operations
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {sellingPoints.map((point) => (
-              <div
-                key={point.title}
-                className="card bg-[rgba(15,22,43,0.6)] border border-[var(--border)] hover:border-[var(--border-strong)] transition-colors landing-card"
-              >
-                <div className="card-body p-6 gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{point.icon}</span>
-                    <h3 className="card-title text-base lg:text-lg text-[var(--text)]">
-                      {point.title}
-                    </h3>
-                  </div>
-                  <p className="neon-subtle text-sm leading-relaxed">
-                    {point.copy}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
         {/* ── PRICING ───────────────────────────────────── */}
         <section className="space-y-10 landing-fade-up" id="pricing">
           <div className="text-center space-y-3">
             <div className="badge badge-outline badge-sm border-[var(--border-strong)] text-[var(--primary)] bg-[rgba(3,102,214,0.06)] uppercase tracking-widest text-[0.65rem]">
               Simple pricing
             </div>
-            <h2 className="text-3xl lg:text-4xl font-bold neon-section-title">
+            <h2 className="text-3xl lg:text-4xl font-medium neon-section-title">
               Pay Per Scan Credit
             </h2>
             <p className="max-w-xl mx-auto neon-subtle text-sm lg:text-base">
@@ -645,7 +477,7 @@ export default function Home() {
           <div className="badge badge-outline badge-sm border-[var(--border-strong)] text-[var(--primary)] bg-[rgba(0,254,217,0.06)] uppercase tracking-widest text-[0.65rem]">
             Ready to run your first scan?
           </div>
-          <h2 className="text-3xl lg:text-4xl font-black tracking-tight neon-hero-title">
+          <h2 className="text-3xl lg:text-4xl font-semibold tracking-tight neon-hero-title">
             Start Delivering Better Security Reports
           </h2>
           <p className="max-w-xl mx-auto neon-subtle text-sm lg:text-base leading-relaxed">
