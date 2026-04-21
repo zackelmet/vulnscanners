@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { GeistSans } from "geist/font/sans";
+import { IBM_Plex_Sans } from "next/font/google";
+
+const ibmPlexSans = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-ibm-plex-sans",
+});
 // ClientProviders and Navbar were temporarily disabled during prerender
 // diagnostics; restore them now.
 import ClientProviders from "@/lib/context/ClientProviders";
@@ -44,9 +50,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={GeistSans.variable}>
+    <html lang="en" className={ibmPlexSans.variable}>
       {/* Change your theme HERE */}
-      <body data-theme="cupcake">
+      <body data-theme="cupcake" className={ibmPlexSans.className}>
         <ClientProviders>
           <ConditionalNav>{children}</ConditionalNav>
         </ClientProviders>
