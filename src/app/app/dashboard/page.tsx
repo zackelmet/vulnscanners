@@ -1,125 +1,163 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+export const dynamic = "force-dynamic";
+
+import { useMemo, useState, useEffect, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faShieldHalved,
   faRocket,
-  faChartLine,
-  faBullseye,
   faSatelliteDish,
-  faCreditCard,
+  faSpider,
+  faPlus,
+  faXmark,
 } from "@fortawesome/free-solid-svg-icons";
+import Image from "next/image";
 import Link from "next/link";
 import { useUserData } from "@/lib/hooks/useUserData";
 import { useUserScans } from "@/lib/hooks/useUserScans";
 import { useAuth } from "@/lib/context/AuthContext";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { Target } from "@/lib/types/target";
-import PricingCard from "@/components/pricing/PricingCard";
+import toast from "react-hot-toast";
 
-const CREDIT_PACKS = [
+/* ─── Credit pack definitions ────────────────────────────── */
+
+interface CreditPack {
+  id: string;
+  name: string;
+  price: number;
+  credits: number;
+  priceId: string;
+}
+
+const CREDIT_PACKS: CreditPack[] = [
   {
+    id: "essential",
     name: "Essential",
-    price: "$10",
+    price: 10,
+    credits: 10,
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ESSENTIAL || "",
-    features: [
-      "1 scan credit",
-      "Nmap, Nuclei, or ZAP",
-      "PDF report export",
-      "Email support",
-    ],
   },
   {
+    id: "pro",
     name: "Pro",
-    price: "$50",
+    price: 50,
+    credits: 100,
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO || "",
-    popular: true,
-    features: [
-      "5 scan credits",
-      "Mix scanner types freely",
-      "PDF report export",
-      "Priority support",
-    ],
   },
   {
+    id: "scale",
     name: "Scale",
-    price: "$200",
+    price: 200,
+    credits: 1000,
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_SCALE || "",
-    features: [
-      "20 scan credits",
-      "Mix scanner types freely",
-      "PDF report export",
-      "Dedicated support",
-    ],
   },
 ];
+
+/* ─── Per-scanner card config ────────────────────────────── */
+
+const SCANNERS = [
+  {
+    key: "nmap" as const,
+    label: "Nmap",
+    description: "Port scanning & service detection",
+    logo: "/scanners/nmap.png",
+    logoW: 80,
+    logoH: 32,
+  },
+  {
+    key: "nuclei" as const,
+    label: "Nuclei",
+    description: "CVE detection & vulnerability assessment",
+    logo: "/scanners/nuclei.png",
+    logoW: 32,
+    logoH: 32,
+  },
+  {
+    key: "zap" as const,
+    label: "OWASP ZAP",
+    description: "Web app security & OWASP Top 10",
+    logo: "/scanners/zap.png",
+    logoW: 32,
+    logoH: 32,
+  },
+];
+
+/* ─── Page ───────────────────────────────────────────────── */
 
 export default function DashboardPage() {
   const { userData, loading } = useUserData();
   const { currentUser } = useAuth();
-  const { scans: userScans = [], loading: scansLoading } = useUserScans(
-    currentUser?.uid ?? null,
+  const { scans: userScans = [] } = useUserScans(currentUser?.uid ?? null);
+
+  const [showModal, setShowModal] = useState(false);
+  const [selectedPack, setSelectedPack] = useState<CreditPack>(CREDIT_PACKS[1]);
+  const [loadingCheckout, setLoadingCheckout] = useState(false);
+
+  const credits = useMemo(
+    () => ({
+      nmap: userData?.scanCredits?.nmap ?? 0,
+      nuclei: userData?.scanCredits?.nuclei ?? 0,
+      zap: userData?.scanCredits?.zap ?? 0,
+    }),
+    [userData],
   );
 
-  const [targets, setTargets] = useState<Target[]>([]);
-  const [loadingTargets, setLoadingTargets] = useState(true);
+  const used = useMemo(
+    () => ({
+      nmap: userData?.scansUsed?.nmap ?? 0,
+      nuclei: userData?.scansUsed?.nuclei ?? 0,
+      zap: userData?.scansUsed?.zap ?? 0,
+    }),
+    [userData],
+  );
 
-  useEffect(() => {
-    const fetchTargets = async () => {
-      if (!currentUser) return;
-      try {
-        const token = await currentUser.getIdToken();
-        const res = await fetch("/api/targets", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (data.success) {
-          setTargets(data.targets);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoadingTargets(false);
-      }
-    };
-    fetchTargets();
-  }, [currentUser]);
+  const hasCredits = credits.nmap > 0 || credits.nuclei > 0 || credits.zap > 0;
+  const recentScans = useMemo(() => userScans.slice(0, 5), [userScans]);
 
-  const targetHealth = useMemo(() => {
-    if (targets.length === 0) return 0;
-    const total = targets.reduce(
-      (acc: number, t: Target) => acc + (t.healthScore || 100),
-      0,
-    );
-    return Math.round(total / targets.length);
-  }, [targets]);
+  const openModal = (pack: CreditPack = CREDIT_PACKS[1]) => {
+    setSelectedPack(pack);
+    setShowModal(true);
+  };
 
-  const hasCredits = userData
-    ? (userData.scanCredits?.nmap ?? 0) > 0 ||
-      (userData.scanCredits?.nuclei ?? 0) > 0 ||
-      (userData.scanCredits?.zap ?? 0) > 0
-    : false;
-
-  const stats = useMemo(() => {
-    const credits = userData?.scanCredits || { nmap: 0, nuclei: 0, zap: 0 };
-    const used = userData?.scansUsed || { nmap: 0, nuclei: 0, zap: 0 };
-    return {
-      nmap: { remaining: credits.nmap ?? 0, used: used.nmap ?? 0 },
-      nuclei: { remaining: credits.nuclei ?? 0, used: used.nuclei ?? 0 },
-      zap: { remaining: credits.zap ?? 0, used: used.zap ?? 0 },
-    };
-  }, [userData]);
-
-  const recentScans = useMemo(() => {
-    return userScans.slice(0, 5);
-  }, [userScans]);
+  const handleCheckout = async () => {
+    if (!currentUser) {
+      window.location.href = "/login";
+      return;
+    }
+    if (!selectedPack.priceId) {
+      toast.error("Pricing not configured — contact support.");
+      return;
+    }
+    setLoadingCheckout(true);
+    try {
+      const res = await fetch("/api/stripe/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          priceId: selectedPack.priceId,
+          userId: currentUser.uid,
+          email: currentUser.email,
+          quantity: 1,
+          metadata: { tier: selectedPack.id },
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to create session");
+      if (data.url) window.location.href = data.url;
+    } catch (err: any) {
+      toast.error(err.message || "Failed to start checkout");
+    } finally {
+      setLoadingCheckout(false);
+    }
+  };
 
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-gray-500">Loading...</div>
+        <div className="flex items-center justify-center min-h-screen bg-[#0a141f]">
+          <div className="text-gray-400">Loading...</div>
         </div>
       </DashboardLayout>
     );
@@ -127,269 +165,115 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 lg:p-8 space-y-6 max-w-full">
-        {/* No credits — show purchase section */}
-        {!hasCredits && (
-          <div className="space-y-6">
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm">
-              <div className="flex items-start gap-4">
-                <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-[#0A1128]">
-                  <FontAwesomeIcon icon={faRocket} className="text-2xl" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-xl text-[#0A1128]">
-                    Buy Credits to Start Scanning
-                  </h3>
-                  <p className="text-gray-600 mt-1">
-                    Purchase scan credits to unlock hosted Nmap, Nuclei, and
-                    OWASP ZAP scanning. Pick a pack below to go straight to
-                    checkout.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {CREDIT_PACKS.map((pack) => (
-                <PricingCard key={pack.name} {...pack} />
-              ))}
-            </div>
+      <Suspense fallback={null}>
+        <PurchaseParamHandler openModal={() => openModal()} />
+      </Suspense>
+
+      <div className="p-6 lg:p-8 space-y-8 max-w-7xl mx-auto bg-[#0a141f] min-h-screen">
+        {/* Page header */}
+        <div>
+          <h1 className="text-3xl font-light text-white mb-1">Dashboard</h1>
+          <p className="text-gray-400">Manage your scans and credits</p>
+        </div>
+
+        {/* Top CTA */}
+        <Link
+          href="/app/scans"
+          className="w-full block bg-gradient-to-br from-[#0366d6] to-[#1a56db] border border-[#0366d6] rounded-xl p-6 shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all text-center"
+        >
+          <div className="p-4 rounded-full bg-white/10 mb-3 inline-block">
+            <FontAwesomeIcon icon={faRocket} className="text-4xl text-white" />
           </div>
-        )}
+          <p className="text-white font-light text-xl mb-1">Launch New Scan</p>
+          <p className="text-white/70 text-sm">
+            Pick a target, choose your scanner
+          </p>
+        </Link>
 
-        {/* Summary grid */}
-        {hasCredits && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-green-50 border border-green-200 text-green-600">
-                  <FontAwesomeIcon icon={faShieldHalved} className="text-2xl" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-lg text-[#0A1128]">
-                    Scan Credits Available
-                  </h3>
-                  <p className="text-gray-600 text-sm">
-                    Nmap: {userData?.scanCredits?.nmap ?? 0} &nbsp;·&nbsp;
-                    Nuclei: {userData?.scanCredits?.nuclei ?? 0} &nbsp;·&nbsp;
-                    ZAP: {userData?.scanCredits?.zap ?? 0}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-purple-50 border border-purple-200 text-purple-600">
-                  <FontAwesomeIcon icon={faChartLine} className="text-2xl" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-lg text-[#0A1128]">
-                    Overall Target Health
-                  </h3>
-                  <div className="flex items-baseline gap-2 mt-1">
-                    <span
-                      className={`text-2xl font-bold ${targetHealth >= 80 ? "text-green-600" : targetHealth >= 50 ? "text-yellow-600" : "text-red-600"}`}
-                    >
-                      {targetHealth}/100
-                    </span>
-                    <span className="text-gray-500 text-sm">
-                      ({targets.length} targets)
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Stats Grid */}
-        {hasCredits && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Nmap Stats */}
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="font-semibold text-[#0A1128]">
-                    Nmap - Network Scanner
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Port scanning and service detection
-                  </p>
-                </div>
-                <div className="text-[#0A1128]">
-                  <FontAwesomeIcon icon={faSatelliteDish} />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-[#0A1128]">
-                    {stats.nmap.remaining}
-                  </span>
-                  <span className="text-gray-500 text-sm">
-                    credits remaining
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500">{stats.nmap.used} used</p>
-              </div>
-            </div>
-
-            {/* Nuclei Stats */}
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="font-semibold text-[#0A1128]">
-                    Nuclei - Vulnerability Assessment
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    CVE detection and security analysis
-                  </p>
-                </div>
-                <div className="text-[#0A1128]">
-                  <FontAwesomeIcon icon={faShieldHalved} />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-[#0A1128]">
-                    {stats.nuclei.remaining}
-                  </span>
-                  <span className="text-gray-500 text-sm">
-                    credits remaining
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500">
-                  {stats.nuclei.used} used
-                </p>
-              </div>
-            </div>
-
-            {/* ZAP Stats */}
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="font-semibold text-[#0A1128]">
-                    OWASP ZAP - Web Application Scanner
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Web vulnerabilities and OWASP Top 10
-                  </p>
-                </div>
-                <div className="text-[#0A1128]">
-                  <FontAwesomeIcon icon={faChartLine} />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-[#0A1128]">
-                    {stats.zap.remaining}
-                  </span>
-                  <span className="text-gray-500 text-sm">
-                    credits remaining
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500">{stats.zap.used} used</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Top up credits */}
-        {hasCredits && (
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm space-y-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-[#0A1128]">
-                <FontAwesomeIcon icon={faCreditCard} className="text-lg" />
-              </div>
-              <div>
-                <h3 className="font-bold text-lg text-[#0A1128]">
-                  Top Up Credits
-                </h3>
-                <p className="text-sm text-gray-600">
-                  Buy more scan credits — goes straight to checkout.
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {CREDIT_PACKS.map((pack) => (
-                <PricingCard key={pack.name} {...pack} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Quick Actions */}
-        {hasCredits && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Link
-              href="/app/scans"
-              className="bg-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"
+        {/* Per-scanner credit cards */}
+        <div className="grid lg:grid-cols-3 gap-6">
+          {SCANNERS.map((s) => (
+            <div
+              key={s.key}
+              className="bg-gradient-to-br from-[#0d1b2e] to-[#0a141f] border border-[#0366d6]/30 rounded-xl p-6 shadow-lg"
             >
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-[#0A1128]">
-                  <FontAwesomeIcon
-                    icon={faSatelliteDish}
-                    className="text-2xl"
+              <div className="flex items-start justify-between mb-5">
+                <div className="h-8 flex items-center">
+                  <Image
+                    src={s.logo}
+                    alt={s.label}
+                    width={s.logoW}
+                    height={s.logoH}
+                    className="object-contain object-left max-h-7 w-auto"
                   />
                 </div>
-                <div>
-                  <h3 className="font-semibold text-lg text-[#0A1128]">
-                    New Scan
-                  </h3>
-                  <p className="text-gray-600 text-sm">
-                    Launch a security scan
-                  </p>
-                </div>
+                <button
+                  onClick={() => openModal()}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0366d6]/10 hover:bg-[#0366d6]/25 border border-[#0366d6]/40 hover:border-[#0366d6] transition-colors text-sm font-medium text-[#58a6ff]"
+                >
+                  Buy Credits
+                  <FontAwesomeIcon icon={faPlus} className="text-xs" />
+                </button>
               </div>
-            </Link>
+              <div>
+                <p className="text-gray-400 text-sm mb-1">{s.description}</p>
+                <p className="text-5xl font-bold text-white mb-1">
+                  {credits[s.key]}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {used[s.key]} used · {credits[s.key]} remaining
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
 
-            <Link
-              href="/app/vulnerabilities"
-              className="bg-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-600">
-                  <FontAwesomeIcon icon={faShieldHalved} className="text-2xl" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg text-[#0A1128]">
-                    Vulnerabilities
-                  </h3>
-                  <p className="text-gray-600 text-sm">
-                    View identified issues
-                  </p>
+        {/* No credits banner */}
+        {!hasCredits && (
+          <div className="bg-gradient-to-r from-[#0366d6]/10 to-[#0366d6]/5 border border-[#0366d6]/30 rounded-xl p-6">
+            <div className="flex items-start gap-4">
+              <div className="p-3 rounded-lg bg-[#0366d6]/20 border border-[#0366d6]/40">
+                <FontAwesomeIcon
+                  icon={faShieldHalved}
+                  className="text-2xl text-[#58a6ff]"
+                />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-xl text-white mb-2">
+                  Purchase Credits to Start Scanning
+                </h3>
+                <p className="text-gray-300 mb-4">
+                  Credits work across all three scanners — Nmap, Nuclei, and
+                  OWASP ZAP. Starting at $10 for 10 scans.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  {CREDIT_PACKS.map((pack) => (
+                    <button
+                      key={pack.id}
+                      onClick={() => openModal(pack)}
+                      className={`px-5 py-2.5 font-semibold rounded-lg transition-colors ${
+                        pack.id === "pro"
+                          ? "bg-[#0366d6] hover:bg-[#1a56db] text-white"
+                          : "bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                      }`}
+                    >
+                      {pack.name} — {pack.credits.toLocaleString()} credits
+                    </button>
+                  ))}
                 </div>
               </div>
-            </Link>
-
-            <Link
-              href="/app/targets"
-              className="bg-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-[#0A1128]">
-                  <FontAwesomeIcon icon={faBullseye} className="text-2xl" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg text-[#0A1128]">
-                    Manage Targets
-                  </h3>
-                  <p className="text-gray-600 text-sm">
-                    Add or edit scan targets
-                  </p>
-                </div>
-              </div>
-            </Link>
+            </div>
           </div>
         )}
 
-        {/* Recent Scans */}
-        {hasCredits && recentScans.length > 0 && (
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-[#0A1128]">Recent Scans</h2>
+        {/* Recent scans */}
+        {recentScans.length > 0 && (
+          <div className="bg-gradient-to-br from-[#0d1b2e] to-[#0a141f] border border-white/10 rounded-xl p-6 shadow-lg">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">Recent Scans</h2>
               <Link
                 href="/app/scans"
-                className="text-[#0A1128] hover:opacity-70 text-sm font-semibold"
+                className="text-[#58a6ff] hover:text-[#79c0ff] text-sm font-semibold transition-colors"
               >
                 View All →
               </Link>
@@ -398,31 +282,179 @@ export default function DashboardPage() {
               {recentScans.map((scan: any) => (
                 <div
                   key={scan.scanId}
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                  className="p-4 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 hover:border-[#0366d6]/30 transition-all flex items-center justify-between"
                 >
                   <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <span className="px-2 py-1 bg-[#0A1128] text-white text-xs font-semibold rounded uppercase">
+                    <div className="flex items-center gap-3 mb-1">
+                      <span className="px-3 py-1 bg-[#0366d6] text-white text-xs font-semibold rounded-full uppercase">
                         {scan.type}
                       </span>
-                      <span className="font-medium text-[#0A1128]">
+                      <span className="font-semibold text-white">
                         {scan.target}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-gray-400">
                       {scan.status === "completed"
-                        ? "Completed"
+                        ? "✓ Completed"
                         : scan.status === "in_progress"
-                          ? "Running..."
-                          : "Queued"}
+                          ? "⏳ Running…"
+                          : "⏸ Queued"}
                     </p>
                   </div>
+                  <Link
+                    href="/app/scans"
+                    className="px-4 py-2 bg-[#0366d6]/20 hover:bg-[#0366d6]/30 text-[#58a6ff] font-semibold rounded-lg border border-[#0366d6]/30 transition-colors text-sm"
+                  >
+                    View
+                  </Link>
                 </div>
               ))}
             </div>
           </div>
         )}
+
+        {/* Empty state */}
+        {recentScans.length === 0 && (
+          <div className="bg-gradient-to-br from-[#0d1b2e] to-[#0a141f] border border-white/10 rounded-xl p-12 text-center">
+            <div className="max-w-md mx-auto">
+              <div className="p-4 rounded-full bg-white/5 inline-flex mb-4">
+                <FontAwesomeIcon
+                  icon={faShieldHalved}
+                  className="text-5xl text-gray-500"
+                />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">
+                No Scans Yet
+              </h3>
+              <p className="text-gray-400 mb-6">
+                Launch your first scan to start identifying vulnerabilities
+                across your infrastructure.
+              </p>
+              <Link
+                href="/app/scans"
+                className="inline-block px-8 py-3 bg-[#0366d6] hover:bg-[#1a56db] text-white font-semibold rounded-lg transition-colors"
+              >
+                Launch First Scan
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Purchase modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#0d1b2e] border border-[#0366d6]/30 rounded-xl p-8 max-w-lg w-full shadow-2xl">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h2 className="text-3xl font-bold text-white mb-1">
+                  Buy Credits
+                </h2>
+                <p className="text-gray-400">
+                  Works across Nmap, Nuclei, and ZAP
+                </p>
+              </div>
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <FontAwesomeIcon
+                  icon={faXmark}
+                  className="text-gray-400 hover:text-white text-xl"
+                />
+              </button>
+            </div>
+
+            {/* Pack selector */}
+            <div className="space-y-3 mb-6">
+              {CREDIT_PACKS.map((pack) => (
+                <button
+                  key={pack.id}
+                  onClick={() => setSelectedPack(pack)}
+                  className={`w-full flex items-center justify-between p-4 rounded-lg border transition-all ${
+                    selectedPack.id === pack.id
+                      ? "border-[#0366d6] bg-[#0366d6]/15"
+                      : "border-white/10 bg-white/5 hover:bg-white/10"
+                  }`}
+                >
+                  <div className="text-left">
+                    <p className="font-bold text-white">{pack.name}</p>
+                    <p className="text-sm text-gray-400">
+                      {pack.credits.toLocaleString()} scan credits
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-black text-white">
+                      ${pack.price}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      ${(pack.price / pack.credits).toFixed(2)}/scan
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* What's included */}
+            <div className="bg-white/5 border border-[#0366d6]/20 rounded-lg p-5 mb-6">
+              <p className="text-xs text-gray-400 font-semibold uppercase mb-3">
+                Included with every pack:
+              </p>
+              <ul className="space-y-2 text-sm text-gray-300">
+                {[
+                  "Hosted Nmap, Nuclei & OWASP ZAP scanning",
+                  "Mix scanner types freely",
+                  "PDF report export",
+                  "Credits never expire",
+                ].map((f) => (
+                  <li key={f} className="flex items-center gap-2">
+                    <span className="text-[#58a6ff]">✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <button
+              onClick={handleCheckout}
+              disabled={loadingCheckout}
+              className="w-full py-4 bg-[#0366d6] hover:bg-[#1a56db] text-white font-bold rounded-lg text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            >
+              {loadingCheckout
+                ? "Processing…"
+                : `Proceed to Checkout — $${selectedPack.price}`}
+            </button>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
+}
+
+/* ─── URL param handler ──────────────────────────────────── */
+
+function PurchaseParamHandler({ openModal }: { openModal: () => void }) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  useEffect(() => {
+    const success = searchParams.get("success");
+    const canceled = searchParams.get("canceled");
+
+    if (success === "true") {
+      toast.success("Payment successful! Your credits will appear shortly.", {
+        duration: 6000,
+      });
+      router.replace("/app/dashboard", { scroll: false });
+    } else if (canceled === "true") {
+      toast("Purchase canceled — no charge was made.", {
+        icon: "ℹ️",
+        duration: 5000,
+      });
+      router.replace("/app/dashboard", { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  return null;
 }
