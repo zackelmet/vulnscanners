@@ -179,7 +179,7 @@ export default function DashboardPage() {
         {/* Top CTA */}
         <Link
           href="/app/scans"
-          className="w-full block bg-gradient-to-br from-[#0366d6] to-[#1a56db] border border-[#0366d6] rounded-xl p-6 shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all text-center"
+          className="w-full block bg-gradient-to-br from-[#06b6d4] to-[#0891b2] border border-[#06b6d4] rounded-xl p-6 shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all text-center"
         >
           <div className="p-4 rounded-full bg-white/10 mb-3 inline-block">
             <FontAwesomeIcon icon={faRocket} className="text-4xl text-white" />
@@ -195,7 +195,7 @@ export default function DashboardPage() {
           {SCANNERS.map((s) => (
             <div
               key={s.key}
-              className="bg-gradient-to-br from-[#0d1b2e] to-[#0a141f] border border-[#0366d6]/30 rounded-xl p-6 shadow-lg"
+              className="bg-gradient-to-br from-[#0d1b2e] to-[#0a141f] border border-[#06b6d4]/30 rounded-xl p-6 shadow-lg"
             >
               <div className="flex items-start justify-between mb-5">
                 <div className="h-8 flex items-center">
@@ -209,7 +209,7 @@ export default function DashboardPage() {
                 </div>
                 <button
                   onClick={() => openModal()}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0366d6]/10 hover:bg-[#0366d6]/25 border border-[#0366d6]/40 hover:border-[#0366d6] transition-colors text-sm font-medium text-[#58a6ff]"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#06b6d4]/10 hover:bg-[#06b6d4]/25 border border-[#06b6d4]/40 hover:border-[#06b6d4] transition-colors text-sm font-medium text-[#22d3ee]"
                 >
                   Buy Credits
                   <FontAwesomeIcon icon={faPlus} className="text-xs" />
@@ -230,12 +230,12 @@ export default function DashboardPage() {
 
         {/* No credits banner */}
         {!hasCredits && (
-          <div className="bg-gradient-to-r from-[#0366d6]/10 to-[#0366d6]/5 border border-[#0366d6]/30 rounded-xl p-6">
+          <div className="bg-gradient-to-r from-[#06b6d4]/10 to-[#06b6d4]/5 border border-[#06b6d4]/30 rounded-xl p-6">
             <div className="flex items-start gap-4">
-              <div className="p-3 rounded-lg bg-[#0366d6]/20 border border-[#0366d6]/40">
+              <div className="p-3 rounded-lg bg-[#06b6d4]/20 border border-[#06b6d4]/40">
                 <FontAwesomeIcon
                   icon={faShieldHalved}
-                  className="text-2xl text-[#58a6ff]"
+                  className="text-2xl text-[#22d3ee]"
                 />
               </div>
               <div className="flex-1">
@@ -253,7 +253,7 @@ export default function DashboardPage() {
                       onClick={() => openModal(pack)}
                       className={`px-5 py-2.5 font-semibold rounded-lg transition-colors ${
                         pack.id === "pro"
-                          ? "bg-[#0366d6] hover:bg-[#1a56db] text-white"
+                          ? "bg-[#06b6d4] hover:bg-[#0891b2] text-[#04141d] hover:text-white"
                           : "bg-white/10 hover:bg-white/20 text-white border border-white/20"
                       }`}
                     >
@@ -273,7 +273,7 @@ export default function DashboardPage() {
               <h2 className="text-2xl font-bold text-white">Recent Scans</h2>
               <Link
                 href="/app/scans"
-                className="text-[#58a6ff] hover:text-[#79c0ff] text-sm font-semibold transition-colors"
+                className="text-[#22d3ee] hover:text-[#67e8f9] text-sm font-semibold transition-colors"
               >
                 View All →
               </Link>
@@ -282,11 +282,11 @@ export default function DashboardPage() {
               {recentScans.map((scan: any) => (
                 <div
                   key={scan.scanId}
-                  className="p-4 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 hover:border-[#0366d6]/30 transition-all flex items-center justify-between"
+                  className="p-4 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 hover:border-[#06b6d4]/30 transition-all flex items-center justify-between"
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-1">
-                      <span className="px-3 py-1 bg-[#0366d6] text-white text-xs font-semibold rounded-full uppercase">
+                      <span className="px-3 py-1 bg-[#06b6d4] text-[#04141d] text-xs font-semibold rounded-full uppercase">
                         {scan.type}
                       </span>
                       <span className="font-semibold text-white">
@@ -303,7 +303,7 @@ export default function DashboardPage() {
                   </div>
                   <Link
                     href="/app/scans"
-                    className="px-4 py-2 bg-[#0366d6]/20 hover:bg-[#0366d6]/30 text-[#58a6ff] font-semibold rounded-lg border border-[#0366d6]/30 transition-colors text-sm"
+                    className="px-4 py-2 bg-[#06b6d4]/20 hover:bg-[#06b6d4]/30 text-[#22d3ee] font-semibold rounded-lg border border-[#06b6d4]/30 transition-colors text-sm"
                   >
                     View
                   </Link>
@@ -332,7 +332,7 @@ export default function DashboardPage() {
               </p>
               <Link
                 href="/app/scans"
-                className="inline-block px-8 py-3 bg-[#0366d6] hover:bg-[#1a56db] text-white font-semibold rounded-lg transition-colors"
+                className="inline-block px-8 py-3 bg-[#06b6d4] hover:bg-[#0891b2] text-[#04141d] hover:text-white font-semibold rounded-lg transition-colors shadow-[0_8px_24px_rgba(6,182,212,0.25)]"
               >
                 Launch First Scan
               </Link>
@@ -344,7 +344,7 @@ export default function DashboardPage() {
       {/* Purchase modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0d1b2e] border border-[#0366d6]/30 rounded-xl p-8 max-w-lg w-full shadow-2xl">
+          <div className="bg-[#0d1b2e] border border-[#06b6d4]/30 rounded-xl p-8 max-w-lg w-full shadow-2xl">
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h2 className="text-3xl font-bold text-white mb-1">
@@ -373,7 +373,7 @@ export default function DashboardPage() {
                   onClick={() => setSelectedPack(pack)}
                   className={`w-full flex items-center justify-between p-4 rounded-lg border transition-all ${
                     selectedPack.id === pack.id
-                      ? "border-[#0366d6] bg-[#0366d6]/15"
+                      ? "border-[#06b6d4] bg-[#06b6d4]/15"
                       : "border-white/10 bg-white/5 hover:bg-white/10"
                   }`}
                 >
@@ -396,7 +396,7 @@ export default function DashboardPage() {
             </div>
 
             {/* What's included */}
-            <div className="bg-white/5 border border-[#0366d6]/20 rounded-lg p-5 mb-6">
+            <div className="bg-white/5 border border-[#06b6d4]/20 rounded-lg p-5 mb-6">
               <p className="text-xs text-gray-400 font-semibold uppercase mb-3">
                 Included with every pack:
               </p>
@@ -408,7 +408,7 @@ export default function DashboardPage() {
                   "Credits never expire",
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2">
-                    <span className="text-[#58a6ff]">✓</span>
+                    <span className="text-[#22d3ee]">✓</span>
                     {f}
                   </li>
                 ))}
@@ -418,7 +418,7 @@ export default function DashboardPage() {
             <button
               onClick={handleCheckout}
               disabled={loadingCheckout}
-              className="w-full py-4 bg-[#0366d6] hover:bg-[#1a56db] text-white font-bold rounded-lg text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              className="w-full py-4 bg-[#06b6d4] hover:bg-[#0891b2] text-[#04141d] hover:text-white font-bold rounded-lg text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_8px_24px_rgba(6,182,212,0.3)]"
             >
               {loadingCheckout
                 ? "Processing…"

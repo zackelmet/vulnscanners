@@ -135,34 +135,34 @@ export default function TargetsPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 lg:p-8 space-y-6 max-w-full">
+      <div className="p-6 lg:p-8 space-y-6 max-w-full bg-[#0a141f] min-h-screen">
         <div>
-          <h1 className="text-3xl font-bold text-[#0A1128]">Targets</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-light text-white">Targets</h1>
+          <p className="text-gray-400 mt-1">
             Manage infrastructure, domains, and APIs to scan.
           </p>
         </div>
 
         {/* Create Target Form */}
         <form
-          className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm space-y-4"
+          className="bg-gradient-to-br from-[#0d1b2e] to-[#0a141f] border border-[#1a2d44] rounded-xl p-6 shadow-lg space-y-4"
           onSubmit={handleSubmit}
         >
-          <h2 className="text-xl font-semibold text-[#0A1128]">Add Target</h2>
+          <h2 className="text-xl font-semibold text-white">Add Target</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <label className="flex flex-col">
-              <span className="text-sm font-semibold text-gray-700">Name</span>
+              <span className="text-sm font-semibold text-gray-300">Name</span>
               <input
                 type="text"
                 required
                 value={formState.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
                 placeholder="Production API"
-                className="mt-2 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#0A1128]"
+                className="mt-2 px-3 py-2 border border-[#1a2d44] rounded-lg bg-white/5 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#06b6d4] focus:border-[#06b6d4]"
               />
             </label>
             <label className="flex flex-col">
-              <span className="text-sm font-semibold text-gray-700">
+              <span className="text-sm font-semibold text-gray-300">
                 Value (IP / URL / Domain)
               </span>
               <input
@@ -171,25 +171,31 @@ export default function TargetsPage() {
                 value={formState.value}
                 onChange={(e) => handleInputChange("value", e.target.value)}
                 placeholder="192.168.1.1 or api.example.com"
-                className="mt-2 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1128]"
+                className="mt-2 px-3 py-2 border border-[#1a2d44] rounded-lg bg-white/5 text-white placeholder:text-gray-500 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-[#06b6d4] focus:border-[#06b6d4]"
               />
             </label>
             <label className="flex flex-col">
-              <span className="text-sm font-semibold text-gray-700">Type</span>
+              <span className="text-sm font-semibold text-gray-300">Type</span>
               <select
                 value={formState.type}
                 onChange={(e) => handleInputChange("type", e.target.value)}
-                className="mt-2 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#0A1128]"
+                className="mt-2 px-3 py-2 border border-[#1a2d44] rounded-lg bg-white/5 text-white focus:outline-none focus:ring-2 focus:ring-[#06b6d4] focus:border-[#06b6d4]"
               >
-                <option value="domain">Domain Name</option>
-                <option value="ip">IP Address</option>
-                <option value="url">URL (e.g. for ZAP)</option>
+                <option value="domain" className="bg-[#0d1b2e]">
+                  Domain Name
+                </option>
+                <option value="ip" className="bg-[#0d1b2e]">
+                  IP Address
+                </option>
+                <option value="url" className="bg-[#0d1b2e]">
+                  URL (e.g. for ZAP)
+                </option>
               </select>
             </label>
           </div>
           <div>
             <label className="flex flex-col">
-              <span className="text-sm font-semibold text-gray-700">
+              <span className="text-sm font-semibold text-gray-300">
                 Tags (comma separated)
               </span>
               <input
@@ -197,7 +203,7 @@ export default function TargetsPage() {
                 value={formState.tags}
                 onChange={(e) => handleInputChange("tags", e.target.value)}
                 placeholder="production, api"
-                className="mt-2 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#0A1128]"
+                className="mt-2 px-3 py-2 border border-[#1a2d44] rounded-lg bg-white/5 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#06b6d4] focus:border-[#06b6d4]"
               />
             </label>
           </div>
@@ -205,14 +211,14 @@ export default function TargetsPage() {
             <button
               type="submit"
               disabled={saving || !formState.value.trim()}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#00FED9] text-[#0A1128] font-semibold rounded-lg hover:bg-[#00D4B8] transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#06b6d4] text-[#04141d] hover:text-white font-semibold rounded-lg hover:bg-[#0891b2] transition-colors disabled:opacity-50 shadow-[0_8px_24px_rgba(6,182,212,0.2)]"
             >
               <FontAwesomeIcon icon={faPlus} />{" "}
               {saving ? "Saving…" : "Save target"}
             </button>
             {feedback && (
               <span
-                className={`text-sm ${feedback.type === "error" ? "text-red-600" : "text-green-600"}`}
+                className={`text-sm ${feedback.type === "error" ? "text-red-400" : "text-green-400"}`}
               >
                 {feedback.message}
               </span>
@@ -221,19 +227,29 @@ export default function TargetsPage() {
         </form>
 
         {/* Data Table */}
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-gradient-to-br from-[#0d1b2e] to-[#0a141f] border border-[#1a2d44] rounded-xl shadow-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200 text-sm text-gray-600">
-                  <th className="p-4 font-semibold">Target</th>
-                  <th className="p-4 font-semibold">Type</th>
-                  <th className="p-4 font-semibold">Health Score</th>
-                  <th className="p-4 font-semibold">Tags</th>
-                  <th className="p-4 font-semibold text-right">Actions</th>
+                <tr className="bg-white/5 border-b border-[#1a2d44] text-sm text-gray-400">
+                  <th className="p-4 font-semibold uppercase tracking-wide text-xs">
+                    Target
+                  </th>
+                  <th className="p-4 font-semibold uppercase tracking-wide text-xs">
+                    Type
+                  </th>
+                  <th className="p-4 font-semibold uppercase tracking-wide text-xs">
+                    Health Score
+                  </th>
+                  <th className="p-4 font-semibold uppercase tracking-wide text-xs">
+                    Tags
+                  </th>
+                  <th className="p-4 font-semibold uppercase tracking-wide text-xs text-right">
+                    Actions
+                  </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[#1a2d44]">
                 {loading ? (
                   <tr>
                     <td colSpan={5} className="p-6 text-center text-gray-500">
@@ -250,11 +266,11 @@ export default function TargetsPage() {
                   targets.map((t) => (
                     <tr
                       key={t.id}
-                      className="hover:bg-gray-50 transition-colors"
+                      className="hover:bg-white/5 transition-colors"
                     >
                       <td className="p-4">
                         <div className="flex flex-col">
-                          <span className="font-semibold text-[#0A1128]">
+                          <span className="font-semibold text-white">
                             {t.name}
                           </span>
                           <span className="text-sm font-mono text-gray-500">
@@ -263,7 +279,7 @@ export default function TargetsPage() {
                         </div>
                       </td>
                       <td className="p-4">
-                        <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700">
+                        <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md text-xs font-semibold bg-[#06b6d4]/15 text-[#22d3ee] border border-[#06b6d4]/30">
                           <FontAwesomeIcon icon={getTargetIcon(t.type)} />
                           {t.type.toUpperCase()}
                         </span>
@@ -274,11 +290,11 @@ export default function TargetsPage() {
                             icon={faHeartPulse}
                             className={
                               t.healthScore === 100
-                                ? "text-green-500"
-                                : "text-yellow-500"
+                                ? "text-green-400"
+                                : "text-yellow-400"
                             }
                           />
-                          <span className="font-semibold text-gray-700">
+                          <span className="font-semibold text-gray-200">
                             {t.healthScore ?? 100}/100
                           </span>
                         </div>
@@ -288,7 +304,7 @@ export default function TargetsPage() {
                           {t.tags?.map((tag) => (
                             <span
                               key={tag}
-                              className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full"
+                              className="px-2 py-0.5 bg-white/5 text-gray-300 text-xs rounded-full border border-white/10"
                             >
                               {tag}
                             </span>
@@ -297,7 +313,7 @@ export default function TargetsPage() {
                       </td>
                       <td className="p-4 text-right">
                         <button
-                          className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                          className="p-2 text-gray-500 hover:text-red-400 transition-colors"
                           onClick={() => handleDelete(t.id)}
                         >
                           <FontAwesomeIcon icon={faTrash} />

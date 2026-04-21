@@ -78,23 +78,23 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100 flex overflow-hidden">
+    <div className="min-h-screen bg-[#0a141f] flex overflow-hidden">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black bg-opacity-60 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-[#0A1128] text-white transform transition-transform duration-300 ease-in-out ${
+        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-[#0b1826] text-white transform transition-transform duration-300 ease-in-out ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        } flex flex-col`}
+        } flex flex-col border-r border-[#1a2d44]`}
       >
         {/* Logo */}
-        <div className="p-6 border-b border-gray-700">
+        <div className="p-6 border-b border-[#1a2d44]">
           <Link href="/" className="flex items-center gap-3">
             <Image
               src="/HA-logo.png"
@@ -117,8 +117,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 href={item.href}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                   isActive
-                    ? "bg-[#00FED9] bg-opacity-10 text-[#00FED9] font-semibold"
-                    : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                    ? "bg-[#06b6d4]/10 text-[#22d3ee] font-semibold border border-[#06b6d4]/30"
+                    : "text-gray-300 hover:bg-white/5 hover:text-white border border-transparent"
                 }`}
                 onClick={() => setSidebarOpen(false)}
               >
@@ -137,7 +137,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <a
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-3 px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors text-sm"
+                className="flex items-center gap-3 px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-sm"
               >
                 <FontAwesomeIcon icon={item.icon} className="w-4 h-4" />
                 {item.label}
@@ -147,14 +147,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
           {/* Account */}
           <div
-            className="relative border-t border-gray-700 pt-4"
+            className="relative border-t border-[#1a2d44] pt-4"
             ref={accountMenuRef}
           >
             <button
               onClick={() => setAccountMenuOpen(!accountMenuOpen)}
-              className="w-full flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-white/5 transition-colors"
             >
-              <div className="w-8 h-8 rounded-full bg-[#00FED9] text-[#0A1128] font-bold flex items-center justify-center text-sm">
+              <div className="w-8 h-8 rounded-full bg-[#06b6d4] text-[#04141d] font-bold flex items-center justify-center text-sm">
                 {getInitials(currentUser?.email)}
               </div>
               <div className="flex-1 overflow-hidden text-left">
@@ -170,11 +170,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
             {/* Account Dropdown Menu */}
             {accountMenuOpen && (
-              <div className="absolute bottom-full left-4 right-4 mb-2 bg-gray-800 rounded-lg shadow-xl border border-gray-700 overflow-hidden">
+              <div className="absolute bottom-full left-4 right-4 mb-2 bg-[#13253a] rounded-lg shadow-xl border border-[#1a2d44] overflow-hidden">
                 <div className="py-1">
                   <Link
                     href="/app/settings"
-                    className="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                    className="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
                     onClick={() => {
                       setAccountMenuOpen(false);
                       setSidebarOpen(false);
@@ -188,7 +188,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                       handleLogout();
                       setAccountMenuOpen(false);
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:bg-gray-700 hover:text-red-300 transition-colors"
+                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:bg-white/5 hover:text-red-300 transition-colors"
                   >
                     <FontAwesomeIcon icon={faSignOutAlt} className="w-4 h-4" />
                     Logout
@@ -201,7 +201,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Upgrade button */}
           <Link
             href="/#pricing"
-            className="block w-full px-4 py-3 bg-[#00FED9] text-[#0A1128] font-semibold rounded-lg text-center hover:bg-[#00D4B8] transition-colors"
+            className="block w-full px-4 py-3 bg-[#06b6d4] text-[#04141d] font-semibold rounded-lg text-center hover:bg-[#0891b2] hover:text-white transition-colors shadow-[0_8px_24px_rgba(6,182,212,0.25)]"
           >
             <FontAwesomeIcon icon={faRocket} className="mr-2" />
             Upgrade Plan
@@ -212,10 +212,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
         {/* Mobile header with hamburger */}
-        <header className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-30">
+        <header className="lg:hidden bg-[#0b1826] border-b border-[#1a2d44] px-4 py-3 flex items-center justify-between sticky top-0 z-30">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 text-gray-600 hover:text-gray-900"
+            className="p-2 text-gray-300 hover:text-white"
           >
             <FontAwesomeIcon icon={faBars} className="w-6 h-6" />
           </button>
@@ -227,7 +227,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               height={24}
               className="w-6 h-6"
             />
-            <span className="font-bold text-[#0A1128]">VulnScanners</span>
+            <span className="font-bold text-white">VulnScanners</span>
           </Link>
           <div className="w-10" /> {/* Spacer for centering */}
         </header>

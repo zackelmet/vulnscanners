@@ -63,66 +63,78 @@ export default function VulnerabilitiesPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 lg:p-8 space-y-6 max-w-full">
+      <div className="p-6 lg:p-8 space-y-6 max-w-full bg-[#0a141f] min-h-screen">
         <div>
-          <h1 className="text-3xl font-bold text-[#0A1128]">
+          <h1 className="text-3xl font-light text-white">
             Open Vulnerabilities
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-gray-400 mt-1">
             Review active findings mapped across all your scan targets.
           </p>
         </div>
 
         {/* Filters */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex flex-col sm:flex-row items-center gap-4">
-          <div className="flex items-center gap-2 text-gray-600 font-semibold text-sm">
-            <FontAwesomeIcon icon={faFilter} />
+        <div className="bg-gradient-to-br from-[#0d1b2e] to-[#0a141f] border border-[#1a2d44] rounded-xl p-4 shadow-lg flex flex-col sm:flex-row items-center gap-4">
+          <div className="flex items-center gap-2 text-gray-300 font-semibold text-sm">
+            <FontAwesomeIcon icon={faFilter} className="text-[#22d3ee]" />
             Filters:
           </div>
           <select
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#00FED9]"
+            className="px-3 py-2 border border-[#1a2d44] rounded-lg text-sm bg-white/5 text-white focus:outline-none focus:ring-2 focus:ring-[#06b6d4] focus:border-[#06b6d4]"
             value={filterSeverity}
             onChange={(e) => setFilterSeverity(e.target.value)}
           >
-            <option value="all">All Severities</option>
-            <option value="critical">Critical</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
+            <option value="all" className="bg-[#0d1b2e]">
+              All Severities
+            </option>
+            <option value="critical" className="bg-[#0d1b2e]">
+              Critical
+            </option>
+            <option value="high" className="bg-[#0d1b2e]">
+              High
+            </option>
+            <option value="medium" className="bg-[#0d1b2e]">
+              Medium
+            </option>
+            <option value="low" className="bg-[#0d1b2e]">
+              Low
+            </option>
           </select>
           <select
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#00FED9]"
+            className="px-3 py-2 border border-[#1a2d44] rounded-lg text-sm bg-white/5 text-white focus:outline-none focus:ring-2 focus:ring-[#06b6d4] focus:border-[#06b6d4]"
             value={filterTarget}
             onChange={(e) => setFilterTarget(e.target.value)}
           >
-            <option value="all">All Targets</option>
+            <option value="all" className="bg-[#0d1b2e]">
+              All Targets
+            </option>
             {uniqueTargets.map(([id, name]) => (
-              <option key={id} value={id}>
+              <option key={id} value={id} className="bg-[#0d1b2e]">
                 {name}
               </option>
             ))}
           </select>
 
-          <div className="ml-auto text-sm text-gray-500 font-semibold bg-gray-100 px-3 py-1.5 rounded-lg border border-gray-200">
+          <div className="ml-auto text-sm text-[#22d3ee] font-semibold bg-[#06b6d4]/10 px-3 py-1.5 rounded-lg border border-[#06b6d4]/30">
             {filteredVulns.length} Results
           </div>
         </div>
 
         {/* List */}
         {loading ? (
-          <div className="flex justify-center py-20 text-gray-500">
+          <div className="flex justify-center py-20 text-gray-400">
             Loading your vulnerabilities...
           </div>
         ) : filteredVulns.length === 0 ? (
-          <div className="text-center py-20 bg-gray-50 border border-gray-200 rounded-xl shadow-sm">
+          <div className="text-center py-20 bg-gradient-to-br from-[#0d1b2e] to-[#0a141f] border border-[#1a2d44] rounded-xl shadow-lg">
             <FontAwesomeIcon
               icon={faShieldVirus}
-              className="text-6xl text-gray-300 mb-4"
+              className="text-6xl text-gray-600 mb-4"
             />
-            <h3 className="text-xl font-bold text-[#0A1128]">
+            <h3 className="text-xl font-bold text-white">
               No Vulnerabilities Found
             </h3>
-            <p className="text-gray-600">
+            <p className="text-gray-400">
               Great job! Your selected targets are secure. Try running a new
               scan.
             </p>
