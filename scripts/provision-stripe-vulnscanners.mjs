@@ -37,19 +37,19 @@ const products = [
     key: "ESSENTIAL",
     name: "Vulnscanners Essential Credits",
     unit_amount: 1000, // $10
-    credits: { nmap: "1", nuclei: "1", zap: "1" },
+    credits: { nmap: "10", nuclei: "10", zap: "10" },
   },
   {
     key: "PRO",
     name: "Vulnscanners Pro Credits",
     unit_amount: 5000, // $50
-    credits: { nmap: "5", nuclei: "5", zap: "5" },
+    credits: { nmap: "100", nuclei: "100", zap: "100" },
   },
   {
     key: "SCALE",
     name: "Vulnscanners Scale Credits",
     unit_amount: 20000, // $200
-    credits: { nmap: "20", nuclei: "20", zap: "20" },
+    credits: { nmap: "1000", nuclei: "1000", zap: "1000" },
   },
 ];
 

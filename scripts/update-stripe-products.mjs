@@ -19,9 +19,9 @@ const priceMap = {
 };
 
 const defaultCredits = {
-  essential: { nmap: "1", nuclei: "1", zap: "1" },
-  pro: { nmap: "5", nuclei: "5", zap: "5" },
-  scale: { nmap: "20", nuclei: "20", zap: "20" },
+  essential: { nmap: "10", nuclei: "10", zap: "10" },
+  pro: { nmap: "100", nuclei: "100", zap: "100" },
+  scale: { nmap: "1000", nuclei: "1000", zap: "1000" },
 };
 
 async function updatePrice(id, metadata) {
