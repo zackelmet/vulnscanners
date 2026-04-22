@@ -101,7 +101,7 @@ const SCANNERS = [
 const FAQ = [
   {
     q: "Do I need to install anything?",
-    a: "No. Every scan runs on our hosted infrastructure. You provide a target; we handle the engine, templates, rate-limiting, and reporting.",
+    a: "No. Every scan runs on our hosted infrastructure. You provide a target; we handle the engine, templates, updating, and reporting.",
   },
   {
     q: "Whose targets can I scan?",

@@ -1,22 +1,34 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 const CITIES = [
-  { n: "San Francisco", lat: 37.7, lon: -122.4 },
-  { n: "New York", lat: 40.7, lon: -74.0 },
-  { n: "São Paulo", lat: -23.5, lon: -46.6 },
-  { n: "London", lat: 51.5, lon: -0.1 },
-  { n: "Frankfurt", lat: 50.1, lon: 8.7 },
-  { n: "Lagos", lat: 6.5, lon: 3.4 },
-  { n: "Dubai", lat: 25.2, lon: 55.3 },
-  { n: "Mumbai", lat: 19.1, lon: 72.9 },
-  { n: "Singapore", lat: 1.3, lon: 103.8 },
-  { n: "Tokyo", lat: 35.7, lon: 139.7 },
-  { n: "Sydney", lat: -33.9, lon: 151.2 },
-  { n: "Toronto", lat: 43.7, lon: -79.4 },
-  { n: "Paris", lat: 48.9, lon: 2.3 },
-  { n: "Seoul", lat: 37.6, lon: 126.9 },
+  { lat: 37.7, lon: -122.4 },
+  { lat: 40.7, lon: -74.0 },
+  { lat: -23.5, lon: -46.6 },
+  { lat: 51.5, lon: -0.1 },
+  { lat: 50.1, lon: 8.7 },
+  { lat: 6.5, lon: 3.4 },
+  { lat: 25.2, lon: 55.3 },
+  { lat: 19.1, lon: 72.9 },
+  { lat: 1.3, lon: 103.8 },
+  { lat: 35.7, lon: 139.7 },
+  { lat: -33.9, lon: 151.2 },
+  { lat: 43.7, lon: -79.4 },
+  { lat: 48.9, lon: 2.3 },
+  { lat: 37.6, lon: 126.9 },
+  { lat: 55.8, lon: 37.6 },
+  { lat: -26.2, lon: 28.0 },
+  { lat: 30.0, lon: 31.2 },
+  { lat: 39.9, lon: 116.4 },
+  { lat: 19.4, lon: -99.1 },
+  { lat: 34.0, lon: -118.2 },
+  { lat: 41.0, lon: 29.0 },
+  { lat: -34.6, lon: -58.4 },
+  { lat: 14.1, lon: -87.2 },
+  { lat: 59.9, lon: 10.7 },
+  { lat: 52.5, lon: 13.4 },
+  { lat: 45.5, lon: -73.6 },
 ];
 
 interface Props {
@@ -41,17 +53,9 @@ function latLonToVec3(
   );
 }
 
-export default function GlobeCanvas({
-  wrapClassName,
-  canvasClassName,
-  tickerClassName,
-  dotClassName,
-}: Props) {
+export default function GlobeCanvas({ wrapClassName, canvasClassName }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const [ticker, setTicker] = useState(
-    "scanning · San Francisco → Tokyo · London → Singapore",
-  );
 
   useEffect(() => {
     if (!canvasRef.current || !wrapRef.current) return;
@@ -68,7 +72,6 @@ export default function GlobeCanvas({
       const canvas = canvasRef.current;
       const wrap = wrapRef.current;
 
-      // ── Renderer ──────────────────────────────────────────────────
       const renderer = new THREE.WebGLRenderer({
         canvas,
         antialias: true,
@@ -88,40 +91,61 @@ export default function GlobeCanvas({
         camera.updateProjectionMatrix();
       }
 
-      // ── Earth group ───────────────────────────────────────────────
       const earth = new THREE.Group();
       scene.add(earth);
 
-      // Lighting
-      scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-      const key = new THREE.DirectionalLight(0xfff0e0, 1.35);
+      // Soft neutral lighting for a monochrome look
+      scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+      const key = new THREE.DirectionalLight(0xffffff, 1.1);
       key.position.set(3, 2, 2);
       scene.add(key);
-      const fill = new THREE.DirectionalLight(0x3060a0, 0.25);
+      const fill = new THREE.DirectionalLight(0x8899aa, 0.3);
       fill.position.set(-2, -1, -1);
       scene.add(fill);
 
-      // ── Texture load ──────────────────────────────────────────────
+      // Load texture — desaturate via shader
       const loader = new THREE.TextureLoader();
       const [dayTex, bumpTex] = await Promise.all([
         loader.loadAsync("/textures/earth-blue-marble.jpg"),
         loader.loadAsync("/textures/earth-topology.png"),
       ]);
 
+      // Grayscale + slightly darkened earth via custom shader
       earth.add(
         new THREE.Mesh(
           new THREE.SphereGeometry(1.0, 64, 64),
-          new THREE.MeshPhongMaterial({
-            map: dayTex,
-            bumpMap: bumpTex,
-            bumpScale: 0.06,
-            specular: new THREE.Color(0x224466),
-            shininess: 14,
+          new THREE.ShaderMaterial({
+            uniforms: {
+              map: { value: dayTex },
+              bumpMap: { value: bumpTex },
+            },
+            vertexShader: `
+              varying vec2 vUv;
+              varying vec3 vNormal;
+              void main() {
+                vUv    = uv;
+                vNormal = normalize(normalMatrix * normal);
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+              }`,
+            fragmentShader: `
+              uniform sampler2D map;
+              varying vec2 vUv;
+              varying vec3 vNormal;
+              void main() {
+                vec4  col  = texture2D(map, vUv);
+                float lum  = dot(col.rgb, vec3(0.299, 0.587, 0.114));
+                // remap: dark oceans → near-black, land → mid-gray
+                float gray = lum * 0.55 + 0.04;
+                // subtle diffuse shading
+                float diff = max(0.0, dot(vNormal, normalize(vec3(1.0, 0.8, 0.8))));
+                gray = gray * (0.55 + 0.45 * diff);
+                gl_FragColor = vec4(vec3(gray), 1.0);
+              }`,
           }),
         ),
       );
 
-      // Subtle grid overlay
+      // Faint grid overlay
       earth.add(
         new THREE.Mesh(
           new THREE.SphereGeometry(1.004, 36, 24),
@@ -129,7 +153,7 @@ export default function GlobeCanvas({
             color: 0x4493f8,
             wireframe: true,
             transparent: true,
-            opacity: 0.055,
+            opacity: 0.06,
           }),
         ),
       );
@@ -137,12 +161,12 @@ export default function GlobeCanvas({
       // Atmosphere halo
       scene.add(
         new THREE.Mesh(
-          new THREE.SphereGeometry(1.14, 48, 48),
+          new THREE.SphereGeometry(1.13, 48, 48),
           new THREE.ShaderMaterial({
             transparent: true,
             blending: THREE.AdditiveBlending,
             side: THREE.BackSide,
-            uniforms: { c: { value: new THREE.Color(0x2a88ff) } },
+            uniforms: { c: { value: new THREE.Color(0x4493f8) } },
             vertexShader: `
               varying vec3 vN;
               void main() {
@@ -154,7 +178,7 @@ export default function GlobeCanvas({
               varying vec3 vN;
               void main() {
                 float i = pow(0.72 - dot(vN, vec3(0.0,0.0,1.0)), 2.6);
-                gl_FragColor = vec4(c,1.0) * i * 0.85;
+                gl_FragColor = vec4(c,1.0) * i * 0.9;
               }`,
           }),
         ),
@@ -163,6 +187,7 @@ export default function GlobeCanvas({
       // ── Scan-arc system ───────────────────────────────────────────
       type V3 = InstanceType<typeof THREE.Vector3>;
       type Mat = InstanceType<typeof THREE.MeshBasicMaterial>;
+      type LineMat = InstanceType<typeof THREE.LineBasicMaterial>;
       type ArcEntry = {
         head: InstanceType<typeof THREE.Mesh>;
         pts: V3[];
@@ -170,13 +195,15 @@ export default function GlobeCanvas({
         ttl: number;
       };
       const liveArcs: ArcEntry[] = [];
-      const arcColors = [0x4493f8, 0x22d3ee, 0xa78bfa, 0x34d399];
+
+      // Muted accent colors — white/cyan/light-blue so they pop on the B&W globe
+      const arcColors = [0xffffff, 0x88ccff, 0x4493f8, 0x22d3ee, 0xaaaaaa];
 
       function buildArcPoints(
         from: { lat: number; lon: number },
         to: { lat: number; lon: number },
-        segs = 64,
-        alt = 0.36,
+        segs = 56,
+        alt = 0.32,
       ): V3[] {
         const vFrom = latLonToVec3(THREE, from.lat, from.lon, 1.0);
         const vTo = latLonToVec3(THREE, to.lat, to.lon, 1.0);
@@ -196,76 +223,52 @@ export default function GlobeCanvas({
 
         const color = arcColors[Math.floor(Math.random() * arcColors.length)];
         const pts = buildArcPoints(a, b);
+        const ttl = 1800 + Math.random() * 1000;
 
-        // Faint full-arc trail
         const trailGeo = new THREE.BufferGeometry().setFromPoints(pts);
         const trailMat = new THREE.LineBasicMaterial({
           color,
           transparent: true,
-          opacity: 0.2,
+          opacity: 0.22,
         });
         const trail = new THREE.Line(trailGeo, trailMat);
         earth.add(trail);
 
-        // Bright moving head
         const headMat = new THREE.MeshBasicMaterial({
           color,
           transparent: true,
         });
         const head = new THREE.Mesh(
-          new THREE.SphereGeometry(0.018, 10, 10),
+          new THREE.SphereGeometry(0.016, 8, 8),
           headMat,
         );
         earth.add(head);
 
-        // Origin pulse dot (red — "target being scanned")
-        const originMat = new THREE.MeshBasicMaterial({
-          color: 0xff4455,
-          transparent: true,
-          opacity: 0.9,
-        });
-        const origin = new THREE.Mesh(
-          new THREE.SphereGeometry(0.016, 10, 10),
-          originMat,
-        );
-        origin.position.copy(latLonToVec3(THREE, a.lat, a.lon, 1.02));
-        earth.add(origin);
-
-        const entry: ArcEntry = {
-          head,
-          pts,
-          start: performance.now(),
-          ttl: 2800,
-        };
+        const entry: ArcEntry = { head, pts, start: performance.now(), ttl };
         liveArcs.push(entry);
 
-        setTicker(`scanning · ${a.n} → ${b.n}`);
-
-        const TTL = 3200;
         setTimeout(() => {
           earth.remove(trail);
           earth.remove(head);
-          earth.remove(origin);
           trailGeo.dispose();
-          trailMat.dispose();
-          headMat.dispose();
-          originMat.dispose();
+          (trailMat as LineMat).dispose();
+          (headMat as Mat).dispose();
           const idx = liveArcs.indexOf(entry);
           if (idx !== -1) liveArcs.splice(idx, 1);
-        }, TTL);
+        }, ttl + 400);
       }
 
-      arcTimer = setInterval(fireArc, 1600);
-      fireArc();
-      setTimeout(fireArc, 700);
+      // Seed several arcs immediately, then keep firing rapidly
+      for (let i = 0; i < 5; i++) setTimeout(fireArc, i * 180);
+      arcTimer = setInterval(fireArc, 700);
 
       // ── Render loop ───────────────────────────────────────────────
       const clock = new THREE.Clock();
       function loop() {
         animId = requestAnimationFrame(loop);
         const dt = clock.getDelta();
-        earth.rotation.y += dt * ((Math.PI * 2) / 50);
-        earth.rotation.x = 0.2;
+        earth.rotation.y += dt * ((Math.PI * 2) / 55);
+        earth.rotation.x = 0.18;
 
         const now = performance.now();
         for (const arc of liveArcs) {
@@ -276,7 +279,7 @@ export default function GlobeCanvas({
           );
           arc.head.position.copy(arc.pts[idx]);
           (arc.head.material as Mat).opacity =
-            t < 0.88 ? 1 : 1 - (t - 0.88) / 0.12;
+            t < 0.85 ? 1 : 1 - (t - 0.85) / 0.15;
         }
 
         renderer.render(scene, camera);
@@ -305,17 +308,13 @@ export default function GlobeCanvas({
           position: "absolute",
           inset: "-10%",
           background:
-            "radial-gradient(circle at 50% 50%, rgba(3,102,214,0.20), transparent 58%)",
+            "radial-gradient(circle at 50% 50%, rgba(3,102,214,0.18), transparent 58%)",
           filter: "blur(8px)",
           pointerEvents: "none",
           borderRadius: "50%",
         }}
       />
       <canvas ref={canvasRef} className={canvasClassName} />
-      <div className={tickerClassName}>
-        <span className={dotClassName} />
-        {ticker}
-      </div>
     </div>
   );
 }
