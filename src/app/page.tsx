@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import Link  from "next/link";
+import Link from "next/link";
 import toast from "react-hot-toast";
 import { useAuth } from "@/lib/context/AuthContext";
 import GlobeCanvas from "@/components/landing/GlobeCanvas";
@@ -129,16 +129,41 @@ const FAQ = [
 
 function ArrowIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-      <path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M2 6h8M7 3l3 3-3 3"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
 function CheckIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className={styles.checkIcon} aria-hidden="true">
-      <path d="M3 7.5L6 10l5-5.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      fill="none"
+      className={styles.checkIcon}
+      aria-hidden="true"
+    >
+      <path
+        d="M3 7.5L6 10l5-5.5"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -177,10 +202,12 @@ export default function Home() {
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to create checkout session");
+      if (!response.ok)
+        throw new Error(data.error || "Failed to create checkout session");
       if (data.url) window.location.href = data.url;
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to start checkout";
+      const msg =
+        err instanceof Error ? err.message : "Failed to start checkout";
       console.error("Checkout error:", err);
       toast.error(msg);
     } finally {
@@ -190,28 +217,34 @@ export default function Home() {
 
   return (
     <div className={styles.lpRoot}>
-
       {/* ── Hero ────────────────────────────────────────────────── */}
       <section className={styles.hero}>
         <div className={styles.heroGrid} aria-hidden="true" />
         <div className={`${styles.container} ${styles.heroInner}`}>
-
           <div>
             <span className={styles.eyebrow}>
               <span className={styles.eyebrowPulse} />
               HOSTED · NMAP · NUCLEI · ZAP
             </span>
             <h1 className={styles.heroH1}>
-              Hosted scans.<br />Shippable reports.
+              Hosted scans.
+              <br />
+              Deliverable reports.
             </h1>
             <p className={styles.lede}>
               Nmap · Nuclei · OWASP ZAP — one console, zero install.
             </p>
             <div className={styles.heroCtas}>
-              <Link href="/login" className={`${styles.btn} ${styles.btnPrimary} ${styles.btnLg}`}>
+              <Link
+                href="/login"
+                className={`${styles.btn} ${styles.btnPrimary} ${styles.btnLg}`}
+              >
                 Start scanning <ArrowIcon />
               </Link>
-              <Link href="#scanners" className={`${styles.btn} ${styles.btnGhost} ${styles.btnLg}`}>
+              <Link
+                href="#scanners"
+                className={`${styles.btn} ${styles.btnGhost} ${styles.btnLg}`}
+              >
                 See scanners
               </Link>
             </div>
@@ -225,16 +258,25 @@ export default function Home() {
               dotClassName={styles.globeTickerDot}
             />
           </div>
-
         </div>
       </section>
 
       {/* ── Logo bar ────────────────────────────────────────────── */}
       <div className={styles.logobar}>
         <div className={`${styles.container} ${styles.logobarInner}`}>
-          <span className={styles.logobarLabel}>Runs the scanners you already trust</span>
+          <span className={styles.logobarLabel}>
+            Runs the scanners you already trust
+          </span>
           <div className={styles.logobarItems}>
-            {(["Nmap", "Nuclei", "OWASP ZAP", "SBOM checks", "CVE feeds"] as const).map((name) => (
+            {(
+              [
+                "Nmap",
+                "Nuclei",
+                "OWASP ZAP",
+                "SBOM checks",
+                "CVE feeds",
+              ] as const
+            ).map((name) => (
               <span key={name} className={styles.logobarItem}>
                 <span className={styles.logobarDot} />
                 {name}
@@ -248,10 +290,13 @@ export default function Home() {
       <section className={styles.block} id="scanners">
         <div className={styles.container}>
           <div className={styles.sectionHead}>
-            <p className={styles.sectionKicker}>003 · Scanners</p>
-            <h2 className={styles.sectionTitle}>Three scanners. One hosted workflow.</h2>
+            <p className={styles.sectionKicker}>Scanners</p>
+            <h2 className={styles.sectionTitle}>
+              Three scanners. One hosted workflow.
+            </h2>
             <p className={styles.sectionSub}>
-              Each engine is tuned, patched, and rate-limited on our side. You pick the target, we handle the rest.
+              Each engine is tuned, patched, and rate-limited on our side. You
+              pick the target, we handle the rest.
             </p>
           </div>
           <div className={styles.scannersGrid}>
@@ -273,7 +318,10 @@ export default function Home() {
                 <p className={styles.scannerSummary}>{s.summary}</p>
                 <div className={styles.scannerFoot}>
                   <span>1 credit per scan</span>
-                  <Link href={`/scanners/${s.slug}`} className={styles.scannerMore}>
+                  <Link
+                    href={`/scanners/${s.slug}`}
+                    className={styles.scannerMore}
+                  >
                     Learn more →
                   </Link>
                 </div>
@@ -287,11 +335,11 @@ export default function Home() {
       <section className={styles.block} id="pricing">
         <div className={styles.container}>
           <div className={styles.sectionHead}>
-            <p className={styles.sectionKicker}>007 · Pricing</p>
+            <p className={styles.sectionKicker}>Pricing</p>
             <h2 className={styles.sectionTitle}>Credits, not subscriptions.</h2>
             <p className={styles.sectionSub}>
-              Buy a pack, run any scanner against any approved target. Credits don&apos;t expire for 12 months.
-              No seats, no overages.
+              Buy a pack, run any scanner against any approved target. Credits
+              don&apos;t expire for 12 months. No seats, no overages.
             </p>
           </div>
           <div className={styles.pricingGrid}>
@@ -302,7 +350,9 @@ export default function Home() {
               >
                 <div className={styles.priceLabel}>
                   <span className={styles.priceLabelName}>{t.name}</span>
-                  {t.popular && <span className={styles.priceLabelPop}>Most popular</span>}
+                  {t.popular && (
+                    <span className={styles.priceLabelPop}>Most popular</span>
+                  )}
                 </div>
                 <div className={styles.priceAmount}>
                   <span className={styles.priceAmountBig}>${t.price}</span>
@@ -335,8 +385,8 @@ export default function Home() {
       <section className={`${styles.block} ${styles.blockNoPb}`} id="faq">
         <div className={styles.container}>
           <div className={styles.sectionHead}>
-            <p className={styles.sectionKicker}>011 · FAQ</p>
-            <h2 className={styles.sectionTitle}>Questions, answered plainly.</h2>
+            <p className={styles.sectionKicker}>FAQ</p>
+            <h2 className={styles.sectionTitle}>Common questions</h2>
           </div>
           <div className={styles.faq}>
             {FAQ.map((item, i) => (
@@ -345,7 +395,9 @@ export default function Home() {
                 className={`${styles.faqItem}${i === FAQ.length - 1 ? ` ${styles.faqItemLast}` : ""}`}
               >
                 <h3 className={styles.faqQ}>
-                  <span className={styles.faqNum}>{String(i + 1).padStart(2, "0")}</span>
+                  <span className={styles.faqNum}>
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
                   {item.q}
                 </h3>
                 <p className={styles.faqA}>{item.a}</p>
@@ -358,21 +410,29 @@ export default function Home() {
       {/* ── Final CTA ───────────────────────────────────────────── */}
       <section className={styles.final}>
         <div className={`${styles.container} ${styles.finalInner}`}>
-          <h2 className={styles.finalH2}>Start delivering better security reports.</h2>
+          <h2 className={styles.finalH2}>
+            Start delivering better security reports.
+          </h2>
           <p className={styles.finalP}>
-            Unified web app. Three scanners. Evidence-backed output your team can triage, fix, and verify.
+            Unified web app. Three scanners. Evidence-backed output your team
+            can triage, fix, and verify.
           </p>
           <div className={styles.finalCtas}>
-            <Link href="/login"      className={`${styles.btn} ${styles.btnPrimary} ${styles.btnLg}`}>
+            <Link
+              href="/login"
+              className={`${styles.btn} ${styles.btnPrimary} ${styles.btnLg}`}
+            >
               Create account
             </Link>
-            <Link href="/app/scans" className={`${styles.btn} ${styles.btnGhost}   ${styles.btnLg}`}>
+            <Link
+              href="/app/scans"
+              className={`${styles.btn} ${styles.btnGhost}   ${styles.btnLg}`}
+            >
               Open the console
             </Link>
           </div>
         </div>
       </section>
-
     </div>
   );
 }
