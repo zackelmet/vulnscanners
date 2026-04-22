@@ -295,8 +295,8 @@ export default function Home() {
               Three scanners. One hosted workflow.
             </h2>
             <p className={styles.sectionSub}>
-              Each engine is tuned, patched, and rate-limited on our side. You
-              pick the target, we handle the rest.
+              Each engine is tuned, patched, and continuously updated on our
+              side. You pick the target, we handle the rest.
             </p>
           </div>
           <div className={styles.scannersGrid}>
