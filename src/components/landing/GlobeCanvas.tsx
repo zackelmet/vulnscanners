@@ -296,9 +296,9 @@ export default function GlobeCanvas({ wrapClassName, canvasClassName }: Props) {
         }, ttl + 600);
       }
 
-      // Seed 6 arcs staggered, then maintain target density
-      const TARGET = 6;
-      for (let i = 0; i < TARGET; i++) setTimeout(fireArc, i * 200);
+      // Seed 18 arcs staggered, then maintain target density
+      const TARGET = 18;
+      for (let i = 0; i < TARGET; i++) setTimeout(fireArc, i * 100);
       arcTimer = setInterval(() => {
         if (liveArcs.length < TARGET) fireArc();
       }, 400);
