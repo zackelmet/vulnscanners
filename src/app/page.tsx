@@ -224,7 +224,7 @@ export default function Home() {
           <div>
             <span className={styles.eyebrow}>
               <span className={styles.eyebrowPulse} />
-              NMAP · NUCLEI · ZAP
+              Login in and start scanning.
             </span>
             <h1 className={styles.heroH1}>
               Hosted scans.
