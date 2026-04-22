@@ -1,0 +1,19 @@
+{
+    email {$CADDY_ACME_EMAIL:admin@vulnscanners.com}
+}
+
+{$SCANNER_HOSTNAME} {
+    encode zstd gzip
+
+    # Block everything except health + scan endpoints at the edge
+    @allowed path /health /scan /scan/validate
+    handle @allowed {
+        reverse_proxy scanner:8080 {
+            header_up X-Forwarded-Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+    handle {
+        respond "Not Found" 404
+    }
+}

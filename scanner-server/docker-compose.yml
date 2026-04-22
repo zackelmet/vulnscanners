@@ -1,0 +1,52 @@
+services:
+  scanner:
+    build: .
+    image: vulnscanners/scanner:latest
+    container_name: vulnscanners-scanner
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      ZAP_API_URL: http://zap:8090
+      GOOGLE_APPLICATION_CREDENTIALS: /secrets/gcp-key.json
+    volumes:
+      - ./gcp-key.json:/secrets/gcp-key.json:ro
+    # Keep private; Caddy fronts :8080
+    expose:
+      - "8080"
+    # nmap needs raw sockets for -sS; unprivileged nmap uses connect scan and works fine
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+    depends_on:
+      - zap
+
+  zap:
+    image: zaproxy/zap-stable:latest
+    container_name: vulnscanners-zap
+    restart: unless-stopped
+    command: >
+      zap.sh -daemon -host 0.0.0.0 -port 8090
+      -config api.addrs.addr.name=.*
+      -config api.addrs.addr.regex=true
+      -config api.key=${ZAP_API_KEY}
+    expose:
+      - "8090"
+
+  caddy:
+    image: caddy:2
+    container_name: vulnscanners-caddy
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - scanner
+
+volumes:
+  caddy_data:
+  caddy_config:
