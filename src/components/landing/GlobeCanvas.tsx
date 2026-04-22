@@ -188,23 +188,21 @@ export default function GlobeCanvas({ wrapClassName, canvasClassName }: Props) {
       const radars: RadarEntry[] = [];
 
       function spawnRadar(pos: V3, color: number) {
-        // 3 staggered rings per ping
-        for (let wave = 0; wave < 3; wave++) {
-          const mat = new THREE.MeshBasicMaterial({
-            color,
-            transparent: true,
-            opacity: 0.0,
-            side: THREE.DoubleSide,
-          });
-          const mesh = new THREE.Mesh(
-            new THREE.RingGeometry(0.001, 0.018, 32),
-            mat,
-          );
-          mesh.position.copy(pos);
-          mesh.lookAt(pos.clone().multiplyScalar(3));
-          earth.add(mesh);
-          radars.push({ mesh, mat, start: performance.now() + wave * 280 });
-        }
+        // single quiet ring per ping
+        const mat = new THREE.MeshBasicMaterial({
+          color,
+          transparent: true,
+          opacity: 0.0,
+          side: THREE.DoubleSide,
+        });
+        const mesh = new THREE.Mesh(
+          new THREE.RingGeometry(0.001, 0.012, 32),
+          mat,
+        );
+        mesh.position.copy(pos);
+        mesh.lookAt(pos.clone().multiplyScalar(3));
+        earth.add(mesh);
+        radars.push({ mesh, mat, start: performance.now() });
       }
 
       // ── Arc system ────────────────────────────────────────────────
@@ -349,7 +347,7 @@ export default function GlobeCanvas({ wrapClassName, canvasClassName }: Props) {
         // Animate radar rings
         for (let i = radars.length - 1; i >= 0; i--) {
           const r = radars[i];
-          const age = (now - r.start) / 1100;
+          const age = (now - r.start) / 1400;
           if (age < 0) continue; // staggered delay not yet started
           if (age >= 1) {
             earth.remove(r.mesh);
@@ -357,9 +355,9 @@ export default function GlobeCanvas({ wrapClassName, canvasClassName }: Props) {
             radars.splice(i, 1);
             continue;
           }
-          const s = 1 + age * 8;
+          const s = 1 + age * 5;
           r.mesh.scale.set(s, s, s);
-          r.mat.opacity = 0.7 * (1 - age);
+          r.mat.opacity = 0.35 * (1 - age);
         }
 
         renderer.render(scene, camera);
