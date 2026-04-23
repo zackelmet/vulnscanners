@@ -36,6 +36,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
 # GCP service account keys (do not commit)
 gcp/keys/*.json
 gemini.md

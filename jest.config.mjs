@@ -8,7 +8,7 @@ const createJestConfig = nextJest({
 // Add any custom config to be passed to Jest
 const config = {
   testEnvironment: "jest-environment-jsdom",
-  // Add more setup options before each test is run
+  testPathIgnorePatterns: ["/node_modules/", "/tests/smoke/"],
   setupFilesAfterEnv: ["<rootDir>/jest.setup.mjs"],
 };
 
