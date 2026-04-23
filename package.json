@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "test": "jest",
+    "test:smoke": "playwright test",
     "build": "next build",
+    "typecheck": "tsc --noEmit",
     "stripe:update-prices": "node ./scripts/update-stripe-products.mjs",
     "start": "next start",
     "lint": "next lint",
@@ -50,6 +52,7 @@
   },
   "devDependencies": {
     "@netlify/plugin-nextjs": "^5.14.7",
+    "@playwright/test": "^1.59.1",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.4.8",
     "@testing-library/react": "^16.0.0",
