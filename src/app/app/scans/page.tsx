@@ -7,6 +7,8 @@ import {
   faRocket,
   faHistory,
   faSatelliteDish,
+  faFileAlt,
+  faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
 import { useUserData } from "@/lib/hooks/useUserData";
 import { useUserScans } from "@/lib/hooks/useUserScans";
@@ -82,6 +84,37 @@ export default function ScansPage() {
 
   const handleSavedTargetChange = (value: string) => {
     setSelectedTargetId(value);
+  };
+
+  const [generatingReport, setGeneratingReport] = useState<string | null>(null);
+
+  const generateReport = async (scanId: string) => {
+    if (!currentUser) return;
+    setGeneratingReport(scanId);
+    try {
+      const token = await currentUser.getIdToken();
+      const res = await fetch(`/api/scans/${scanId}/report`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err?.error || "Failed to generate report");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const cd = res.headers.get("content-disposition") || "";
+      const fnMatch = cd.match(/filename="([^"]+)"/);
+      a.download = fnMatch?.[1] || `report-${scanId.slice(0, 8)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(err?.message || "Report generation failed");
+    } finally {
+      setGeneratingReport(null);
+    }
   };
 
   const hasCredits = userData
@@ -591,19 +624,50 @@ export default function ScansPage() {
                           )}
                         </td>
                         <td className="px-6 py-4">
-                          {scan.gcpReportSignedUrl ? (
-                            <a
-                              href={scan.gcpReportSignedUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-[#00FED9] hover:text-[#00D4B8] text-sm font-semibold"
-                              title="Download PDF report"
-                            >
-                              PDF
-                            </a>
-                          ) : (
-                            <span className="text-gray-400 text-sm">—</span>
-                          )}
+                          <div className="flex flex-col gap-1">
+                            {scan.gcpReportSignedUrl && (
+                              <a
+                                href={scan.gcpReportSignedUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[#00FED9] hover:text-[#00D4B8] text-sm font-semibold"
+                                title="Download PDF report"
+                              >
+                                PDF
+                              </a>
+                            )}
+                            {(scan.type === "nmap" ||
+                              scan.scannerType === "nmap") &&
+                              scan.status === "completed" && (
+                                <button
+                                  onClick={() => generateReport(scan.scanId)}
+                                  disabled={generatingReport === scan.scanId}
+                                  className="flex items-center gap-1 text-[#0366d6] hover:text-[#0255b3] text-sm font-semibold disabled:opacity-50"
+                                  title="Generate branded PDF report"
+                                >
+                                  <FontAwesomeIcon
+                                    icon={
+                                      generatingReport === scan.scanId
+                                        ? faSpinner
+                                        : faFileAlt
+                                    }
+                                    className={
+                                      generatingReport === scan.scanId
+                                        ? "animate-spin"
+                                        : ""
+                                    }
+                                  />
+                                  {generatingReport === scan.scanId
+                                    ? "Generating…"
+                                    : "Report"}
+                                </button>
+                              )}
+                            {!scan.gcpReportSignedUrl &&
+                              scan.type !== "nmap" &&
+                              scan.scannerType !== "nmap" && (
+                                <span className="text-gray-400 text-sm">—</span>
+                              )}
+                          </div>
                         </td>
                       </tr>
                     ))}
