@@ -119,7 +119,7 @@ export async function GET(
       .slice(0, 40);
     const filename = `vulnscanners-nmap-${safeTarget}-${scanId.slice(0, 8)}.pdf`;
 
-    return new NextResponse(pdfBytes, {
+    return new Response(pdfBytes.buffer as ArrayBuffer, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
