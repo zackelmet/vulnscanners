@@ -1,0 +1,42 @@
+# Public reverse proxy for the vulnscanners worker.
+# Replace the site address with your real Hetzner-facing hostname,
+# e.g. scanner.vulnscanners.com. Caddy will provision TLS automatically.
+{$SCANNER_PUBLIC_HOSTNAME} {
+    encode zstd gzip
+
+    # Hard cap on body size; payloads from the web app are tiny.
+    request_body {
+        max_size 64KB
+    }
+
+    @scan path /scan
+    handle @scan {
+        reverse_proxy 127.0.0.1:8080 {
+            transport http {
+                response_header_timeout 30s
+            }
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    handle /health {
+        reverse_proxy 127.0.0.1:8080
+    }
+
+    handle /version {
+        reverse_proxy 127.0.0.1:8080
+    }
+
+    handle {
+        respond "not found" 404
+    }
+
+    log {
+        output file /var/log/caddy/vulnscanners.log {
+            roll_size 50mb
+            roll_keep 10
+        }
+        format json
+    }
+}

@@ -1,0 +1,40 @@
+[Unit]
+Description=vulnscanners scanner worker (FastAPI)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=vulnscanners
+Group=vulnscanners
+WorkingDirectory=/opt/vulnscanners/backend
+EnvironmentFile=/etc/vulnscanners/backend.env
+ExecStart=/opt/vulnscanners/backend/.venv/bin/uvicorn app.main:app \
+    --host ${BACKEND_HOST} \
+    --port ${BACKEND_PORT} \
+    --workers 1 \
+    --proxy-headers \
+    --forwarded-allow-ips="127.0.0.1"
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+LimitNOFILE=65536
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+RestrictRealtime=true
+LockPersonality=true
+# nmap raw-socket scan modes need CAP_NET_RAW. If you only run -sT (TCP connect),
+# you can drop this line.
+AmbientCapabilities=CAP_NET_RAW CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_RAW CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target
