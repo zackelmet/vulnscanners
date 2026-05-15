@@ -39,16 +39,20 @@ export default function SupportPage() {
     setSubmitStatus(null);
 
     try {
-      const res = await fetch("/api/support", {
+      const res = await fetch("https://formspree.io/f/mjglngwo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          category: formData.category,
+          subject: formData.subject,
+          message: formData.message,
+        }),
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
-        throw new Error(data.error || "Failed to send message");
+        throw new Error("Failed to send message");
       }
 
       setSubmitStatus({
