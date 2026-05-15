@@ -113,16 +113,6 @@ export default function DashboardPage() {
     [userData],
   );
 
-  // Debug logging for credits issue
-  useEffect(() => {
-    console.log("🎯 Dashboard credits debug:", {
-      userData: userData,
-      scanCredits: userData?.scanCredits,
-      credits: credits,
-      hasCredits: credits.nmap > 0 || credits.nuclei > 0 || credits.zap > 0,
-    });
-  }, [userData, credits]);
-
   const hasCredits = credits.nmap > 0 || credits.nuclei > 0 || credits.zap > 0;
   const recentScans = useMemo(() => userScans.slice(0, 5), [userScans]);
 
@@ -180,51 +170,6 @@ export default function DashboardPage() {
       </Suspense>
 
       <div className="p-6 lg:p-8 space-y-8 max-w-7xl mx-auto bg-[#07090d] min-h-screen">
-        {/* DEBUG PANEL - TEMPORARY */}
-        <div className="bg-yellow-500/10 border-2 border-yellow-500 rounded-xl p-6">
-          <h3 className="text-yellow-500 font-bold mb-3 text-lg">
-            🐛 DEBUG MODE - Credits Issue Investigation
-          </h3>
-          <div className="space-y-3 text-sm font-mono">
-            <div>
-              <span className="text-[#9aa5b6]">Loading state:</span>{" "}
-              <span className="text-[#e6edf5]">
-                {loading ? "true" : "false"}
-              </span>
-            </div>
-            <div>
-              <span className="text-[#9aa5b6]">userData exists:</span>{" "}
-              <span className="text-[#e6edf5]">{userData ? "YES" : "NO"}</span>
-            </div>
-            <div>
-              <span className="text-[#9aa5b6]">
-                userData.scanCredits exists:
-              </span>{" "}
-              <span className="text-[#e6edf5]">
-                {userData?.scanCredits ? "YES" : "NO"}
-              </span>
-            </div>
-            <div>
-              <span className="text-[#9aa5b6]">Raw userData.scanCredits:</span>
-              <pre className="bg-[#0d1117] p-3 rounded mt-2 text-[#e6edf5] overflow-x-auto">
-                {JSON.stringify(userData?.scanCredits, null, 2) || "undefined"}
-              </pre>
-            </div>
-            <div>
-              <span className="text-[#9aa5b6]">Computed credits object:</span>
-              <pre className="bg-[#0d1117] p-3 rounded mt-2 text-[#e6edf5] overflow-x-auto">
-                {JSON.stringify(credits, null, 2)}
-              </pre>
-            </div>
-            <div>
-              <span className="text-[#9aa5b6]">Full userData object:</span>
-              <pre className="bg-[#0d1117] p-3 rounded mt-2 text-[#e6edf5] overflow-x-auto max-h-48 overflow-y-auto">
-                {JSON.stringify(userData, null, 2) || "null"}
-              </pre>
-            </div>
-          </div>
-        </div>
-
         {/* Page header */}
         <div>
           <h1 className="text-3xl font-light text-[#e6edf5] mb-1">Dashboard</h1>
