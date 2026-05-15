@@ -156,8 +156,8 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-screen bg-[#0a141f]">
-          <div className="text-gray-400">Loading...</div>
+        <div className="flex items-center justify-center min-h-screen bg-[#07090d]">
+          <div className="text-[#9aa5b6]">Loading...</div>
         </div>
       </DashboardLayout>
     );
@@ -169,23 +169,28 @@ export default function DashboardPage() {
         <PurchaseParamHandler openModal={() => openModal()} />
       </Suspense>
 
-      <div className="p-6 lg:p-8 space-y-8 max-w-7xl mx-auto bg-[#0a141f] min-h-screen">
+      <div className="p-6 lg:p-8 space-y-8 max-w-7xl mx-auto bg-[#07090d] min-h-screen">
         {/* Page header */}
         <div>
-          <h1 className="text-3xl font-light text-white mb-1">Dashboard</h1>
-          <p className="text-gray-400">Manage your scans and credits</p>
+          <h1 className="text-3xl font-light text-[#e6edf5] mb-1">Dashboard</h1>
+          <p className="text-[#9aa5b6]">Manage your scans and credits</p>
         </div>
 
         {/* Top CTA */}
         <Link
           href="/app/scans"
-          className="w-full block bg-gradient-to-br from-[#0366d6] to-[#1a56db] border border-[#0366d6] rounded-xl p-6 shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all text-center"
+          className="w-full block bg-[#0d1117] border border-[#161b24] rounded-xl p-6 shadow-lg hover:border-[#0366d6] transition-all text-center"
         >
-          <div className="p-4 rounded-full bg-white/10 mb-3 inline-block">
-            <FontAwesomeIcon icon={faRocket} className="text-4xl text-white" />
+          <div className="p-4 rounded-full bg-[#0366d6]/20 mb-3 inline-block">
+            <FontAwesomeIcon
+              icon={faRocket}
+              className="text-4xl text-[#4493f8]"
+            />
           </div>
-          <p className="text-white font-light text-xl mb-1">Launch New Scan</p>
-          <p className="text-white/70 text-sm">
+          <p className="text-[#e6edf5] font-light text-xl mb-1">
+            Launch New Scan
+          </p>
+          <p className="text-[#9aa5b6] text-sm">
             Pick a target, choose your scanner
           </p>
         </Link>
@@ -195,7 +200,7 @@ export default function DashboardPage() {
           {SCANNERS.map((s) => (
             <div
               key={s.key}
-              className="bg-gradient-to-br from-[#0d1b2e] to-[#0a141f] border border-[#0366d6]/30 rounded-xl p-6 shadow-lg"
+              className="bg-[#0d1117] border border-[#161b24] rounded-xl p-6 shadow-lg hover:border-[#0366d6]/50 transition-colors"
             >
               <div className="flex items-start justify-between mb-5">
                 <div className="h-8 flex items-center">
@@ -209,18 +214,18 @@ export default function DashboardPage() {
                 </div>
                 <button
                   onClick={() => openModal()}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0366d6]/10 hover:bg-[#0366d6]/25 border border-[#0366d6]/40 hover:border-[#0366d6] transition-colors text-sm font-medium text-[#58a6ff]"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0366d6]/10 hover:bg-[#0366d6]/25 border border-[#0366d6]/40 hover:border-[#0366d6] transition-colors text-sm font-medium text-[#4493f8]"
                 >
                   Buy Credits
                   <FontAwesomeIcon icon={faPlus} className="text-xs" />
                 </button>
               </div>
               <div>
-                <p className="text-gray-400 text-sm mb-1">{s.description}</p>
-                <p className="text-5xl font-bold text-white mb-1">
+                <p className="text-[#9aa5b6] text-sm mb-1">{s.description}</p>
+                <p className="text-5xl font-bold text-[#e6edf5] mb-1">
                   {credits[s.key]}
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-[#697080]">
                   {used[s.key]} used · {credits[s.key]} remaining
                 </p>
               </div>
@@ -230,19 +235,19 @@ export default function DashboardPage() {
 
         {/* No credits banner */}
         {!hasCredits && (
-          <div className="bg-gradient-to-r from-[#0366d6]/10 to-[#0366d6]/5 border border-[#0366d6]/30 rounded-xl p-6">
+          <div className="bg-[#0d1117] border border-[#161b24] rounded-xl p-6">
             <div className="flex items-start gap-4">
               <div className="p-3 rounded-lg bg-[#0366d6]/20 border border-[#0366d6]/40">
                 <FontAwesomeIcon
                   icon={faShieldHalved}
-                  className="text-2xl text-[#58a6ff]"
+                  className="text-2xl text-[#4493f8]"
                 />
               </div>
               <div className="flex-1">
-                <h3 className="font-bold text-xl text-white mb-2">
+                <h3 className="font-bold text-xl text-[#e6edf5] mb-2">
                   Purchase Credits to Start Scanning
                 </h3>
-                <p className="text-gray-300 mb-4">
+                <p className="text-[#9aa5b6] mb-4">
                   Credits work across all three scanners — Nmap, Nuclei, and
                   OWASP ZAP. Starting at $10 for 10 scans.
                 </p>
@@ -253,8 +258,8 @@ export default function DashboardPage() {
                       onClick={() => openModal(pack)}
                       className={`px-5 py-2.5 font-semibold rounded-lg transition-colors ${
                         pack.id === "pro"
-                          ? "bg-[#0366d6] hover:bg-[#1a56db] text-white"
-                          : "bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                          ? "bg-[#0366d6] hover:bg-[#4493f8] text-white"
+                          : "bg-[#11161f] hover:bg-[#161b24] text-[#e6edf5] border border-[#161b24]"
                       }`}
                     >
                       {pack.name} — {pack.credits.toLocaleString()} credits
@@ -268,12 +273,14 @@ export default function DashboardPage() {
 
         {/* Recent scans */}
         {recentScans.length > 0 && (
-          <div className="bg-gradient-to-br from-[#0d1b2e] to-[#0a141f] border border-white/10 rounded-xl p-6 shadow-lg">
+          <div className="bg-[#0d1117] border border-[#161b24] rounded-xl p-6 shadow-lg">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">Recent Scans</h2>
+              <h2 className="text-2xl font-bold text-[#e6edf5]">
+                Recent Scans
+              </h2>
               <Link
                 href="/app/scans"
-                className="text-[#58a6ff] hover:text-[#79c0ff] text-sm font-semibold transition-colors"
+                className="text-[#4493f8] hover:text-[#0366d6] text-sm font-semibold transition-colors"
               >
                 View All →
               </Link>
@@ -282,18 +289,18 @@ export default function DashboardPage() {
               {recentScans.map((scan: any) => (
                 <div
                   key={scan.scanId}
-                  className="p-4 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 hover:border-[#0366d6]/30 transition-all flex items-center justify-between"
+                  className="p-4 bg-[#11161f] hover:bg-[#161b24] rounded-lg border border-[#161b24] hover:border-[#0366d6]/50 transition-all flex items-center justify-between"
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-1">
                       <span className="px-3 py-1 bg-[#0366d6] text-white text-xs font-semibold rounded-full uppercase">
                         {scan.type}
                       </span>
-                      <span className="font-semibold text-white">
+                      <span className="font-semibold text-[#e6edf5]">
                         {scan.target}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-400">
+                    <p className="text-sm text-[#9aa5b6]">
                       {scan.status === "completed"
                         ? "✓ Completed"
                         : scan.status === "in_progress"
@@ -303,7 +310,7 @@ export default function DashboardPage() {
                   </div>
                   <Link
                     href="/app/scans"
-                    className="px-4 py-2 bg-[#0366d6]/20 hover:bg-[#0366d6]/30 text-[#58a6ff] font-semibold rounded-lg border border-[#0366d6]/30 transition-colors text-sm"
+                    className="px-4 py-2 bg-[#0366d6]/20 hover:bg-[#0366d6]/30 text-[#4493f8] font-semibold rounded-lg border border-[#0366d6]/30 transition-colors text-sm"
                   >
                     View
                   </Link>
@@ -315,24 +322,24 @@ export default function DashboardPage() {
 
         {/* Empty state */}
         {recentScans.length === 0 && (
-          <div className="bg-gradient-to-br from-[#0d1b2e] to-[#0a141f] border border-white/10 rounded-xl p-12 text-center">
+          <div className="bg-[#0d1117] border border-[#161b24] rounded-xl p-12 text-center">
             <div className="max-w-md mx-auto">
-              <div className="p-4 rounded-full bg-white/5 inline-flex mb-4">
+              <div className="p-4 rounded-full bg-[#11161f] inline-flex mb-4">
                 <FontAwesomeIcon
                   icon={faShieldHalved}
-                  className="text-5xl text-gray-500"
+                  className="text-5xl text-[#697080]"
                 />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">
+              <h3 className="text-xl font-bold text-[#e6edf5] mb-2">
                 No Scans Yet
               </h3>
-              <p className="text-gray-400 mb-6">
+              <p className="text-[#9aa5b6] mb-6">
                 Launch your first scan to start identifying vulnerabilities
                 across your infrastructure.
               </p>
               <Link
                 href="/app/scans"
-                className="inline-block px-8 py-3 bg-[#0366d6] hover:bg-[#1a56db] text-white font-semibold rounded-lg transition-colors"
+                className="inline-block px-8 py-3 bg-[#0366d6] hover:bg-[#4493f8] text-white font-semibold rounded-lg transition-colors"
               >
                 Launch First Scan
               </Link>
@@ -344,23 +351,23 @@ export default function DashboardPage() {
       {/* Purchase modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0d1b2e] border border-[#0366d6]/30 rounded-xl p-8 max-w-lg w-full shadow-2xl">
+          <div className="bg-[#0d1117] border border-[#161b24] rounded-xl p-8 max-w-lg w-full shadow-2xl">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h2 className="text-3xl font-bold text-white mb-1">
+                <h2 className="text-3xl font-bold text-[#e6edf5] mb-1">
                   Buy Credits
                 </h2>
-                <p className="text-gray-400">
+                <p className="text-[#9aa5b6]">
                   Works across Nmap, Nuclei, and ZAP
                 </p>
               </div>
               <button
                 onClick={() => setShowModal(false)}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                className="p-2 hover:bg-[#11161f] rounded-lg transition-colors"
               >
                 <FontAwesomeIcon
                   icon={faXmark}
-                  className="text-gray-400 hover:text-white text-xl"
+                  className="text-[#9aa5b6] hover:text-[#e6edf5] text-xl"
                 />
               </button>
             </div>
@@ -374,20 +381,20 @@ export default function DashboardPage() {
                   className={`w-full flex items-center justify-between p-4 rounded-lg border transition-all ${
                     selectedPack.id === pack.id
                       ? "border-[#0366d6] bg-[#0366d6]/15"
-                      : "border-white/10 bg-white/5 hover:bg-white/10"
+                      : "border-[#161b24] bg-[#11161f] hover:bg-[#161b24]"
                   }`}
                 >
                   <div className="text-left">
-                    <p className="font-bold text-white">{pack.name}</p>
-                    <p className="text-sm text-gray-400">
+                    <p className="font-bold text-[#e6edf5]">{pack.name}</p>
+                    <p className="text-sm text-[#9aa5b6]">
                       {pack.credits.toLocaleString()} scan credits
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-black text-white">
+                    <p className="text-2xl font-black text-[#e6edf5]">
                       ${pack.price}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-[#697080]">
                       ${(pack.price / pack.credits).toFixed(2)}/scan
                     </p>
                   </div>
@@ -396,11 +403,11 @@ export default function DashboardPage() {
             </div>
 
             {/* What's included */}
-            <div className="bg-white/5 border border-[#0366d6]/20 rounded-lg p-5 mb-6">
-              <p className="text-xs text-gray-400 font-semibold uppercase mb-3">
+            <div className="bg-[#11161f] border border-[#161b24] rounded-lg p-5 mb-6">
+              <p className="text-xs text-[#9aa5b6] font-semibold uppercase mb-3">
                 Included with every pack:
               </p>
-              <ul className="space-y-2 text-sm text-gray-300">
+              <ul className="space-y-2 text-sm text-[#9aa5b6]">
                 {[
                   "Hosted Nmap, Nuclei & OWASP ZAP scanning",
                   "Mix scanner types freely",
@@ -408,7 +415,7 @@ export default function DashboardPage() {
                   "Credits never expire",
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2">
-                    <span className="text-[#58a6ff]">✓</span>
+                    <span className="text-[#4493f8]">✓</span>
                     {f}
                   </li>
                 ))}
@@ -418,7 +425,7 @@ export default function DashboardPage() {
             <button
               onClick={handleCheckout}
               disabled={loadingCheckout}
-              className="w-full py-4 bg-[#0366d6] hover:bg-[#1a56db] text-white font-bold rounded-lg text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              className="w-full py-4 bg-[#0366d6] hover:bg-[#4493f8] text-white font-bold rounded-lg text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
               {loadingCheckout
                 ? "Processing…"
