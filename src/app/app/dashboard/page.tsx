@@ -7,7 +7,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faShieldHalved,
-  faRocket,
+  faJetFighterUp,
   faSatelliteDish,
   faSpider,
   faPlus,
@@ -113,6 +113,16 @@ export default function DashboardPage() {
     [userData],
   );
 
+  // Debug logging for credits issue
+  useEffect(() => {
+    console.log("🎯 Dashboard credits debug:", {
+      userData: userData,
+      scanCredits: userData?.scanCredits,
+      credits: credits,
+      hasCredits: credits.nmap > 0 || credits.nuclei > 0 || credits.zap > 0,
+    });
+  }, [userData, credits]);
+
   const hasCredits = credits.nmap > 0 || credits.nuclei > 0 || credits.zap > 0;
   const recentScans = useMemo(() => userScans.slice(0, 5), [userScans]);
 
@@ -183,7 +193,7 @@ export default function DashboardPage() {
         >
           <div className="p-4 rounded-full bg-[#0366d6]/20 mb-3 inline-block">
             <FontAwesomeIcon
-              icon={faRocket}
+              icon={faJetFighterUp}
               className="text-4xl text-[#4493f8]"
             />
           </div>

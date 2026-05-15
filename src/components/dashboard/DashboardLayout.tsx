@@ -12,11 +12,11 @@ import {
   faQuestionCircle,
   faBars,
   faTimes,
-  faRocket,
+  faJetFighterUp,
   faSignOutAlt,
   faCog,
   faChevronUp,
-  faRobot,
+  faHistory,
   faShieldHalved,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "@/lib/context/AuthContext";
@@ -63,8 +63,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const navItems = [
     { href: "/app/dashboard", label: "Dashboard", icon: faHome },
     { href: "/app/targets", label: "Targets", icon: faBullseye },
-    { href: "/app/scans", label: "Scans", icon: faSatelliteDish },
-    { href: "/app/pentests", label: "Pentests", icon: faRobot },
+    { href: "/app/scans", label: "Launch Scan", icon: faJetFighterUp },
+    { href: "/app/history", label: "Scan History", icon: faHistory },
   ];
 
   const bottomItems = [
@@ -198,7 +198,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             href="/app/dashboard?purchase=true"
             className="block w-full px-4 py-3 bg-[#0366d6] text-white font-semibold rounded-lg text-center hover:bg-[#4493f8] transition-colors"
           >
-            <FontAwesomeIcon icon={faRocket} className="mr-2" />
+            <FontAwesomeIcon icon={faJetFighterUp} className="mr-2" />
             Buy Credits
           </Link>
         </div>
