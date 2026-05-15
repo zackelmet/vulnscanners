@@ -68,8 +68,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   ];
 
   const bottomItems = [
-    { href: "#", label: "Support", icon: faLifeRing },
-    { href: "#", label: "Help Center", icon: faQuestionCircle },
+    { href: "/support", label: "Support", icon: faLifeRing },
+    { href: "/help-center", label: "Help Center", icon: faQuestionCircle },
   ];
 
   return (

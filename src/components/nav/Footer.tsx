@@ -66,10 +66,10 @@ export default function Footer() {
               Pricing
             </Link>
             <Link
-              href="/trust-safety"
+              href="/help-center"
               className="hover:text-[#0366d6] transition px-4"
             >
-              Trust + Safety
+              Help Center
             </Link>
             <Link
               href="/support"
