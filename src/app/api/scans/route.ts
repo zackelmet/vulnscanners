@@ -431,18 +431,25 @@ export async function GET(request: NextRequest) {
 
     const userId = decodedToken.uid;
 
-    // Get user's scans
+    // Get user's scans (sort in memory to avoid composite index requirement)
     const scansSnapshot = await firestore
       .collection("scans")
       .where("userId", "==", userId)
-      .orderBy("createdAt", "desc")
-      .limit(50)
+      .limit(100)
       .get();
 
-    const scans = scansSnapshot.docs.map((doc: any) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const scans = scansSnapshot.docs
+      .map((doc: any) => ({
+        id: doc.id,
+        ...doc.data(),
+      }))
+      .sort((a, b) => {
+        // Sort by createdAt descending (newest first)
+        const aTime = a.createdAt?.toMillis?.() ?? 0;
+        const bTime = b.createdAt?.toMillis?.() ?? 0;
+        return bTime - aTime;
+      })
+      .slice(0, 50);
 
     return NextResponse.json({
       success: true,
