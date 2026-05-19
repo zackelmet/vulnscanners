@@ -112,8 +112,48 @@ interface Fonts {
   mono: PDFFont;
 }
 
+// pdf-lib's StandardFonts (Helvetica/Courier) use WinAnsi (CP1252) encoding,
+// which cannot render glyphs like ▲ ▼ → ✓. Map known glyphs to ASCII and
+// strip any remaining char outside the WinAnsi range so the report never
+// crashes on user-supplied or stylized text.
+const WINANSI_MAP: Record<string, string> = {
+  "▲": "^",
+  "▼": "v",
+  "△": "^",
+  "▽": "v",
+  "→": "->",
+  "←": "<-",
+  "↑": "^",
+  "↓": "v",
+  "✓": "Y",
+  "✗": "X",
+  "✘": "X",
+  "★": "*",
+  "☆": "*",
+};
+function toWinAnsi(input: string): string {
+  let out = "";
+  for (const ch of input) {
+    const code = ch.codePointAt(0)!;
+    if (code <= 0x7e) {
+      out += ch; // printable ASCII (and control chars, fine for drawText)
+    } else if (WINANSI_MAP[ch] !== undefined) {
+      out += WINANSI_MAP[ch];
+    } else if (code >= 0xa0 && code <= 0xff) {
+      out += ch; // Latin-1 supplement is WinAnsi-safe (© — • … etc.)
+    } else {
+      out += "?";
+    }
+  }
+  return out;
+}
+
 function addPage(doc: PDFDocument): PDFPage {
-  return doc.addPage(PageSizes.A4);
+  const page = doc.addPage(PageSizes.A4);
+  const original = page.drawText.bind(page);
+  (page as any).drawText = (text: string, options?: any) =>
+    original(toWinAnsi(String(text ?? "")), options);
+  return page;
 }
 
 function drawPageFooter(page: PDFPage, fonts: Fonts, pageNum: number) {
