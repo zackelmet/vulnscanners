@@ -219,37 +219,30 @@ export default function HistoryPage() {
                               PDF
                             </a>
                           )}
-                          {(scan.type === "nmap" ||
-                            scan.scannerType === "nmap") &&
-                            scan.status === "completed" && (
-                              <button
-                                onClick={() => generateReport(scan.scanId)}
-                                disabled={generatingReport === scan.scanId}
-                                className="flex items-center gap-1 text-[#4493f8] hover:text-[#0366d6] text-sm font-semibold disabled:opacity-50"
-                                title="Generate branded PDF report"
-                              >
-                                <FontAwesomeIcon
-                                  icon={
-                                    generatingReport === scan.scanId
-                                      ? faSpinner
-                                      : faFileAlt
-                                  }
-                                  className={
-                                    generatingReport === scan.scanId
-                                      ? "animate-spin"
-                                      : ""
-                                  }
-                                />
-                                {generatingReport === scan.scanId
-                                  ? "Generating…"
-                                  : "Report"}
-                              </button>
-                            )}
-                          {!scan.gcpReportSignedUrl &&
-                            scan.type !== "nmap" &&
-                            scan.scannerType !== "nmap" && (
-                              <span className="text-[#697080] text-sm">—</span>
-                            )}
+                          {scan.status === "completed" && (
+                            <button
+                              onClick={() => generateReport(scan.scanId)}
+                              disabled={generatingReport === scan.scanId}
+                              className="flex items-center gap-1 text-[#4493f8] hover:text-[#0366d6] text-sm font-semibold disabled:opacity-50"
+                              title="Generate branded PDF report"
+                            >
+                              <FontAwesomeIcon
+                                icon={
+                                  generatingReport === scan.scanId
+                                    ? faSpinner
+                                    : faFileAlt
+                                }
+                                className={
+                                  generatingReport === scan.scanId
+                                    ? "animate-spin"
+                                    : ""
+                                }
+                              />
+                              {generatingReport === scan.scanId
+                                ? "Generating…"
+                                : "Report"}
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

@@ -11,7 +11,16 @@ import {
   PageSizes,
 } from "pdf-lib";
 import { ScanReportPayload } from "./types";
-import { ParsedHost, ParsedPort, ParsedNmapReport } from "./types";
+import {
+  ParsedHost,
+  ParsedPort,
+  ParsedNmapReport,
+  ParsedNucleiReport,
+  ParsedNucleiFinding,
+  NucleiSeverity,
+  ParsedZapReport,
+  ParsedZapAlert,
+} from "./types";
 import { portRisk, riskLabel, riskColor, RiskLevel } from "./nmap-parser";
 
 // ── Brand colours ──────────────────────────────────────────────────────────────
@@ -627,6 +636,443 @@ export async function generateNmapPdf(
   }
 
   // 4. Raw appendix
+  drawAppendix(doc, fonts, parsed.rawOutput, pageNum);
+
+  return doc.save();
+}
+
+// ── Shared cover/section helpers used by nuclei & zap reports ─────────────────
+
+function drawScannerCover(
+  page: PDFPage,
+  fonts: Fonts,
+  payload: ScanReportPayload,
+  scannerLabel: string,
+  metrics: { label: string; value: string; color?: ReturnType<typeof rgb> }[],
+) {
+  // Brand band
+  drawRect(page, 0, PAGE_H - 110, PAGE_W, 110, C.navy);
+  page.drawText("VULNSCANNERS", {
+    x: MARGIN,
+    y: PAGE_H - 55,
+    size: 26,
+    font: fonts.bold,
+    color: C.white,
+  });
+  page.drawText("Automated Security Scanning Platform", {
+    x: MARGIN,
+    y: PAGE_H - 80,
+    size: 10,
+    font: fonts.regular,
+    color: C.grey300,
+  });
+
+  // Title + target
+  let y = PAGE_H - 180;
+  page.drawText(`${scannerLabel.toUpperCase()} SCAN REPORT`, {
+    x: MARGIN,
+    y,
+    size: 22,
+    font: fonts.bold,
+    color: C.navy,
+  });
+  y -= 30;
+  page.drawText(payload.target, {
+    x: MARGIN,
+    y,
+    size: 14,
+    font: fonts.regular,
+    color: C.grey700,
+  });
+  y -= 40;
+
+  // Metadata block
+  const meta: [string, string][] = [
+    ["Scan ID", payload.scanId.slice(0, 16) + "..."],
+    ["Generated", payload.generatedAt],
+    ["Scanner", scannerLabel],
+  ];
+  for (const [label, value] of meta) {
+    page.drawText(label, {
+      x: MARGIN,
+      y,
+      size: 9,
+      font: fonts.bold,
+      color: C.grey500,
+    });
+    page.drawText(value, {
+      x: MARGIN + 90,
+      y,
+      size: 10,
+      font: fonts.regular,
+      color: C.grey900,
+    });
+    y -= 18;
+  }
+  y -= 20;
+
+  // Metric tiles
+  const tileW = (CONTENT_W - 12 * (metrics.length - 1)) / metrics.length;
+  const tileH = 70;
+  for (let i = 0; i < metrics.length; i++) {
+    const m = metrics[i];
+    const tx = MARGIN + i * (tileW + 12);
+    drawRect(page, tx, y - tileH, tileW, tileH, C.grey100);
+    page.drawText(m.value, {
+      x: tx + 14,
+      y: y - 30,
+      size: 22,
+      font: fonts.bold,
+      color: m.color ?? C.blue,
+    });
+    page.drawText(m.label, {
+      x: tx + 14,
+      y: y - 55,
+      size: 9,
+      font: fonts.regular,
+      color: C.grey700,
+    });
+  }
+
+  page.drawText("© VulnScanners — vulnscanners.com", {
+    x: MARGIN,
+    y: 36,
+    size: 8,
+    font: fonts.regular,
+    color: C.grey500,
+  });
+}
+
+function severityColor(sev: NucleiSeverity): ReturnType<typeof rgb> {
+  switch (sev) {
+    case "critical":
+    case "high":
+      return C.red;
+    case "medium":
+      return C.amber;
+    case "low":
+      return C.blue;
+    case "info":
+      return C.grey500;
+    default:
+      return C.grey500;
+  }
+}
+
+// ── Nuclei findings pages ─────────────────────────────────────────────────────
+
+function drawNucleiFindings(
+  doc: PDFDocument,
+  fonts: Fonts,
+  parsed: ParsedNucleiReport,
+  pageNum: { n: number },
+) {
+  let page = addPage(doc);
+  pageNum.n++;
+  drawPageFooter(page, fonts, pageNum.n);
+  drawRect(page, 0, PAGE_H - 60, PAGE_W, 60, C.navy);
+  page.drawText("Findings", {
+    x: MARGIN,
+    y: PAGE_H - 38,
+    size: 18,
+    font: fonts.bold,
+    color: C.white,
+  });
+  let y = PAGE_H - 90;
+
+  if (parsed.findings.length === 0) {
+    page.drawText("No findings reported by nuclei templates.", {
+      x: MARGIN,
+      y,
+      size: 11,
+      font: fonts.regular,
+      color: C.grey700,
+    });
+    return;
+  }
+
+  for (const f of parsed.findings) {
+    // Need at least ~50 pt for a finding block
+    if (y < MARGIN + 50) {
+      page = addPage(doc);
+      pageNum.n++;
+      drawPageFooter(page, fonts, pageNum.n);
+      y = PAGE_H - MARGIN;
+    }
+
+    // Severity chip
+    const sevLabel = f.severity.toUpperCase();
+    const chipW = fonts.bold.widthOfTextAtSize(sevLabel, 8) + 12;
+    drawRect(page, MARGIN, y - 14, chipW, 16, severityColor(f.severity));
+    page.drawText(sevLabel, {
+      x: MARGIN + 6,
+      y: y - 10,
+      size: 8,
+      font: fonts.bold,
+      color: C.white,
+    });
+
+    // Template id (bold) on same line
+    page.drawText(f.templateId, {
+      x: MARGIN + chipW + 8,
+      y: y - 10,
+      size: 11,
+      font: fonts.bold,
+      color: C.grey900,
+    });
+
+    // Protocol tag at far right
+    page.drawText(`[${f.protocol}]`, {
+      x: PAGE_W - MARGIN - 50,
+      y: y - 10,
+      size: 9,
+      font: fonts.mono,
+      color: C.grey500,
+    });
+    y -= 22;
+
+    // Target
+    y = drawText({
+      page,
+      text: f.target,
+      x: MARGIN + 4,
+      y,
+      maxW: CONTENT_W - 8,
+      font: fonts.regular,
+      size: 10,
+      lineH: 13,
+      color: C.grey700,
+    });
+
+    // Extracted (optional)
+    if (f.extracted) {
+      y = drawText({
+        page,
+        text: f.extracted,
+        x: MARGIN + 4,
+        y,
+        maxW: CONTENT_W - 8,
+        font: fonts.mono,
+        size: 8,
+        lineH: 11,
+        color: C.grey500,
+      });
+    }
+
+    y -= 10;
+    page.drawLine({
+      start: { x: MARGIN, y: y + 4 },
+      end: { x: PAGE_W - MARGIN, y: y + 4 },
+      thickness: 0.3,
+      color: C.grey300,
+    });
+    y -= 6;
+  }
+}
+
+// ── ZAP alerts pages ──────────────────────────────────────────────────────────
+
+function drawZapAlerts(
+  doc: PDFDocument,
+  fonts: Fonts,
+  parsed: ParsedZapReport,
+  pageNum: { n: number },
+) {
+  let page = addPage(doc);
+  pageNum.n++;
+  drawPageFooter(page, fonts, pageNum.n);
+  drawRect(page, 0, PAGE_H - 60, PAGE_W, 60, C.navy);
+  page.drawText("Alerts", {
+    x: MARGIN,
+    y: PAGE_H - 38,
+    size: 18,
+    font: fonts.bold,
+    color: C.white,
+  });
+  let y = PAGE_H - 90;
+
+  if (parsed.alerts.length === 0) {
+    page.drawText(
+      "No warnings or failures reported. All passive checks passed.",
+      {
+        x: MARGIN,
+        y,
+        size: 11,
+        font: fonts.regular,
+        color: C.grey700,
+      },
+    );
+    return;
+  }
+
+  for (const a of parsed.alerts) {
+    if (y < MARGIN + 50) {
+      page = addPage(doc);
+      pageNum.n++;
+      drawPageFooter(page, fonts, pageNum.n);
+      y = PAGE_H - MARGIN;
+    }
+
+    const color =
+      a.level === "FAIL"
+        ? C.red
+        : a.level.startsWith("WARN")
+          ? C.amber
+          : C.blue;
+
+    const chipW = fonts.bold.widthOfTextAtSize(a.level, 8) + 12;
+    drawRect(page, MARGIN, y - 14, chipW, 16, color);
+    page.drawText(a.level, {
+      x: MARGIN + 6,
+      y: y - 10,
+      size: 8,
+      font: fonts.bold,
+      color: C.white,
+    });
+
+    const title = a.ruleId ? `${a.name} [${a.ruleId}]` : a.name;
+    const countTag = a.count > 1 ? ` x ${a.count}` : "";
+    page.drawText(title + countTag, {
+      x: MARGIN + chipW + 8,
+      y: y - 10,
+      size: 11,
+      font: fonts.bold,
+      color: C.grey900,
+    });
+    y -= 22;
+
+    for (const detail of a.details.slice(0, 6)) {
+      if (y < MARGIN + 20) break;
+      y = drawText({
+        page,
+        text: detail,
+        x: MARGIN + 14,
+        y,
+        maxW: CONTENT_W - 18,
+        font: fonts.mono,
+        size: 8,
+        lineH: 11,
+        color: C.grey700,
+      });
+    }
+    if (a.details.length > 6) {
+      page.drawText(`...and ${a.details.length - 6} more`, {
+        x: MARGIN + 14,
+        y,
+        size: 8,
+        font: fonts.regular,
+        color: C.grey500,
+      });
+      y -= 11;
+    }
+
+    y -= 8;
+    page.drawLine({
+      start: { x: MARGIN, y: y + 4 },
+      end: { x: PAGE_W - MARGIN, y: y + 4 },
+      thickness: 0.3,
+      color: C.grey300,
+    });
+    y -= 6;
+  }
+}
+
+// ── Nuclei main export ────────────────────────────────────────────────────────
+
+export async function generateNucleiPdf(
+  payload: ScanReportPayload,
+): Promise<Uint8Array> {
+  const parsed = payload.parsedData as ParsedNucleiReport;
+  const doc = await PDFDocument.create();
+
+  const [boldFont, regularFont, monoFont] = await Promise.all([
+    doc.embedFont(StandardFonts.HelveticaBold),
+    doc.embedFont(StandardFonts.Helvetica),
+    doc.embedFont(StandardFonts.Courier),
+  ]);
+  const fonts: Fonts = {
+    bold: boldFont,
+    regular: regularFont,
+    mono: monoFont,
+  };
+
+  const critHigh = parsed.bySeverity.critical + parsed.bySeverity.high;
+  const cover = addPage(doc);
+  drawScannerCover(cover, fonts, payload, "Nuclei", [
+    {
+      label: "Total findings",
+      value: String(parsed.totalFindings),
+      color: C.blue,
+    },
+    {
+      label: "Critical / High",
+      value: String(critHigh),
+      color: critHigh > 0 ? C.red : C.green,
+    },
+    {
+      label: "Medium",
+      value: String(parsed.bySeverity.medium),
+      color: parsed.bySeverity.medium > 0 ? C.amber : C.green,
+    },
+    {
+      label: "Info / Low",
+      value: String(parsed.bySeverity.low + parsed.bySeverity.info),
+      color: C.grey500,
+    },
+  ]);
+
+  const pageNum = { n: 1 };
+  drawNucleiFindings(doc, fonts, parsed, pageNum);
+  drawAppendix(doc, fonts, parsed.rawOutput, pageNum);
+
+  return doc.save();
+}
+
+// ── ZAP main export ───────────────────────────────────────────────────────────
+
+export async function generateZapPdf(
+  payload: ScanReportPayload,
+): Promise<Uint8Array> {
+  const parsed = payload.parsedData as ParsedZapReport;
+  const doc = await PDFDocument.create();
+
+  const [boldFont, regularFont, monoFont] = await Promise.all([
+    doc.embedFont(StandardFonts.HelveticaBold),
+    doc.embedFont(StandardFonts.Helvetica),
+    doc.embedFont(StandardFonts.Courier),
+  ]);
+  const fonts: Fonts = {
+    bold: boldFont,
+    regular: regularFont,
+    mono: monoFont,
+  };
+
+  const cover = addPage(doc);
+  drawScannerCover(cover, fonts, payload, "OWASP ZAP", [
+    {
+      label: "URLs crawled",
+      value: parsed.totalUrls != null ? String(parsed.totalUrls) : "-",
+      color: C.blue,
+    },
+    {
+      label: "Failures",
+      value: String(parsed.failures),
+      color: parsed.failures > 0 ? C.red : C.green,
+    },
+    {
+      label: "Warnings",
+      value: String(parsed.warnings),
+      color: parsed.warnings > 0 ? C.amber : C.green,
+    },
+    {
+      label: "Passed checks",
+      value: String(parsed.passed),
+      color: C.green,
+    },
+  ]);
+
+  const pageNum = { n: 1 };
+  drawZapAlerts(doc, fonts, parsed, pageNum);
   drawAppendix(doc, fonts, parsed.rawOutput, pageNum);
 
   return doc.save();

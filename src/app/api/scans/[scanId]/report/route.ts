@@ -5,8 +5,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { initializeAdmin } from "@/lib/firebase/firebaseAdmin";
 import { parseNmapOutput } from "@/lib/report-engine/nmap-parser";
-import { generateNmapPdf } from "@/lib/report-engine/pdf-generator";
-import { ScanReportPayload } from "@/lib/report-engine/types";
+import { parseNucleiOutput } from "@/lib/report-engine/nuclei-parser";
+import { parseZapOutput } from "@/lib/report-engine/zap-parser";
+import {
+  generateNmapPdf,
+  generateNucleiPdf,
+  generateZapPdf,
+} from "@/lib/report-engine/pdf-generator";
+import { ScanReportPayload, ScannerType } from "@/lib/report-engine/types";
 
 export const runtime = "nodejs";
 
@@ -65,17 +71,24 @@ export async function GET(
       );
     }
 
-    const scannerType: string = scan.scannerType || scan.type || "nmap";
+    const scannerType = (scan.scannerType ||
+      scan.type ||
+      "nmap") as ScannerType;
 
-    if (scannerType !== "nmap") {
+    if (
+      scannerType !== "nmap" &&
+      scannerType !== "nuclei" &&
+      scannerType !== "zap"
+    ) {
       return NextResponse.json(
-        { error: "Report generation for this scanner type is coming soon." },
+        { error: `Unsupported scanner type: ${scannerType}` },
         { status: 422 },
       );
     }
 
-    // ── Extract raw nmap output ───────────────────────────────────────────
-    // The VPS worker stores it in rawPayload.stdout (via the webhook callback)
+    // ── Extract raw scanner output ────────────────────────────────────────
+    // The VPS worker stores a preview in resultsSummary.rawPreview for all
+    // scanner types. Fall back to legacy fields for older nmap scans.
     const rawOutput: string =
       scan.resultsSummary?.rawPreview ||
       scan.rawPayload?.stdout ||
@@ -95,13 +108,18 @@ export async function GET(
 
     const target: string = scan.target || scan.targetValue || "Unknown target";
 
-    // ── Parse & generate PDF ──────────────────────────────────────────────
-    const parsedData = parseNmapOutput(rawOutput);
+    // ── Parse & generate PDF (dispatch by scanner type) ───────────────────
+    const parsedData =
+      scannerType === "nmap"
+        ? parseNmapOutput(rawOutput)
+        : scannerType === "nuclei"
+          ? parseNucleiOutput(rawOutput)
+          : parseZapOutput(rawOutput);
 
     const payload: ScanReportPayload = {
       reportId: `${scanId}-report`,
       scanId,
-      scannerType: "nmap",
+      scannerType,
       target,
       userId,
       generatedAt:
@@ -110,14 +128,19 @@ export async function GET(
       rawOutput,
     };
 
-    const pdfBytes = await generateNmapPdf(payload);
+    const pdfBytes =
+      scannerType === "nmap"
+        ? await generateNmapPdf(payload)
+        : scannerType === "nuclei"
+          ? await generateNucleiPdf(payload)
+          : await generateZapPdf(payload);
 
     // ── Return as download ────────────────────────────────────────────────
     const safeTarget = target
       .replace(/[^a-z0-9.-]/gi, "-")
       .toLowerCase()
       .slice(0, 40);
-    const filename = `vulnscanners-nmap-${safeTarget}-${scanId.slice(0, 8)}.pdf`;
+    const filename = `vulnscanners-${scannerType}-${safeTarget}-${scanId.slice(0, 8)}.pdf`;
 
     return new Response(pdfBytes.buffer as ArrayBuffer, {
       status: 200,
