@@ -165,6 +165,21 @@ function addPage(doc: PDFDocument): PDFPage {
   return page;
 }
 
+/** Wrap a font so widthOfTextAtSize/encodeText etc. never see un-encodable
+ * Unicode (which would throw "WinAnsi cannot encode ..."). Same sanitization
+ * applied to page.drawText, so layout calculations match what gets drawn. */
+function safeFont<T extends PDFFont>(font: T): T {
+  const origWidth = font.widthOfTextAtSize.bind(font);
+  const origEncode = (font as any).encodeText?.bind(font);
+  (font as any).widthOfTextAtSize = (text: string, size: number) =>
+    origWidth(toWinAnsi(String(text ?? "")), size);
+  if (origEncode) {
+    (font as any).encodeText = (text: string) =>
+      origEncode(toWinAnsi(String(text ?? "")));
+  }
+  return font;
+}
+
 function drawPageFooter(page: PDFPage, fonts: Fonts, pageNum: number) {
   const y = 24;
   page.drawText("VulnScanners | Confidential Scan Report", {
@@ -342,7 +357,7 @@ function drawHostSection(
     font: fonts.bold,
     color: C.white,
   });
-  const stateLabel = host.state === "up" ? "▲ UP" : "▼ DOWN";
+  const stateLabel = host.state === "up" ? "UP" : "DOWN";
   const stateCol = host.state === "up" ? rgb(0.2, 0.8, 0.4) : C.red;
   const sw = fonts.bold.widthOfTextAtSize(stateLabel, 10);
   page.drawText(stateLabel, {
@@ -616,9 +631,9 @@ export async function generateNmapPdf(
   ]);
 
   const fonts: Fonts = {
-    bold: boldFont,
-    regular: regularFont,
-    mono: monoFont,
+    bold: safeFont(boldFont),
+    regular: safeFont(regularFont),
+    mono: safeFont(monoFont),
   };
 
   // 1. Cover
@@ -991,9 +1006,9 @@ export async function generateNucleiPdf(
     doc.embedFont(StandardFonts.Courier),
   ]);
   const fonts: Fonts = {
-    bold: boldFont,
-    regular: regularFont,
-    mono: monoFont,
+    bold: safeFont(boldFont),
+    regular: safeFont(regularFont),
+    mono: safeFont(monoFont),
   };
 
   const critHigh = parsed.bySeverity.critical + parsed.bySeverity.high;
@@ -1042,9 +1057,9 @@ export async function generateZapPdf(
     doc.embedFont(StandardFonts.Courier),
   ]);
   const fonts: Fonts = {
-    bold: boldFont,
-    regular: regularFont,
-    mono: monoFont,
+    bold: safeFont(boldFont),
+    regular: safeFont(regularFont),
+    mono: safeFont(monoFont),
   };
 
   const cover = addPage(doc);
