@@ -25,7 +25,7 @@ export default function ScansPage() {
   const { currentUser } = useAuth();
 
   const [savedTargets, setSavedTargets] = useState<Target[]>([]);
-  const [selectedTargetId, setSelectedTargetId] = useState<string>("");
+  const [targetInput, setTargetInput] = useState<string>("");
 
   useEffect(() => {
     const loadTargets = async () => {
@@ -38,9 +38,6 @@ export default function ScansPage() {
         const data = await res.json();
         if (data.success && data.targets) {
           setSavedTargets(data.targets);
-          if (data.targets.length > 0) {
-            setSelectedTargetId(data.targets[0].id);
-          }
         }
       } catch (err) {
         console.error("Failed to load targets", err);
@@ -78,9 +75,10 @@ export default function ScansPage() {
     setSubmitSuccess(null);
     setSubmitting(true);
 
-    if (!selectedTargetId) {
+    const trimmedTarget = targetInput.trim();
+    if (!trimmedTarget) {
       setSubmitError(
-        "Please select a target from your saved targets before launching a scan.",
+        "Enter a target (domain, IP, or URL) — or pick one from your saved targets.",
       );
       setSubmitting(false);
       return;
@@ -113,7 +111,7 @@ export default function ScansPage() {
             },
             body: JSON.stringify({
               type: scannerType,
-              targetId: selectedTargetId,
+              target: trimmedTarget,
               options:
                 scannerType === "nmap"
                   ? nmapOptions
@@ -285,40 +283,64 @@ export default function ScansPage() {
                   </div>
                 </div>
 
-                {/* Saved Targets */}
+                {/* Target */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-[#e6edf5] mb-2">
+                  <label
+                    htmlFor="target-input"
+                    className="block text-sm font-semibold text-[#e6edf5] mb-2"
+                  >
                     Target to Scan
                   </label>
-                  <div className="flex flex-wrap gap-3">
-                    {savedTargets.length === 0 ? (
-                      <p className="text-sm text-[#9aa5b6] py-2">
-                        You have no saved targets.{" "}
-                        <a
-                          href="/app/targets"
-                          className="text-[#4493f8] underline hover:text-[#0366d6]"
-                        >
-                          Add a target
-                        </a>{" "}
-                        first.
-                      </p>
-                    ) : (
+                  <input
+                    id="target-input"
+                    type="text"
+                    placeholder="example.com, 192.168.1.1, or https://example.com"
+                    value={targetInput}
+                    onChange={(e) => setTargetInput(e.target.value)}
+                    className="w-full px-4 py-3 border border-[#161b24] rounded-lg bg-[#11161f] text-[#e6edf5] placeholder:text-[#5b6675] focus:ring-2 focus:ring-[#0366d6] focus:border-transparent"
+                  />
+                  {savedTargets.length > 0 && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <span className="text-xs text-[#9aa5b6]">
+                        Or use a saved target:
+                      </span>
                       <select
-                        className="min-w-[200px] px-4 py-3 border border-[#161b24] rounded-lg bg-[#11161f] text-[#e6edf5] focus:ring-2 focus:ring-[#0366d6] focus:border-transparent"
-                        value={selectedTargetId}
-                        onChange={(e) => setSelectedTargetId(e.target.value)}
+                        className="px-2 py-1 text-xs border border-[#161b24] rounded-md bg-[#11161f] text-[#e6edf5] focus:ring-2 focus:ring-[#0366d6] focus:border-transparent"
+                        value=""
+                        onChange={(e) => {
+                          const t = savedTargets.find(
+                            (x) => x.id === e.target.value,
+                          );
+                          if (t) setTargetInput(t.value);
+                        }}
                       >
-                        <option value="" disabled>
-                          Select a target...
-                        </option>
-                        {savedTargets.map((target) => (
-                          <option key={target.id} value={target.id}>
-                            {target.name} ({target.value})
+                        <option value="">— pick one —</option>
+                        {savedTargets.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name} ({t.value})
                           </option>
                         ))}
                       </select>
-                    )}
-                  </div>
+                      <a
+                        href="/app/targets"
+                        className="text-xs text-[#4493f8] underline hover:text-[#0366d6] ml-auto"
+                      >
+                        Manage saved targets
+                      </a>
+                    </div>
+                  )}
+                  {savedTargets.length === 0 && (
+                    <p className="text-xs text-[#5b6675] pt-1">
+                      Tip:{" "}
+                      <a
+                        href="/app/targets"
+                        className="text-[#4493f8] underline hover:text-[#0366d6]"
+                      >
+                        save targets
+                      </a>{" "}
+                      to reuse them across scans.
+                    </p>
+                  )}
                 </div>
 
                 {/* ZAP Profile */}

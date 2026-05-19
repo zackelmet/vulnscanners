@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 import { IBM_Plex_Sans } from "next/font/google";
 
@@ -56,6 +57,9 @@ export default function RootLayout({
         <ClientProviders>
           <ConditionalNav>{children}</ConditionalNav>
         </ClientProviders>
+        <Script id="apollo-tracker" strategy="afterInteractive">
+          {`function initApollo(){var n=Math.random().toString(36).substring(7),o=document.createElement("script");o.src="https://assets.apollo.io/micro/website-tracker/tracker.iife.js?nocache="+n,o.async=!0,o.defer=!0,o.onload=function(){window.trackingFunctions.onLoad({appId:"6a0b4046e86a4e0010a1ab14"})},document.head.appendChild(o)}initApollo();`}
+        </Script>
       </body>
     </html>
   );

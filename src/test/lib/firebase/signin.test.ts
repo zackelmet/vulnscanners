@@ -94,7 +94,9 @@ describe("signIn function", () => {
     });
   });
 
-  it("should not call signupCallback for existing Google users", async () => {
+  it("should call signupCallback for existing Google users (upsert)", async () => {
+    // signin.ts intentionally calls the signupCallback on every Google sign-in
+    // so the user document is created or refreshed regardless of account age.
     const mockUserCredential = {
       user: {
         uid: "123",
@@ -110,6 +112,6 @@ describe("signIn function", () => {
       signupCallback: mockSignupCallback,
     });
 
-    expect(mockSignupCallback).not.toHaveBeenCalled();
+    expect(mockSignupCallback).toHaveBeenCalledWith(mockUserCredential);
   });
 });

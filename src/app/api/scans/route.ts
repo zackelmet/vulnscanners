@@ -46,29 +46,41 @@ export async function POST(request: NextRequest) {
 
     // Parse the request body
     const body: CreateScanRequest = await request.json();
-    const { type, targetId, options } = body;
+    const { type, target, targetId, options } = body;
 
     // Debug logging
-    console.log("Scan request received:", { userId, type, targetId, options });
+    console.log("Scan request received:", {
+      userId,
+      type,
+      target,
+      targetId,
+      options,
+    });
 
-    if (!targetId) {
+    // Resolve target value: prefer ad-hoc `target`, fall back to saved `targetId`.
+    let targetValue: string | undefined;
+    if (typeof target === "string" && target.trim()) {
+      targetValue = target.trim();
+    } else if (targetId) {
+      const targetDoc = await firestore
+        .collection("targets")
+        .doc(targetId)
+        .get();
+      if (!targetDoc.exists || targetDoc.data()?.userId !== userId) {
+        return NextResponse.json(
+          { error: "Target not found or unauthorized" },
+          { status: 404 },
+        );
+      }
+      targetValue = targetDoc.data()?.value;
+    } else {
       return NextResponse.json(
-        { error: "Missing required field: targetId" },
+        { error: "Missing required field: target (or targetId)" },
         { status: 400 },
       );
     }
 
-    // Fetch Target from Firestore
-    const targetDoc = await firestore.collection("targets").doc(targetId).get();
-    if (!targetDoc.exists || targetDoc.data()?.userId !== userId) {
-      return NextResponse.json(
-        { error: "Target not found or unauthorized" },
-        { status: 404 },
-      );
-    }
-
-    const targetValue = targetDoc.data()?.value;
-    const targetArray = [targetValue]; // Wrapping it in array to minimize downstream changes
+    const targetArray = [targetValue!]; // Wrapping it in array to minimize downstream changes
 
     // Normalize options (client may send empty string or null)
     const normalizedOptions =

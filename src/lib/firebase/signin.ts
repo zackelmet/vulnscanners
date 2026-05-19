@@ -2,6 +2,7 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
+  OAuthProvider,
   UserCredential,
 } from "firebase/auth";
 import { auth } from "./firebaseClient";
@@ -22,7 +23,7 @@ interface SignInResult {
 export enum SignInMethod {
   EmailPassword = "email_password",
   Google = "google",
-  // Add other methods as needed (e.g., Facebook, Twitter, etc.)
+  Microsoft = "microsoft",
 }
 
 /**
@@ -87,20 +88,29 @@ export async function signIn(
           options.credentials.email,
           options.credentials.password,
         );
+
+        // Always try to create/update user document on signin
+        if (options?.signupCallback) {
+          await options.signupCallback(userCredential);
+        }
         break;
 
       case SignInMethod.Google:
         const googleProvider = new GoogleAuthProvider();
         userCredential = await signInWithPopup(auth, googleProvider);
 
-        const creationTime = new Date(
-          userCredential.user.metadata.creationTime || 0,
-        );
-        const now = new Date();
-        const timeDifference = now.getTime() - creationTime.getTime();
-        const isNewUser = timeDifference < 10000;
+        // Always try to create/update user document
+        if (options?.signupCallback) {
+          await options.signupCallback(userCredential);
+        }
+        break;
 
-        if (isNewUser && options?.signupCallback) {
+      case SignInMethod.Microsoft:
+        const microsoftProvider = new OAuthProvider("microsoft.com");
+        userCredential = await signInWithPopup(auth, microsoftProvider);
+
+        // Always try to create/update user document
+        if (options?.signupCallback) {
           await options.signupCallback(userCredential);
         }
         break;
