@@ -233,13 +233,18 @@ export async function POST(request: NextRequest) {
           const scanData: any = {
             userId,
             type,
-            targetId,
             targetValue: normalizedTarget,
             options: normalizedOptions,
             status: "queued",
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           };
+
+          // Only include targetId if user picked a saved target.
+          // Firestore Admin rejects `undefined` field values.
+          if (targetId) {
+            scanData.targetId = targetId;
+          }
 
           // Only include batchId if it exists (multiple targets)
           if (batchId) {
@@ -295,13 +300,17 @@ export async function POST(request: NextRequest) {
           scanId: scanRef.id,
           status: "queued",
           type,
-          targetId,
           targetValue: normalizedTarget,
           startTime: admin.firestore.FieldValue.serverTimestamp(),
           resultsSummary: null,
           gcpStorageUrl: null,
           errorMessage: null,
         };
+
+        // Only include targetId if user picked a saved target.
+        if (targetId) {
+          userScanData.targetId = targetId;
+        }
 
         // Only include batchId if it exists
         if (batchId) {
