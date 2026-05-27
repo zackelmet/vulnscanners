@@ -66,7 +66,15 @@ h6 {
 	letter-spacing: -0.02em;
 }
 
-/* DaisyUI override for the active theme (cupcake is set in layout) */
+/* DaisyUI override for the active theme (cupcake is set in layout)
+ *
+ * DaisyUI v4's [data-theme] selector applies background-color via
+ * var(--fallback-b1, oklch(var(--b1)/1)). Cupcake is a light theme by
+ * default, so its --fallback-b1 is white — which paints our body white
+ * whenever a page wrapper isn't covering it. Override the fallbacks
+ * to match our dark palette so the body inherits the right colors
+ * even before the oklch chain resolves.
+ */
 body[data-theme="cupcake"] {
 	--p: 213 97% 43%;
 	--pf: 213 97% 35%;
@@ -82,6 +90,10 @@ body[data-theme="cupcake"] {
 	--b2: 213 38% 10%;
 	--b3: 213 36% 12%;
 	--bc: 213 30% 90%;
+	--fallback-b1: #0a141f;
+	--fallback-b2: #0f1d2e;
+	--fallback-b3: #142436;
+	--fallback-bc: #f0f6ff;
 }
 
 /* Utility skins for the neon dark system */

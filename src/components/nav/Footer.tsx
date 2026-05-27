@@ -69,7 +69,7 @@ export default function Footer() {
               href="/help-center"
               className="hover:text-[#0366d6] transition px-4"
             >
-              Help Center
+              Trust &amp; Safety
             </Link>
             <Link
               href="/support"
