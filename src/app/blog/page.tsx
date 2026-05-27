@@ -27,7 +27,7 @@ export default function BlogPage() {
   const posts = getAllPosts(["slug", "title", "date", "description"]);
 
   return (
-    <main className="min-h-screen bg-[#0a141f] text-[#e6edf5]">
+    <main className="min-h-screen text-[#e6edf5]">
       <div className="max-w-4xl mx-auto px-5 py-20">
         <header className="mb-14">
           <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#4493f8] mb-3">

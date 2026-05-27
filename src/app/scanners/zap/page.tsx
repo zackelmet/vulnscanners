@@ -66,7 +66,7 @@ const USE_CASES = [
 
 export default function ZapScannerPage() {
   return (
-    <main className="min-h-screen bg-[#0a141f] text-[#e6edf5]">
+    <main className="min-h-screen text-[#e6edf5]">
       <div className="max-w-5xl mx-auto px-5 py-20 space-y-20">
         {/* Hero */}
         <header className="space-y-6">

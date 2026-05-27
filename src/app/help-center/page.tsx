@@ -77,9 +77,9 @@ export default function HelpCenterPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#07090d]">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="border-b border-[#161b24] bg-[#0d1117]">
+      <header className="border-b border-[#161b24] bg-[#0d1117]/80 backdrop-blur">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <Link
             href="/"

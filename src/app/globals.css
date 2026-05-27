@@ -24,9 +24,23 @@
 }
 
 body {
-	background: radial-gradient(circle at 20% 20%, rgba(3,102,214,0.07), transparent 25%),
+	/*
+	 * Site-wide ambient grid background (matches the landing page).
+	 * Layers, top to bottom:
+	 *   1-2. Subtle radial blue glows (existing brand wash).
+	 *   3.   Diagonal blue tint to add depth.
+	 *   4-5. 48px white grid lines (vertical + horizontal).
+	 *   6.   Base color from --bg.
+	 * Pages that need a flat surface can opt out by setting their own background.
+	 */
+	background:
+		radial-gradient(circle at 20% 20%, rgba(3,102,214,0.07), transparent 25%),
 		radial-gradient(circle at 80% 10%, rgba(37,99,235,0.05), transparent 23%),
+		linear-gradient(135deg, rgba(3,102,214,0.08) 0%, transparent 50%),
+		linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px),
+		linear-gradient(180deg, rgba(255,255,255,0.025) 1px, transparent 1px),
 		var(--bg);
+	background-size: auto, auto, auto, 48px 48px, 48px 48px, auto;
 	color: var(--text);
 	min-height: 100vh;
 	font-family: var(--font-ibm-plex-sans), 'IBM Plex Sans', sans-serif;
