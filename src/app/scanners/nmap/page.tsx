@@ -1,9 +1,24 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata = {
-  title: "A better vulnerability scanner — Nmap Port Scanner",
+export const metadata: Metadata = {
+  title: "Hosted Nmap Port Scanner",
   description:
     "Internet-facing service inventory, open port verification, and attack surface mapping — hosted with zero local setup.",
+  alternates: { canonical: "/scanners/nmap" },
+  openGraph: {
+    title: "Hosted Nmap Port Scanner — VulnScanners",
+    description:
+      "Internet-facing service inventory and attack surface mapping — hosted, zero install.",
+    url: "https://vulnscanners.com/scanners/nmap",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Hosted Nmap Port Scanner — VulnScanners",
+    description:
+      "Internet-facing service inventory and attack surface mapping — hosted, zero install.",
+  },
 };
 
 export default function NmapScannerPage() {

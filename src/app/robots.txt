@@ -1,5 +1,9 @@
 User-Agent: *
 Allow: /
-Disallow: /private/
+Disallow: /app/
+Disallow: /admin/
+Disallow: /api/
+Disallow: /login
+Disallow: /password-reset
 
-Sitemap: https://test.com/sitemap.xml
+Sitemap: https://vulnscanners.com/sitemap.xml

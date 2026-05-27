@@ -1,9 +1,24 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata = {
-  title: "A better vulnerability scanner — Nuclei CVE Scanner",
+export const metadata: Metadata = {
+  title: "Hosted Nuclei CVE Scanner",
   description:
     "Template-based vulnerability detection mapped to current CVE intelligence. Continuously updated community templates.",
+  alternates: { canonical: "/scanners/nuclei" },
+  openGraph: {
+    title: "Hosted Nuclei CVE Scanner — VulnScanners",
+    description:
+      "Template-based CVE detection on continuously updated community templates — hosted.",
+    url: "https://vulnscanners.com/scanners/nuclei",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Hosted Nuclei CVE Scanner — VulnScanners",
+    description:
+      "Template-based CVE detection on continuously updated community templates — hosted.",
+  },
 };
 
 export default function NucleiScannerPage() {

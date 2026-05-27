@@ -1,9 +1,24 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata = {
-  title: "A better vulnerability scanner — OWASP ZAP Web Scanner",
+export const metadata: Metadata = {
+  title: "Hosted OWASP ZAP Web Scanner",
   description:
     "Automated web-layer security baseline for common app-level risk. Crawler-based passive analysis for web applications.",
+  alternates: { canonical: "/scanners/zap" },
+  openGraph: {
+    title: "Hosted OWASP ZAP Web Scanner — VulnScanners",
+    description:
+      "Automated web-layer security baseline and crawler-based passive analysis — hosted.",
+    url: "https://vulnscanners.com/scanners/zap",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Hosted OWASP ZAP Web Scanner — VulnScanners",
+    description:
+      "Automated web-layer security baseline and crawler-based passive analysis — hosted.",
+  },
 };
 
 export default function ZapScannerPage() {

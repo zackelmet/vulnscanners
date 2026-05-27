@@ -17,22 +17,26 @@ import "@fortawesome/fontawesome-svg-core/styles.css";
 config.autoAddCss = false;
 
 export const metadata: Metadata = {
-  title: "A better vulnerability scanner — VulnScanners",
+  title: {
+    default: "VulnScanners — Hosted Nmap, Nuclei & OWASP ZAP",
+    template: "%s · VulnScanners",
+  },
   description:
-    "Vulnerability Scanning: Zero Install. Maximum Impact. Hosted Nmap, Nuclei, and OWASP ZAP in one unified web app.",
+    "Hosted Nmap, Nuclei, and OWASP ZAP in one unified web app. Zero install, no maintenance, credits never expire.",
   metadataBase: new URL("https://vulnscanners.com"),
   openGraph: {
-    title: "A better vulnerability scanner — VulnScanners",
+    title: "VulnScanners — Hosted Nmap, Nuclei & OWASP ZAP",
     description:
-      "Vulnerability Scanning: Zero Install. Maximum Impact. Hosted Nmap, Nuclei, and OWASP ZAP in one unified web app.",
+      "Hosted Nmap, Nuclei, and OWASP ZAP in one unified web app. Zero install, no maintenance.",
     url: "https://vulnscanners.com",
     siteName: "VulnScanners",
+    type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "A better vulnerability scanner — VulnScanners",
+    title: "VulnScanners — Hosted Nmap, Nuclei & OWASP ZAP",
     description:
-      "Vulnerability Scanning: Zero Install. Maximum Impact. Hosted Nmap, Nuclei, and OWASP ZAP in one unified web app.",
+      "Hosted Nmap, Nuclei, and OWASP ZAP in one unified web app. Zero install, no maintenance.",
   },
   icons: {
     icon: [
@@ -45,6 +49,16 @@ export const metadata: Metadata = {
   },
 };
 
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "VulnScanners",
+  url: "https://vulnscanners.com",
+  logo: "https://vulnscanners.com/vulnscanners-logo.png",
+  description:
+    "Hosted Nmap, Nuclei, and OWASP ZAP vulnerability scanning in one unified web app.",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -52,6 +66,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={ibmPlexSans.variable}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd),
+          }}
+        />
+      </head>
       {/* Change your theme HERE */}
       <body data-theme="cupcake" className={ibmPlexSans.className}>
         <ClientProviders>
