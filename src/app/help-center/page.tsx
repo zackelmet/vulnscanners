@@ -58,7 +58,7 @@ export default function HelpCenterPage() {
       content: [
         "In the unlikely event of a security incident affecting our platform or your data, we maintain a comprehensive incident response plan to quickly contain, investigate, and remediate the issue.",
         "We will notify affected users within 72 hours of confirming a data breach or security incident that compromises user data, in accordance with applicable regulations.",
-        "Our incident response team is available 24/7 to handle security-related concerns. If you believe you've discovered a vulnerability in VulnScanners, please report it to security@vulnscanners.com.",
+        "Our incident response team handles security-related concerns. If you believe you've discovered a vulnerability in VulnScanners, please report it through our support page using the \"Security concern\" category.",
       ],
     },
     {
@@ -165,19 +165,13 @@ export default function HelpCenterPage() {
             If you have questions about our security practices, data handling,
             or need to report a security concern, our team is here to help.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex justify-center">
             <Link
               href="/support"
               className="inline-block px-6 py-3 bg-[#0366d6] hover:bg-[#4493f8] text-white font-semibold rounded-lg transition-colors"
             >
               Contact Support
             </Link>
-            <a
-              href="mailto:security@vulnscanners.com"
-              className="inline-block px-6 py-3 bg-[#11161f] hover:bg-[#161b24] text-[#e6edf5] font-semibold rounded-lg border border-[#161b24] transition-colors"
-            >
-              Report Security Issue
-            </a>
           </div>
         </div>
 
