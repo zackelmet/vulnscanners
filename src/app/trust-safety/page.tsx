@@ -1,14 +1,21 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 
-export const metadata = {
-  title: "A better vulnerability scanner — Trust + Safety",
-  description: "Trust & Safety information for VulnScanners — coming soon.",
-  metadataBase: new URL("https://vulnscanners.com/trust-safety"),
+export const metadata: Metadata = {
+  title: "Trust & Safety",
+  description: "Trust & Safety information for VulnScanners.",
+  alternates: { canonical: "/trust-safety" },
   openGraph: {
-    title: "A better vulnerability scanner — Trust + Safety",
-    description: "Trust & Safety information for VulnScanners — coming soon.",
+    title: "Trust & Safety — VulnScanners",
+    description: "Trust & Safety information for VulnScanners.",
     url: "https://vulnscanners.com/trust-safety",
     siteName: "VulnScanners",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Trust & Safety — VulnScanners",
+    description: "Trust & Safety information for VulnScanners.",
   },
 };
 
