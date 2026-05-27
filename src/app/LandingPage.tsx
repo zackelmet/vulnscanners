@@ -361,6 +361,51 @@ export default function LandingPage() {
         </div>
       </div>
 
+      {/* ── Scanner cards ───────────────────────────────────────── */}
+      <section className={styles.block} id="scanners">
+        <div className={styles.container}>
+          <div className={styles.sectionHead}>
+            <p className={styles.sectionKicker}>Scanners</p>
+            <h2 className={styles.sectionTitle}>
+              Three scanners. One hosted workflow.
+            </h2>
+            <p className={styles.sectionSub}>
+              Each engine is tuned, patched, and continuously updated on our
+              side. You pick the target, we handle the rest.
+            </p>
+          </div>
+          <div className={styles.scannersGrid}>
+            {SCANNERS.map((s) => (
+              <article key={s.slug} className={styles.scannerCard}>
+                <div className={styles.scannerLogoWrap}>
+                  <Image
+                    src={s.logo}
+                    alt={`${s.name} logo`}
+                    width={120}
+                    height={56}
+                    className={styles.scannerLogoImg}
+                  />
+                </div>
+                <div className={styles.scannerHead}>
+                  <span className={styles.scannerName}>{s.name}</span>
+                  <span className={styles.scannerTag}>{s.tag}</span>
+                </div>
+                <p className={styles.scannerSummary}>{s.summary}</p>
+                <div className={styles.scannerFoot}>
+                  <span>1 credit per scan</span>
+                  <Link
+                    href={`/scanners/${s.slug}`}
+                    className={styles.scannerMore}
+                  >
+                    Learn more →
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── Pain points ─────────────────────────────────────────── */}
       <section className={styles.block} id="why" aria-labelledby="why-title">
         <div className={styles.container}>
@@ -418,54 +463,9 @@ export default function LandingPage() {
             </article>
           </div>
           <div className={styles.painsFoot}>
-            <Link href="#scanners" className={styles.painsFootLink}>
-              See how VulnScanners solves this <ArrowIcon />
+            <Link href="#pricing" className={styles.painsFootLink}>
+              Skip the setup — see pricing <ArrowIcon />
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Scanner cards ───────────────────────────────────────── */}
-      <section className={styles.block} id="scanners">
-        <div className={styles.container}>
-          <div className={styles.sectionHead}>
-            <p className={styles.sectionKicker}>Scanners</p>
-            <h2 className={styles.sectionTitle}>
-              Three scanners. One hosted workflow.
-            </h2>
-            <p className={styles.sectionSub}>
-              Each engine is tuned, patched, and continuously updated on our
-              side. You pick the target, we handle the rest.
-            </p>
-          </div>
-          <div className={styles.scannersGrid}>
-            {SCANNERS.map((s) => (
-              <article key={s.slug} className={styles.scannerCard}>
-                <div className={styles.scannerLogoWrap}>
-                  <Image
-                    src={s.logo}
-                    alt={`${s.name} logo`}
-                    width={120}
-                    height={56}
-                    className={styles.scannerLogoImg}
-                  />
-                </div>
-                <div className={styles.scannerHead}>
-                  <span className={styles.scannerName}>{s.name}</span>
-                  <span className={styles.scannerTag}>{s.tag}</span>
-                </div>
-                <p className={styles.scannerSummary}>{s.summary}</p>
-                <div className={styles.scannerFoot}>
-                  <span>1 credit per scan</span>
-                  <Link
-                    href={`/scanners/${s.slug}`}
-                    className={styles.scannerMore}
-                  >
-                    Learn more →
-                  </Link>
-                </div>
-              </article>
-            ))}
           </div>
         </div>
       </section>
