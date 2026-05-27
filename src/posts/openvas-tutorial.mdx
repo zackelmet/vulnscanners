@@ -1,0 +1,188 @@
+---
+title: "OpenVAS / Greenbone Tutorial: Install, Configure, and Run Your First Scan"
+date: "2026-05-14"
+description: "A practical OpenVAS (Greenbone Community Edition) tutorial — Docker install, feed sync, configuring a scan, and reading the output."
+author: "VulnScanners team"
+tags: ["openvas", "greenbone", "tutorial"]
+---
+
+OpenVAS is the open-source vulnerability scanner most people have heard of. It's also the one most people give up on midway through install. The supported runtime now is Greenbone Community Edition (Docker), and the experience is dramatically better than the historic Kali / apt route. This is the working tutorial.
+
+## TL;DR
+
+- The supported install is the Greenbone Community Edition Docker stack — not `apt install openvas`.
+- First-time feed sync takes hours. Plan for it.
+- Scans take long. Hours, not minutes. Schedule, don't run interactively.
+- Output is comprehensive but noisy. Triage is non-optional.
+
+## What OpenVAS actually is
+
+OpenVAS — the Open Vulnerability Assessment System — is the scanner engine. The full stack (now branded Greenbone Community Edition) is several components:
+
+- **GVM** — Greenbone Vulnerability Management framework
+- **gvmd** — the manager daemon, where scans, targets, and reports live
+- **openvas-scanner** — the engine that actually executes checks
+- **NVTs** — Network Vulnerability Tests, the actual detection logic (the "feed")
+- **GSA** — Greenbone Security Assistant, the web UI
+
+Maintained by Greenbone Networks. The community edition is GPL; the enterprise edition is paid. [greenbone.net](https://www.greenbone.net/)
+
+## Install via Docker
+
+Greenbone publishes a docker-compose stack. This is the supported install — the `apt` packages on most distros are years out of date.
+
+```bash
+# Pick a directory to host the stack
+mkdir -p /opt/greenbone-community
+cd /opt/greenbone-community
+
+# Pull the official compose file
+curl -O https://greenbone.github.io/docs/latest/_static/docker-compose-22.4.yml
+mv docker-compose-22.4.yml docker-compose.yml
+
+# Set the admin password (do this before first-up)
+export PASSWORD=<a strong password>
+
+# Bring the stack up
+docker compose pull
+docker compose up -d
+```
+
+The first `docker compose up` will pull a dozen container images and start them in the right order. Give it ten minutes to settle.
+
+## Feed sync (the slow part)
+
+The detection logic — NVTs, CERT data, SCAP data, GVMD data — has to be downloaded before the scanner can do anything. The default behaviour is to sync on startup, then refresh daily.
+
+```bash
+# Watch the feed-sync containers
+docker compose logs -f notus-data nvt-data scap-data cert-bund-data dfn-cert-data
+```
+
+First sync: **2–6 hours** depending on bandwidth. Subsequent syncs are incremental. Until that's done, scans run but find nothing — the engine is checking against an empty database.
+
+You can check sync status from the web UI under **Administration → Feed Status**.
+
+## First login
+
+```
+https://localhost:9392
+```
+
+Username `admin`, password whatever you set in `PASSWORD`. Self-signed TLS by default; accept the certificate warning for local development.
+
+## Configure a target
+
+Targets are reusable scan objects. Create one before scanning.
+
+**Configuration → Targets → New Target:**
+
+- **Name:** descriptive, e.g. `lab-network`
+- **Hosts:** comma-separated IPs, CIDRs, or hostnames. `192.168.1.0/24`, `10.0.0.5`, `example.com`
+- **Exclude Hosts:** optional, anything in `Hosts` that shouldn't be scanned
+- **Port List:** default is "All IANA assigned TCP and UDP" — full coverage but slow. "OpenVAS Default" is faster.
+- **Alive Test:** ICMP, TCP-ACK, or both. For modern environments, use **Consider Alive** if you know hosts are up — most cloud / corporate networks block ICMP.
+- **Credentials:** for authenticated scanning, configure SSH or SMB credentials separately and link them here.
+
+## Authenticated scanning
+
+This is where OpenVAS earns its keep over external-only scanners. Authenticated scans hit the host's package manager, registry, configuration files — finding vulnerabilities that no external scan can detect.
+
+**Configuration → Credentials → New Credential:**
+
+- **Type:** Username + Password, or Username + SSH Key
+- **Name:** descriptive
+- **Login / Password / Private Key:** the actual auth
+
+Link the credential to your target. The scan will then SSH (Linux) or use SMB (Windows) into each host, query installed packages, and match against the NVT database.
+
+For a Linux target, the scan user needs:
+
+- SSH access (key-based)
+- `sudo` rights to read package lists (or run with reduced coverage)
+
+For Windows, you'll need an account with at least local admin or read access to relevant registry paths.
+
+## Configure a scan task
+
+**Scans → Tasks → New Task:**
+
+- **Name:** e.g., `lab-network-weekly`
+- **Scan Targets:** the target you just created
+- **Schedule:** for recurring scans (highly recommended over one-shot)
+- **Scan Config:** "Full and fast" is the sensible default. Other options:
+  - "Discovery" — just enumerate ports / services, no vuln checks
+  - "Host Discovery" — even lighter, alive checks only
+  - "Full and fast ultimate" — more thorough, much slower
+  - "Empty" — for custom configurations
+- **Alerts:** optional email when the scan completes
+
+Save, then **Start** the task.
+
+## Reading the report
+
+Once a scan finishes, navigate to **Scans → Reports** and open the latest.
+
+The report has several views:
+
+- **Summary** — finding counts by severity (High / Medium / Low / Log)
+- **Results** — every finding, filterable / sortable
+- **Hosts** — per-host breakdown
+- **Operating Systems** — OS fingerprints
+- **CVEs** — CVE IDs referenced
+
+Each finding has:
+
+- **NVT** — the test that fired
+- **Severity** — CVSS-derived score
+- **CVE references** — when applicable
+- **Solution** — vendor's recommended fix
+- **Detection Method** — version banner, registry key, package version, etc.
+
+Export to PDF, CSV, or XML via the report menu.
+
+## Reducing noise
+
+Out of the box, OpenVAS produces *many* findings — including informational fingerprinting results, low-severity certificate notes, and version banners. Triage:
+
+- **Filter by severity ≥ 5.0** for a realistic first pass.
+- **Group by host** to spot systemic issues (one outdated package on 50 hosts is one ticket, not 50).
+- **Use overrides** to suppress known-acceptable findings going forward. Overrides apply to all future reports.
+- **Tag false positives explicitly.** Don't just dismiss them — mark them as False Positive so the next operator knows.
+
+## Scheduling vs one-shot
+
+OpenVAS scans against a complete feed against a typical subnet take **hours**. Run interactively only when you need fresh data immediately. For ongoing monitoring, use the Schedule feature:
+
+- Weekly full scans against critical assets
+- Monthly full scans against the whole estate
+- Discovery-only daily scans for change detection
+
+Pair with email alerts so you're not babysitting the UI.
+
+## Common pitfalls
+
+- **Installing from apt and giving up.** The supported install is Docker / Greenbone Community Edition. Apt packages on most distros are stale.
+- **Scanning before feed sync completes.** Empty NVT DB = empty findings. Wait for the feed.
+- **Running unauthenticated scans and reporting on patch level.** External scans see versions only when banners are exposed. For real patch posture, you need authenticated scans.
+- **Treating every "high" as urgent.** OpenVAS severity is broadly aligned with CVSS but calibration varies. See [our SLA guide](/blog/vulnerability-management-slas-guide).
+- **Running full scans interactively.** They take hours. Schedule them.
+
+## When OpenVAS is the wrong tool
+
+- **Modern cloud / containerised infrastructure** — better served by [Trivy](https://aquasecurity.github.io/trivy/) for images / IaC and [Nuclei](/scanners/nuclei) for runtime checks.
+- **Web application vulnerabilities** — OpenVAS does some web-layer checks but [OWASP ZAP](/scanners/zap) is purpose-built for it.
+- **Fast iteration / CI gating** — scans are too slow. Nuclei runs in seconds.
+- **Small operations without dedicated infra** — running the Greenbone stack 24/7 is overhead. Hosted alternatives sidestep this.
+
+OpenVAS shines for **authenticated host-level scanning of traditional Linux / Windows infrastructure** where you can run the stack permanently and you need wide CVE coverage. For everything else, the modern toolchain is usually a better fit.
+
+## Where hosted scanning fits
+
+For an organisation that doesn't have the infrastructure budget for a permanent OpenVAS deployment, hosted alternatives cover the external attack surface without the maintenance overhead. [VulnScanners](/) runs Nmap, Nuclei, and OWASP ZAP on our infrastructure, with PDF reports per scan. That doesn't replace OpenVAS for authenticated internal scanning — but for external assessment, it's substantially less operational work.
+
+## Further reading
+
+- Greenbone Community Edition install — [greenbone.github.io/docs/latest/22.4/container/index.html](https://greenbone.github.io/docs/latest/22.4/container/index.html)
+- NVT database — [community.greenbone.net](https://community.greenbone.net/)
+- Companion: [our open-source scanner comparison](/blog/best-open-source-vulnerability-scanners)

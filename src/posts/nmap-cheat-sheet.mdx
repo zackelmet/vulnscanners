@@ -1,0 +1,191 @@
+---
+title: "Nmap Cheat Sheet: The Commands You'll Actually Use"
+date: "2026-05-27"
+description: "A working Nmap cheat sheet for port scanning, service detection, NSE scripts, and timing — only commands worth memorising."
+author: "VulnScanners team"
+tags: ["nmap", "port-scanning", "recon"]
+---
+
+Most Nmap cheat sheets are a wall of every flag in the man page. This isn't that. It's the flags you'll actually reach for during a real engagement, with a one-line explanation of when each matters. Bookmark it.
+
+## TL;DR
+
+- Default TCP SYN scan with version detection is `nmap -sV -T4 <target>`.
+- `-Pn` skips host discovery — use it whenever ICMP is filtered.
+- `-sU` is UDP. It's slow. Pair with `--top-ports`.
+- NSE scripts are categorised — start with `--script default,safe` if you don't know what you want.
+- `-oA <basename>` writes all three output formats at once. Use it every time.
+
+## Targets
+
+```bash
+nmap example.com              # single host
+nmap 10.0.0.0/24              # CIDR
+nmap 10.0.0.1-50              # range
+nmap -iL targets.txt          # list from file
+nmap --exclude 10.0.0.5 ...   # skip a host
+```
+
+When you're scanning a customer's external range, always confirm scope in writing first. Hosted scanners like [VulnScanners](/scanners/nmap) make scope easier because they ship from a fixed IP your client can allowlist.
+
+## Host discovery
+
+```bash
+nmap -sn 10.0.0.0/24    # ping sweep, no port scan
+nmap -Pn <target>       # skip discovery, treat host as up
+nmap -PS22,80,443 ...   # TCP SYN ping on specific ports
+nmap -PE <target>       # ICMP echo
+nmap -n <target>        # no DNS resolution (faster, less noisy)
+```
+
+`-Pn` is the flag you'll hit most often in the real world. Cloud-hosted targets, corporate firewalls, and most modern hosts drop ICMP, so the default ping sweep misses them.
+
+## Port-scan techniques
+
+| Flag | Scan type | When to reach for it |
+|------|-----------|----------------------|
+| `-sS` | TCP SYN (default with root) | Fast, stealthier, default for most cases |
+| `-sT` | TCP connect | Non-root users, or strict environments |
+| `-sU` | UDP | Slow but mandatory for services like DNS, SNMP |
+| `-sA` | TCP ACK | Map firewall rules (filtered vs unfiltered) |
+| `-sN` `-sF` `-sX` | Null / FIN / Xmas | Evasion when SYN is blocked |
+| `-sV` | Version detection | Almost always — `-sV` makes results actionable |
+| `-O` | OS fingerprinting | Once you've confirmed scope; needs raw sockets |
+
+## Port selection
+
+```bash
+nmap -p 80,443 <target>           # specific ports
+nmap -p 1-1000 <target>           # range
+nmap -p- <target>                 # all 65535 ports
+nmap --top-ports 100 <target>     # 100 most common
+nmap -p T:80,U:53 <target>        # mix TCP and UDP
+nmap -F <target>                  # fast scan: top 100 ports
+```
+
+For external recon, `-p- -sV` plus a reasonable timing template is the gold standard. It's slow but you don't miss services on weird ports — and "service on a weird port" is half of what makes an engagement productive.
+
+## Timing and performance
+
+```bash
+nmap -T0 ...    # paranoid (IDS evasion, very slow)
+nmap -T1 ...    # sneaky
+nmap -T2 ...    # polite
+nmap -T3 ...    # normal (default)
+nmap -T4 ...    # aggressive — sane default for most networks
+nmap -T5 ...    # insane — drops accuracy
+```
+
+`-T4` is the sweet spot for most engagements. Bump to `-T5` only when you're scanning a host you control and accuracy matters less than wall-clock time. Use `-T2` or below when you're worried about getting noticed by an IDS.
+
+You can also tune timing more precisely:
+
+```bash
+nmap --max-rtt-timeout 200ms --min-rate 1000 <target>
+```
+
+`--min-rate` is underrated. It's the easiest way to speed up `-p-` scans without bumping the timing template all the way to `-T5`.
+
+## Version & service detection
+
+```bash
+nmap -sV <target>                 # service version detection
+nmap -sV --version-intensity 9    # most aggressive probing
+nmap -sV --version-light          # faster, less accurate
+nmap -A <target>                  # version + OS + scripts + traceroute
+```
+
+`-A` is convenient but heavy. On large scopes, run `-sV` first and add `-O` / NSE selectively for hosts that matter.
+
+## Nmap Scripting Engine (NSE)
+
+```bash
+nmap --script default <target>           # the "safe by default" set
+nmap --script vuln <target>              # known vuln checks
+nmap --script "http-*" <target>          # all http scripts
+nmap --script "not intrusive" <target>   # exclude noisy scripts
+nmap --script ssl-enum-ciphers -p 443 <target>
+nmap --script smb-enum-shares -p 445 <target>
+```
+
+Useful NSE categories to know:
+
+- `default` — same set as `-sC`; safe baseline checks
+- `safe` — won't crash services or trigger IDS
+- `vuln` — known-vulnerability detections
+- `discovery` — extra service / host enumeration
+- `auth` — authentication-related checks
+- `intrusive` — may crash services; only with explicit permission
+
+You can pass script arguments with `--script-args`:
+
+```bash
+nmap --script http-brute --script-args userdb=users.txt,passdb=pw.txt -p 80 <target>
+```
+
+## Output formats
+
+```bash
+nmap -oN scan.txt <target>     # normal (human-readable)
+nmap -oX scan.xml <target>     # XML — best for parsing
+nmap -oG scan.gnmap <target>   # grepable
+nmap -oA basename <target>     # all three at once
+```
+
+XML is the format that matters. It's what every report generator, ticketing integration, and downstream pipeline reads. `-oA` writes all three so you never have to re-scan because you picked the wrong one.
+
+## Firewall / IDS evasion
+
+```bash
+nmap -f <target>                  # fragment packets
+nmap --mtu 24 <target>            # custom MTU (multiple of 8)
+nmap -D RND:10 <target>           # 10 random decoy hosts
+nmap -S <spoof-ip> -e <iface> ... # spoof source IP
+nmap --source-port 53 <target>    # source from port 53 (UDP/DNS)
+nmap --data-length 50 <target>    # pad packets
+```
+
+Treat evasion flags as scalpels — they often slow scans down or muddle results. Use them when you have a specific reason (IDS sandbox, network ACL), not by default.
+
+## Useful one-liners
+
+```bash
+# Full external recon scan of a single host
+nmap -Pn -sS -sV -p- -T4 --min-rate 1000 -A -oA recon-$(date +%F) example.com
+
+# Quick top-100 TCP scan over a /24
+nmap -F -T4 --open 10.0.0.0/24 -oA quick
+
+# UDP top-100 (still slow; expect 20+ minutes)
+nmap -sU --top-ports 100 -T4 --open <target>
+
+# CVE checks against everything Nmap thinks is HTTP
+nmap -sV --script vuln,http-vuln* <target>
+
+# Re-test what changed since last scan
+diff <(grep "open" old.gnmap) <(grep "open" new.gnmap)
+```
+
+## Common gotchas
+
+- **`-sS` needs root.** As a regular user, Nmap silently falls back to `-sT` (slower, more visible).
+- **`-Pn` is not just "fast mode".** Skipping host discovery means Nmap scans every port on every IP whether the host is up or not. On a /16 with `-p-` you'll be there for days.
+- **`-A` is loud.** Avoid it when you care about being subtle. Build the equivalent from `-sV -O --script default` and pick scripts deliberately.
+- **DNS resolution adds latency.** `-n` on large scans saves real time.
+- **UDP scans are unreliable by design.** Most UDP services don't respond if they're not the right protocol — Nmap can't always tell "filtered" from "closed". Cross-check with version detection.
+
+## When you shouldn't run Nmap locally
+
+Three situations:
+
+1. **Client allowlists by IP.** Residential / VPN IPs change. A static scan source ([VulnScanners](/scanners/nmap), HostedScan, etc.) sidesteps the recurring "what's my IP today" dance.
+2. **You need a deliverable, not raw output.** A grepable file isn't a report. Hosted scanners produce PDFs you can hand a client.
+3. **You're scanning from a low-trust network.** Coffee-shop Wi-Fi shouldn't be the source IP for your client recon.
+
+For everything else — local Nmap is great. Memorise the flags above and you'll handle 90% of what you encounter.
+
+## Further reading
+
+- Nmap reference manual — [nmap.org/book/man.html](https://nmap.org/book/man.html)
+- NSE script library — [nmap.org/nsedoc](https://nmap.org/nsedoc/)
+- Our scanner page: [hosted Nmap port scanning](/scanners/nmap)

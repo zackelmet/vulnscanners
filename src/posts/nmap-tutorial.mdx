@@ -1,0 +1,235 @@
+---
+title: "Nmap Tutorial: From Install to Your First Useful Scan"
+date: "2026-05-26"
+description: "A beginner-to-intermediate Nmap tutorial covering install, scan types, NSE scripts, and how to read the output without guessing."
+author: "VulnScanners team"
+tags: ["nmap", "tutorial"]
+---
+
+If you've installed Nmap, run `nmap example.com`, looked at the output, and thought "now what?", this is for you. We'll go from a fresh install to scanning real targets and understanding the output well enough to do something with it.
+
+## TL;DR
+
+- Install Nmap, scan a host you own, and verify open ports — that's lesson one.
+- Default scan is fast but shallow. Version detection (`-sV`) is what makes the output actionable.
+- NSE scripts turn Nmap from a port scanner into a recon framework.
+- "Open" doesn't mean "vulnerable". Treat Nmap as the first step, not the deliverable.
+
+## What Nmap actually is
+
+Per [nmap.org](https://nmap.org/), Nmap is "a free and open source utility for network discovery and security auditing." It was first released in 1997 and is licensed under the Nmap Public Source License.
+
+What that means in practice: Nmap sends carefully-crafted packets at a host (or many hosts) and infers things from the responses — what ports are open, what services are running, what version of those services, and sometimes what operating system. That's it. Nmap doesn't exploit anything; it just maps.
+
+## Install
+
+**macOS** (Homebrew):
+
+```bash
+brew install nmap
+```
+
+**Debian / Ubuntu:**
+
+```bash
+sudo apt update && sudo apt install nmap
+```
+
+**Windows:**
+
+Download the installer from [nmap.org/download](https://nmap.org/download.html). It includes Nmap, Zenmap (the GUI), Ncat, and Ndiff.
+
+Verify your install:
+
+```bash
+nmap --version
+```
+
+You should see version 7.x or newer. The features in this tutorial assume 7.x.
+
+## Your first scan
+
+Always start with a host you own. `scanme.nmap.org` is operated by the Nmap project for exactly this purpose:
+
+```bash
+nmap scanme.nmap.org
+```
+
+You'll see something like:
+
+```
+Starting Nmap 7.95 ( https://nmap.org )
+Nmap scan report for scanme.nmap.org (45.33.32.156)
+Host is up (0.043s latency).
+Not shown: 996 closed tcp ports (conn-refused)
+PORT      STATE SERVICE
+22/tcp    open  ssh
+80/tcp    open  http
+9929/tcp  open  nping-echo
+31337/tcp open  Elite
+```
+
+Read it left to right: the port number, the state (`open`, `closed`, `filtered`), and Nmap's guess at the service. By default, Nmap scans the [top 1000 most common TCP ports](https://nmap.org/book/nmap-services.html) — not all 65535. That's why the output says "Not shown: 996 closed tcp ports".
+
+## States explained
+
+- **open** — the host responded; something is actively listening
+- **closed** — the host responded but nothing is listening on that port
+- **filtered** — no response, almost always a firewall in the way
+- **unfiltered** — Nmap can reach the port but can't tell if it's open
+- **open|filtered** / **closed|filtered** — Nmap couldn't disambiguate
+
+For most engagements you care about `open`. `filtered` matters when you're mapping firewalls (try `-sA`).
+
+## Better defaults
+
+The bare `nmap <target>` is too quiet. Two flags change that:
+
+```bash
+nmap -sV -T4 scanme.nmap.org
+```
+
+- **`-sV`** — service / version detection. Instead of guessing "this is probably HTTP" from the port number, Nmap connects and asks. You'll get versions like `Apache httpd 2.4.7`, which tells you whether to check for stale CVEs.
+- **`-T4`** — timing template, aggressive. Default is `-T3`; `-T4` is faster and almost never causes problems on modern networks.
+
+Output now looks like:
+
+```
+PORT      STATE SERVICE       VERSION
+22/tcp    open  ssh           OpenSSH 6.6.1p1 Ubuntu 2ubuntu2.13 (Ubuntu Linux; protocol 2.0)
+80/tcp    open  http          Apache httpd 2.4.7 ((Ubuntu))
+```
+
+That's actionable. "OpenSSH 6.6.1p1" you can google for CVEs. "ssh" alone is just an open port.
+
+## Picking the right scan type
+
+The default scan is **`-sS`** (TCP SYN scan) when you have root, **`-sT`** (TCP connect scan) when you don't. The difference is whether Nmap completes the TCP handshake. SYN is faster and slightly stealthier; connect works without privileged sockets but is slower and shows up more clearly in logs.
+
+For specialised cases:
+
+```bash
+sudo nmap -sU --top-ports 100 <target>   # UDP — slow but essential for DNS, SNMP, NTP, etc.
+sudo nmap -sA <target>                   # ACK scan — map firewall rule sets
+sudo nmap -sN <target>                   # NULL scan — evasion when SYN is blocked
+```
+
+If you're new, stick with the default and `-sU` for UDP. The others are situational.
+
+## Selecting ports
+
+Skipping ports you don't care about saves time. The flag is `-p`:
+
+```bash
+nmap -p 80,443 <target>          # just web ports
+nmap -p 1-1024 <target>          # well-known range
+nmap -p- <target>                # all 65535 — slow but thorough
+nmap --top-ports 200 <target>    # 200 most-likely ports
+nmap -F <target>                 # fast mode: top 100 ports
+```
+
+The `-p-` flag (full TCP port range) is the gold standard for "I want to find services hiding on weird ports". It's slow. Pair with `--min-rate 1000` to speed it up without changing accuracy:
+
+```bash
+sudo nmap -p- -sV --min-rate 1000 -T4 <target>
+```
+
+## NSE: Nmap's scripting engine
+
+This is where Nmap stops being a port scanner and starts being a recon framework. NSE has hundreds of scripts grouped into categories:
+
+```bash
+nmap -sC <target>                        # default category, safe checks
+nmap --script vuln <target>              # known CVE detections
+nmap --script "http-*" <target>          # all HTTP scripts
+nmap --script ssl-enum-ciphers -p 443 <target>  # TLS cipher audit
+```
+
+Useful starter scripts:
+
+| Script | What it does |
+|--------|--------------|
+| `http-enum` | Enumerates common web paths (admin panels, etc.) |
+| `http-title` | Grabs the `<title>` of any HTTP service |
+| `ssl-enum-ciphers` | Lists supported TLS ciphers and rates them |
+| `smb-enum-shares` | Lists SMB shares on Windows hosts |
+| `vuln` (category) | Runs every known-vuln check |
+| `dns-brute` | Tries common subdomain names |
+
+Browse the full list at [nmap.org/nsedoc](https://nmap.org/nsedoc/).
+
+## A realistic workflow
+
+Here's the order I'd run a recon against a new external scope:
+
+```bash
+# 1. Confirm what's up
+sudo nmap -sn -PE -PS22,80,443 -PA80,443 -T4 10.0.0.0/24 -oA hosts-up
+
+# 2. Top-1000 TCP with versions on the hosts that responded
+sudo nmap -iL live-hosts.txt -sS -sV -T4 --top-ports 1000 -oA top1k
+
+# 3. Full TCP on anything interesting
+sudo nmap -iL interesting.txt -sS -sV -p- --min-rate 1000 -T4 -oA full
+
+# 4. UDP top-100 in parallel
+sudo nmap -iL live-hosts.txt -sU --top-ports 100 -T4 -oA udp
+
+# 5. NSE follow-up on confirmed services
+sudo nmap -iL web-hosts.txt -p 80,443 --script "default,http-*,ssl-*" -oA web-scripts
+```
+
+Each stage feeds the next. You don't run `-p-` against everything; you run it against hosts that already look interesting from the top-1000 sweep.
+
+## Saving output
+
+Always use `-oA`. It writes normal, XML, and grepable formats with one base name:
+
+```bash
+nmap -oA recon-$(date +%F) <target>
+```
+
+You'll get `recon-2026-05-26.nmap`, `.xml`, and `.gnmap`. The XML is what report generators and parsers read. The grepable file is great for ad-hoc one-liners:
+
+```bash
+# Hosts with port 22 open
+grep "22/open" recon-2026-05-26.gnmap
+
+# Diff against a previous scan
+diff <(grep open older.gnmap) <(grep open newer.gnmap)
+```
+
+## Reading the output well
+
+A few things newcomers miss:
+
+- **"Service" is a guess until you've run `-sV`.** Port 8443 might be HTTPS, an admin panel, a custom protocol — Nmap defaults to the most common service for a port.
+- **"OS detection" is fingerprinting, not divination.** `-O` gives a confidence-rated guess based on TCP/IP quirks. Treat it as a hint.
+- **"Filtered" usually means a firewall, not a closed port.** That's useful intel by itself.
+- **Open + outdated version ≠ vulnerable.** Backports and patches are invisible in banners.
+
+## When to stop reaching for Nmap
+
+Nmap is the wrong tool for:
+
+- **Authenticated checks** — that's a vulnerability scanner like OpenVAS or Nuclei or a configuration scanner.
+- **Application-layer testing** — for that, you want a DAST tool like [OWASP ZAP](/scanners/zap).
+- **CVE matching at scale** — Nmap detects services; matching versions to CVEs needs a tool like [Nuclei](/scanners/nuclei) or commercial alternatives.
+
+A good external assessment usually layers all three: Nmap maps the surface, Nuclei sweeps for known CVEs, ZAP exercises the web apps. They overlap intentionally.
+
+## Common mistakes
+
+- Running `nmap example.com` without `-sV` and treating "port open" as the deliverable.
+- Forgetting `-Pn` when scanning hosts that drop ICMP, then concluding "host is down".
+- Running `-T5` on a customer's network and triggering their IDS at 2am.
+- Not saving output with `-oA`, then needing to re-scan because the format you have is the wrong one.
+- Running `-A` against a /16. It's fine on a single host; on a network it's a 12-hour scan.
+
+## Where to go next
+
+- **Hands-on:** keep `scanme.nmap.org` in your back pocket. It's authorised scanning.
+- **Reference:** [our Nmap cheat sheet](/blog/nmap-cheat-sheet) has the commands you'll repeat.
+- **Skip the install entirely:** run Nmap [hosted on VulnScanners](/scanners/nmap), with PDF output and a static source IP.
+
+The next step after Nmap is usually pairing it with a vulnerability scanner. We'll cover that in a separate post on Nuclei templates.

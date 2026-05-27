@@ -1,0 +1,272 @@
+---
+title: "Recon-NG Tutorial: OSINT Recon as a Framework"
+date: "2026-05-17"
+description: "A working Recon-NG tutorial — workspaces, modules, API keys, and the workflow that turns it from confusing to useful."
+author: "VulnScanners team"
+tags: ["recon-ng", "osint", "tutorial"]
+---
+
+Recon-NG looks like Metasploit and confuses people because of it. It's not an exploitation framework — it's an OSINT data-collection framework with a Metasploit-style interface. Once that clicks, the workflow makes sense. This is the working tour.
+
+## TL;DR
+
+- Recon-NG organises OSINT into **workspaces** (one per target) and **tables** (domains, hosts, contacts, etc.).
+- Modules read from one table and write to another, building up a target profile.
+- Most useful modules need free API keys (HackerTarget, Shodan, BinaryEdge, etc.).
+- The CLI is the productive way to use it; there's also a web interface.
+
+## Install
+
+```bash
+# Most distros have a package; the git checkout is more current.
+git clone --depth 1 https://github.com/lanmaster53/recon-ng.git
+cd recon-ng
+pip install -r REQUIREMENTS
+
+# Launch
+./recon-ng
+```
+
+You'll see something like:
+
+```
+[*] Version check disabled.
+
+    _/_/_/    _/_/_/  _/_/_/_/_/  _/    _/    _/_/_/   _/      _/  _/_/_/    _/_/_/
+   _/    _/  _/             _/    _/    _/  _/        _/_/  _/_/  _/       _/    _/
+
+[recon-ng][default] >
+```
+
+The prompt is `[recon-ng][<workspace>] >`. Default workspace is `default` — but you should create a per-target one before doing anything.
+
+## Workspaces
+
+A workspace is an isolated SQLite database. Each engagement gets its own.
+
+```
+[recon-ng][default] > workspaces create example-com
+[recon-ng][example-com] >
+```
+
+Other workspace commands:
+
+```
+workspaces list
+workspaces load example-com
+workspaces remove example-com
+```
+
+Inside a workspace you have tables — `domains`, `hosts`, `contacts`, `credentials`, `ports`, `vulnerabilities`, etc. Modules consume rows from one and write rows to another.
+
+Seed the workspace with a target:
+
+```
+[recon-ng][example-com] > db insert domains
+domain (TEXT): example.com
+notes (TEXT):
+
+[recon-ng][example-com] > show domains
++--------------+
+| rowid | domain      | notes |
++--------------+
+| 1     | example.com |       |
++--------------+
+```
+
+## The Marketplace
+
+Modules live in a marketplace. List what's available:
+
+```
+[recon-ng][example-com] > marketplace search
+
+  Path                                       | Version | Status     | Updated   | D | K
+  ------------------------------------------------------------------------------------------
+  discovery/info_disclosure/cache_snoop      | 1.1     | not installed |  2019-06-24 |   |
+  recon/companies-contacts/bing_linkedin_cache | 1.0     | not installed |  2019-06-24 |   |
+  recon/domains-contacts/hunter_io           | 1.1     | not installed |  2019-06-24 |   | *
+  recon/domains-hosts/bing_domain_api        | 1.0     | not installed |  2019-06-24 |   | *
+  recon/domains-hosts/hackertarget           | 1.0.2   | not installed |  2020-05-22 |   |
+  ...
+```
+
+Two columns to read:
+
+- **D** — has dependencies. You'll see `*` if you need to install Python packages for it.
+- **K** — needs an API key.
+
+Install a module:
+
+```
+[recon-ng][example-com] > marketplace install recon/domains-hosts/hackertarget
+```
+
+Or install all modules without dependencies / keys:
+
+```
+[recon-ng][example-com] > marketplace install all
+```
+
+## A first useful module: HackerTarget subdomain enumeration
+
+The HackerTarget API has a free tier and doesn't require a key:
+
+```
+[recon-ng][example-com] > modules load recon/domains-hosts/hackertarget
+[recon-ng][example-com][hackertarget] > options list
+
+  Name      | Current Value | Required | Description
+  ---------------------------------------------------------
+  SOURCE    | default       | True     | source of input
+
+[recon-ng][example-com][hackertarget] > run
+
+EXAMPLE.COM
+-----------
+[*] [host] api.example.com (<blank>)
+[*] [host] dev.example.com (<blank>)
+[*] [host] mail.example.com (<blank>)
+[*] [host] vpn.example.com (<blank>)
+...
+[*] 12 total (12 new) hosts found.
+```
+
+Verify what landed in the `hosts` table:
+
+```
+[recon-ng][example-com][hackertarget] > show hosts
+```
+
+That's the framework idea: a module that takes from `domains`, writes to `hosts`. Each subsequent module takes from `hosts` and enriches further.
+
+## API keys
+
+The high-leverage modules need keys. Add one:
+
+```
+[recon-ng][example-com] > keys add shodan_api YOUR_KEY_HERE
+[recon-ng][example-com] > keys list
+```
+
+Free-tier keys worth grabbing first:
+
+| Service | Module(s) | Worth it for |
+|---------|-----------|--------------|
+| Shodan | `recon/hosts-ports/shodan_ip` | Port / banner data on found hosts |
+| BinaryEdge | `recon/domains-hosts/binaryedge` | Subdomain / cert enumeration |
+| Censys | `recon/hosts-ports/censys_*` | Cert + service inventory |
+| Hunter.io | `recon/domains-contacts/hunter_io` | Email harvesting |
+| GitHub | `recon/companies-multi/github_miner` | Repo / employee mining |
+| HaveIBeenPwned | `recon/credentials/hibp_*` | Breach checking |
+
+The exact module names change between releases; `marketplace search <keyword>` is your friend.
+
+## A realistic workflow
+
+For a typical external recon, the workflow is:
+
+```
+# Seed
+workspaces create example-com
+db insert domains example.com
+
+# Subdomain enumeration
+modules load recon/domains-hosts/hackertarget
+run
+modules load recon/domains-hosts/binaryedge
+run
+modules load recon/domains-hosts/bing_domain_api
+run
+
+# Resolve hosts to IPs
+modules load recon/hosts-hosts/resolve
+run
+
+# Port / banner data for discovered IPs
+modules load recon/hosts-ports/shodan_ip
+run
+
+# Whois / netblock enumeration
+modules load recon/domains-companies/whois_companies
+run
+
+# Export
+modules load reporting/csv
+options set FILENAME /tmp/example-com-recon.csv
+run
+```
+
+Each module reads from one table and adds to another. By the end of a session, the workspace contains an enriched dataset you can hand off, pipe into Nuclei, or feed into a [hosted scanner](/scanners/nmap).
+
+## Reporting modules
+
+The `reporting/` modules export workspace data:
+
+| Module | Output |
+|--------|--------|
+| `reporting/csv` | CSV per table |
+| `reporting/list` | Plain-text list (handy for piping to other tools) |
+| `reporting/json` | JSON dump |
+| `reporting/html` | Static HTML report |
+| `reporting/proxifier` | Proxifier rule file |
+| `reporting/pushpin` | Geo-tagged map of social media activity |
+
+```
+modules load reporting/list
+options set TABLE hosts
+options set FILENAME /tmp/hosts.txt
+run
+```
+
+`reporting/list` is the one you'll use most — drop hostnames into a file, then pipe to your DAST tool of choice:
+
+```bash
+cat /tmp/hosts.txt | httpx -silent | nuclei -t exposures/
+```
+
+## CLI scripting
+
+Recon-NG can be driven non-interactively via resource files:
+
+```bash
+# script.rc
+workspaces create example-com
+db insert domains example.com
+modules load recon/domains-hosts/hackertarget
+run
+modules load recon/hosts-hosts/resolve
+run
+modules load reporting/csv
+options set FILENAME /tmp/recon.csv
+run
+exit
+
+# Run it
+recon-ng -r script.rc
+```
+
+That's the productive shape for recurring engagements — version-control the resource file, run it on demand, get fresh data.
+
+## Common pitfalls
+
+- **Treating Recon-NG like Metasploit.** It's a data framework, not exploitation. Modules collect; nothing exploits.
+- **Skipping workspaces.** Default workspace becomes a swamp of mixed-target data fast.
+- **Not installing dependencies.** Many modules need extra Python packages; `marketplace install` doesn't always handle them silently.
+- **Forgetting `db insert`.** Modules need rows to operate on. An empty `domains` table means modules have nothing to do.
+- **API rate limits.** Free-tier keys throttle fast. Spread runs across multiple sources rather than hammering one.
+- **Stale module set.** The marketplace evolves. Run `marketplace refresh` and `marketplace install all --upgrade` periodically.
+
+## When you'd use something else
+
+- **`subfinder` + `httpx` + `nuclei` pipeline** is the modern, scriptable alternative for subdomain → live-host → vuln workflows. Faster than Recon-NG for the common case.
+- **`amass`** is more thorough for subdomain enumeration specifically; the dataset Recon-NG builds is broader (contacts, creds, whois, etc.) but shallower per-domain.
+- **`theHarvester`** for email enumeration specifically.
+
+Recon-NG's strength is the *unified workspace* — a single SQLite database tying together hostnames, IPs, ports, contacts, credentials, and vulnerabilities. For a multi-day engagement where you want all OSINT in one place, it's still the cleanest workflow.
+
+## Further reading
+
+- Recon-NG on GitHub — [github.com/lanmaster53/recon-ng](https://github.com/lanmaster53/recon-ng)
+- Module marketplace — [github.com/lanmaster53/recon-ng-marketplace](https://github.com/lanmaster53/recon-ng-marketplace)
+- Downstream: [our Nuclei templates guide](/blog/nuclei-templates-guide)

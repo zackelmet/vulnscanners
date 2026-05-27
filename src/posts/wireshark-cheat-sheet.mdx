@@ -1,0 +1,240 @@
+---
+title: "Wireshark Cheat Sheet: Display Filters That Actually Help"
+date: "2026-05-23"
+description: "A working Wireshark cheat sheet — display filters, capture filters, and the keyboard shortcuts you'll use most when debugging real traffic."
+author: "VulnScanners team"
+tags: ["wireshark", "network-analysis", "pcap"]
+---
+
+The Wireshark man page is exhaustive. This isn't. It's the filters and shortcuts that solve real problems — debugging an intermittent TLS handshake, finding the one DNS query out of forty thousand that looks suspicious, narrowing a pcap to a single conversation without spending ten minutes scrolling.
+
+## TL;DR
+
+- **Capture filters** use BPF syntax; **display filters** are Wireshark's own language. Don't confuse them.
+- `ip.addr == X` matches both source and destination. Use `ip.src == X` or `ip.dst == X` when direction matters.
+- Right-click any field → "Apply as Filter" is how you build filters without memorising syntax.
+- `Ctrl+F` searches packet content; `Ctrl+G` jumps to a packet number.
+
+## Capture filters vs display filters
+
+This is the most common confusion.
+
+- **Capture filter** — applied at capture time. Reduces what Wireshark records. Uses BPF syntax (same as `tcpdump`).
+- **Display filter** — applied to a loaded pcap. Hides packets from view without dropping them. Uses Wireshark's own filter language.
+
+You'll use display filters far more often. Capture filters are only worth it when you're recording at high volume and need to drop traffic before it hits disk.
+
+### Capture filter examples (BPF)
+
+```
+host 10.0.0.1
+src host 10.0.0.1
+dst host 10.0.0.1
+port 80
+tcp port 443
+not arp
+host 10.0.0.1 and not port 22
+```
+
+### Display filter examples
+
+```
+ip.addr == 10.0.0.1
+ip.src == 10.0.0.1
+ip.dst == 10.0.0.1
+tcp.port == 443
+http
+dns
+dns.qry.name contains "example"
+http.host == "api.example.com"
+tls.handshake.type == 1   # ClientHello
+```
+
+## Filters by protocol
+
+### HTTP
+
+```
+http                              # all HTTP
+http.request                      # requests only
+http.response                      # responses only
+http.request.method == "POST"
+http.host contains "example.com"
+http.response.code == 500
+http.user_agent contains "curl"
+http contains "password"          # case-sensitive content match
+```
+
+### DNS
+
+```
+dns
+dns.qry.type == 1                 # A records
+dns.qry.type == 28                # AAAA
+dns.qry.type == 15                # MX
+dns.qry.name contains "example"
+dns.flags.response == 0           # queries only
+dns.flags.rcode == 3              # NXDOMAIN responses
+```
+
+### TLS / HTTPS
+
+```
+tls
+tls.handshake                     # all handshake messages
+tls.handshake.type == 1           # ClientHello (great for SNI hunting)
+tls.handshake.type == 2           # ServerHello
+tls.handshake.extensions_server_name contains "example"
+tls.alert_message                 # any TLS alert
+ssl.record.version == 0x0303      # TLS 1.2
+```
+
+### TCP
+
+```
+tcp
+tcp.port == 22
+tcp.flags.syn == 1 and tcp.flags.ack == 0    # SYN only — connection attempts
+tcp.flags.reset == 1                           # RSTs
+tcp.analysis.retransmission
+tcp.analysis.duplicate_ack
+tcp.window_size_value == 0                     # zero-window
+```
+
+### Suspicious / common security filters
+
+```
+# Anything with a non-empty SNI to a host
+tls.handshake.extensions_server_name and ip.dst == 10.0.0.5
+
+# Unusually long DNS names — possible exfil
+dns.qry.name.len > 50
+
+# HTTP basic auth in cleartext
+http.authbasic
+
+# Plaintext credentials in POST bodies
+http.request.method == "POST" and http contains "password="
+
+# SMB
+smb or smb2
+
+# Telnet (still around in odd places)
+telnet
+```
+
+## Combining filters
+
+Use the operators you'd expect:
+
+| Operator | Alt | Meaning |
+|----------|-----|---------|
+| `&&` | `and` | both must match |
+| `\|\|` | `or` | either matches |
+| `!` | `not` | negate |
+| `==` | `eq` | equal |
+| `!=` | `ne` | not equal |
+| `contains` | | substring match |
+| `matches` | | regex match (Perl-style) |
+
+Example:
+
+```
+(ip.src == 10.0.0.1 or ip.src == 10.0.0.2) and tcp.port == 443 and not tls.handshake
+```
+
+## Keyboard shortcuts worth muscle memory
+
+| Shortcut | What it does |
+|----------|--------------|
+| `Ctrl+F` | Find packet (content or display filter) |
+| `Ctrl+G` | Go to packet number |
+| `Ctrl+/` | Focus the display filter bar |
+| `Ctrl+E` | Start / stop capture |
+| `Ctrl+K` | Capture options |
+| `Ctrl+R` | Restart capture |
+| `Ctrl+Space` | Toggle "follow stream" on selected packet |
+| `Ctrl+→` / `Ctrl+←` | Next / previous packet in conversation |
+
+## Follow a conversation
+
+Right-click any packet → **Follow → TCP Stream** (or HTTP, UDP, TLS). Wireshark filters to just that conversation and pops up a viewer showing the reassembled application-layer traffic.
+
+This is the single fastest way to understand what's actually happening — a single broken request, a session that got reset, the exact payload an API call sent.
+
+## Statistics views
+
+`Statistics → Conversations` shows every host pair and the byte counts in each direction. Sort by bytes to find the top talkers.
+
+`Statistics → Endpoints` shows per-host totals. Useful for spotting one machine that's chatting more than it should.
+
+`Statistics → I/O Graphs` lets you graph traffic over time with display-filter expressions on each line. Great for visually correlating a spike to a specific protocol or host.
+
+`Statistics → Protocol Hierarchy` shows the breakdown of every protocol seen in the pcap. A capture that's 40% TLS and 60% mDNS tells you something specific.
+
+## Useful pcap workflows
+
+### "Why is this app slow?"
+
+Filter:
+
+```
+ip.addr == <client-ip> and ip.addr == <server-ip>
+```
+
+Then:
+
+- Sort by time delta to find gaps.
+- `Statistics → TCP Stream Graphs → Round-Trip Time` to see RTT variance.
+- Look for retransmissions and duplicate ACKs.
+
+### "Was credentials sent over the wire?"
+
+```
+http contains "password=" or http.authbasic or telnet or ftp
+```
+
+Then "Follow → TCP Stream" any hit to confirm.
+
+### "What's this host talking to?"
+
+```
+ip.src == <host>
+```
+
+`Statistics → Endpoints (IPv4)` while that filter is set shows you exactly the external destinations.
+
+### "Did the TLS handshake complete?"
+
+```
+ip.addr == <client> and ip.addr == <server> and tls
+```
+
+Look for ClientHello → ServerHello → Certificate → ServerHelloDone → ClientKeyExchange → ChangeCipherSpec → Finished (both directions). Missing any of those tells you where it broke.
+
+## Capture from a remote machine
+
+Sometimes the pcap has to come from a host you don't sit at. Two options:
+
+```bash
+# 1) tcpdump there, scp here
+ssh user@host "sudo tcpdump -i any -w - 'port not 22'" | wireshark -k -i -
+
+# 2) tcpdump to file, transfer later
+ssh user@host "sudo tcpdump -i eth0 -w /tmp/cap.pcap port 443"
+scp user@host:/tmp/cap.pcap .
+```
+
+## Common gotchas
+
+- **`==` doesn't always mean what you think.** `eth.addr == ff:ff:ff:ff:ff:ff` works; some address types need `eq` or you'll get warnings.
+- **`http.host`** is the `Host:` header. If the request is HTTPS, you won't see it without decrypting TLS — use `tls.handshake.extensions_server_name` instead (SNI).
+- **TLS 1.3 hides a lot.** Cert chain is encrypted; SNI is the main thing you can see clear-text.
+- **Promiscuous mode is the default on capture interfaces.** If you're on switched gigabit you won't see other hosts' traffic — that's a switch property, not a Wireshark bug.
+- **`http2` is a separate protocol.** Filtering for `http` doesn't catch HTTP/2 traffic.
+
+## Further reading
+
+- Display filter reference — [wireshark.org/docs/dfref](https://www.wireshark.org/docs/dfref/)
+- Capture filter syntax — [wiki.wireshark.org/CaptureFilters](https://wiki.wireshark.org/CaptureFilters)
+- TCP analysis flags — [wireshark.org/docs/wsug_html_chunked/ChAdvTCPAnalysis.html](https://www.wireshark.org/docs/wsug_html_chunked/ChAdvTCPAnalysis.html)

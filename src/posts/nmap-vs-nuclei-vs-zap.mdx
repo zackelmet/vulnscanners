@@ -1,0 +1,167 @@
+---
+title: "Nmap vs Nuclei vs OWASP ZAP: When to Use Each"
+date: "2026-05-13"
+description: "Three open-source scanners, three different jobs. A clear comparison of when each tool is the right answer — and when to use them together."
+author: "VulnScanners team"
+tags: ["nmap", "nuclei", "zap", "comparison"]
+---
+
+People search "Nmap vs Nuclei vs ZAP" expecting a winner. The honest answer is that none of them compete — they cover different layers. The question isn't which to use; it's which to use *first*, and how to feed each into the next.
+
+## TL;DR
+
+- **Nmap** — what's there? Ports, services, versions.
+- **Nuclei** — is what's there vulnerable? Template-based CVE and exposure detection.
+- **OWASP ZAP** — is the application itself broken? Web-layer DAST.
+- Use Nmap → Nuclei → ZAP, in that order, on the same target. Each builds on the last.
+
+## What each tool does — the one-liner version
+
+| Tool | Layer | Primary output |
+|------|-------|----------------|
+| Nmap | Network / service | List of open ports and the service/version on each |
+| Nuclei | Known-vuln matching | List of CVEs / misconfigs / exposures present on the target |
+| ZAP | Application | List of web-app vulnerabilities (SQLi, XSS, auth bypass, etc.) |
+
+That's the whole comparison. The rest of this post is when each is the right reach and how they compose.
+
+## When to reach for Nmap
+
+You don't know what's running on the target. You don't know which ports are exposed. You need a map.
+
+```bash
+sudo nmap -sV -p- -T4 --min-rate 1000 target.example.com
+```
+
+Nmap returns ports and services. That output is the input to almost every other security tool you'll run. It's not optional in any external assessment.
+
+It's the wrong tool when:
+
+- You already have the surface map.
+- You need vulnerability *findings*, not service inventory.
+- You're testing an application (Nmap can't tell you if `/login.php` is SQL-injectable).
+
+[More on Nmap](/scanners/nmap) and [our Nmap cheat sheet](/blog/nmap-cheat-sheet).
+
+## When to reach for Nuclei
+
+You have a target. You want to know if it has known CVEs or exposures. You want results in minutes, not hours.
+
+```bash
+nuclei -u https://target.example.com -s critical,high
+```
+
+Nuclei is fast and accurate. Templates encode real-world conditions, so false positives are low. The default community template feed covers thousands of CVEs across HTTP, DNS, TCP, SSL, and JavaScript.
+
+It's the wrong tool when:
+
+- The vulnerability is novel (Nuclei finds what's in templates; not what isn't).
+- You need authenticated application testing.
+- You're looking for misconfigurations specific to your stack (write custom templates, or use the next tool down).
+
+[More on Nuclei](/scanners/nuclei) and [our templates guide](/blog/nuclei-templates-guide).
+
+## When to reach for ZAP
+
+You have a web application. You want to know if the app itself — not the server, the *application* — has vulnerabilities like SQLi, XSS, broken auth, CSRF, IDOR.
+
+ZAP proxies your traffic, builds a map of the app via spider / AJAX spider, then runs passive (observation-only) and active (payload-injecting) scans.
+
+It's the wrong tool when:
+
+- The target isn't a web app.
+- You need known-CVE matching (Nuclei is faster).
+- You're doing network-layer recon (Nmap is the answer).
+
+[More on ZAP](/scanners/zap) and [active vs passive scanning explained](/blog/owasp-zap-active-vs-passive-scan).
+
+## The pipeline that works
+
+A typical external assessment runs all three, in order:
+
+```bash
+# 1. Surface map
+sudo nmap -sV -p- -T4 --min-rate 1000 example.com -oA recon
+
+# 2. Known-vuln sweep against discovered web services
+nuclei -u https://example.com -s critical,high -o nuclei.txt
+
+# 3. DAST against the web application
+# (via ZAP UI, or zap-cli, or hosted)
+```
+
+Each stage shapes the next:
+
+- Nmap surfaces an admin panel on port 8443 that you wouldn't have known to scan.
+- Nuclei finds the panel is running an outdated version with a known CVE.
+- ZAP confirms the login form has authentication bypass via SQL injection.
+
+You ship a report saying "the admin panel at port 8443 has a critical SQLi auth bypass." Each tool contributed a different piece.
+
+## What if I only have time for one?
+
+A reasonable default:
+
+- **External web target?** Nuclei. You'll catch the obvious CVEs and exposures faster than anything else.
+- **Internal network assessment?** Nmap. The map is the starting point.
+- **You have a login and want app-level findings?** ZAP. Authenticated DAST is uniquely valuable.
+
+## What about authenticated scanning?
+
+Each tool handles auth differently:
+
+| Tool | Auth support |
+|------|--------------|
+| Nmap | Limited — some NSE scripts support credentials (SMB, SNMP, etc.) |
+| Nuclei | Per-template; some HTTP templates can use headers / cookies |
+| ZAP | Full auth flows — form, JSON, script-based, HTTP basic |
+
+For authenticated *application* testing, ZAP is the answer. For authenticated *host* testing, neither is great — that's where [OpenVAS](/blog/openvas-tutorial) earns its place.
+
+## What about speed?
+
+| Tool | Typical scan time (single target) |
+|------|------------------------------------|
+| Nmap | 1–30 minutes (depends on port range and timing) |
+| Nuclei | 1–10 minutes (community template set) |
+| ZAP | 30 minutes – 6 hours (spider + active scan) |
+
+ZAP is the slow one because it has to crawl, fingerprint, and then send thousands of payloads. Run it overnight or in CI.
+
+## What about false positives?
+
+| Tool | False-positive risk |
+|------|---------------------|
+| Nmap | Low for ports / services; moderate for OS detection |
+| Nuclei | Low — template matchers encode real conditions |
+| ZAP | Moderate — active scan needs verification |
+
+ZAP findings should be verified manually before being reported. Nuclei findings can usually be trusted at face value. Nmap's port output is essentially ground truth.
+
+## What about hosted versions?
+
+The case for hosted: none of these tools are hard to install, but keeping all three current, with up-to-date templates, NSE scripts, and ZAP add-ons, plus a static source IP for client allowlisting, adds up.
+
+[VulnScanners](/) runs all three on our infrastructure:
+
+- [Hosted Nmap](/scanners/nmap)
+- [Hosted Nuclei](/scanners/nuclei)
+- [Hosted ZAP](/scanners/zap)
+
+PDF report per scan, credits never expire, one console for all three. We sync the Nuclei template feed continuously so you're not the one running `nuclei -ut`.
+
+For local development and one-offs, the open-source versions are perfect. For recurring scans against client assets, hosted removes the maintenance overhead.
+
+## Common mistakes
+
+- **Running ZAP first.** Without an Nmap surface map, you'll point ZAP at one URL and miss the admin panel on the weird port.
+- **Treating Nuclei findings as deliverables.** Most are real; some are noise. Verify before reporting.
+- **Confusing tool layers.** "Nmap found port 443 open" isn't a vuln. "Nuclei found a known CVE" is. "ZAP found SQL injection" is too. The layer matters.
+- **Using just one for everything.** No single tool covers all three layers. Layer them.
+
+## Further reading
+
+- [Our open-source vulnerability scanner comparison](/blog/best-open-source-vulnerability-scanners)
+- [Our Nmap tutorial](/blog/nmap-tutorial)
+- [Our Nuclei templates guide](/blog/nuclei-templates-guide)
+- [Active vs passive ZAP scanning](/blog/owasp-zap-active-vs-passive-scan)

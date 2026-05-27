@@ -1,0 +1,217 @@
+---
+title: "Nikto Tutorial: Web Server Scanning in Practice"
+date: "2026-05-18"
+description: "A practical Nikto tutorial — what it actually detects, useful flags, tuning the noise, and when to reach for it versus a modern DAST tool."
+author: "VulnScanners team"
+tags: ["nikto", "web-server", "tutorial"]
+---
+
+Nikto is one of the older open-source web scanners, and it's still useful — particularly for quick web-server-layer checks against legacy infrastructure. It's also a noisy, false-positive-prone tool if you don't tune it. This is the working guide.
+
+## TL;DR
+
+- Nikto checks web servers for known issues at the *server* layer (outdated versions, default files, weak configs), not application logic.
+- It produces a lot of low-value findings out of the box. Tuning matters.
+- Pair Nikto with a DAST tool like [OWASP ZAP](/scanners/zap) — they target different layers.
+- `-Tuning x` is the single most useful flag.
+
+## What Nikto actually checks
+
+Nikto's database (currently 6,700+ entries) covers things like:
+
+- Outdated server versions (Apache, IIS, nginx with known CVEs)
+- Default files and admin scripts (`phpinfo.php`, `test.cgi`, sample data)
+- Server misconfigurations (directory listing enabled, server info pages exposed)
+- Common CGI vulnerabilities (legacy, but still relevant on older infrastructure)
+- HTTP method support that shouldn't be enabled (PUT, DELETE, TRACE)
+- SSL/TLS configuration issues
+- Robots.txt entries that suggest sensitive paths
+
+It does **not** find application vulnerabilities like SQL injection, XSS, or auth bypass. That's a DAST tool's job.
+
+## Install
+
+```bash
+# Debian / Ubuntu
+sudo apt install nikto
+
+# macOS
+brew install nikto
+
+# Or clone — guarantees current database
+git clone --depth 1 https://github.com/sullo/nikto.git
+cd nikto/program
+./nikto.pl -Version
+```
+
+The git checkout gets you the latest plugin / database updates faster than distro packages.
+
+## First scan
+
+```bash
+nikto -h https://target.example.com
+```
+
+Output looks like:
+
+```
++ Server: Apache/2.4.41
++ The anti-clickjacking X-Frame-Options header is not present.
++ The X-Content-Type-Options header is not set.
++ Cookie session created without the httponly flag
++ /admin/: This might be interesting...
++ /backup.zip: A backup file was found.
++ OSVDB-3092: /test/: This might be interesting...
++ 7967 requests: 0 error(s) and 12 item(s) reported on remote host
+```
+
+That's the unfiltered firehose. Most engagements need it scoped down.
+
+## Useful flags
+
+| Flag | Effect |
+|------|--------|
+| `-h` | Target host |
+| `-p` | Port (default: 80, 443 if `-ssl`) |
+| `-ssl` | Force SSL/TLS |
+| `-Tuning` | Limit which check categories run (see below) |
+| `-output` / `-o` | Output file |
+| `-Format` | Output format (`txt`, `html`, `csv`, `xml`, `json`) |
+| `-Display` | Verbosity control (`V` = verbose, `E` = redirects) |
+| `-evasion` | IDS evasion technique |
+| `-useragent` | Custom User-Agent |
+| `-Cgidirs` | Specify CGI directories to scan |
+| `-id` | HTTP basic auth (`-id user:pass`) |
+| `-Cookies` | Cookie string |
+| `-Plugins` | Limit / specify plugins |
+| `-update` | Update plugins and database |
+
+## `-Tuning` is the noise control
+
+Out of the box, Nikto runs everything. The `-Tuning` flag restricts which categories run. Categories are single-character codes:
+
+| Code | Category |
+|------|----------|
+| `0` | File upload |
+| `1` | Interesting files / found in logs |
+| `2` | Misconfiguration / default files |
+| `3` | Information disclosure |
+| `4` | Injection (XSS / script / HTML) |
+| `5` | Remote file retrieval — within web root |
+| `6` | Denial of service |
+| `7` | Remote file retrieval — server-wide |
+| `8` | Command execution / remote shell |
+| `9` | SQL injection |
+| `a` | Authentication bypass |
+| `b` | Software identification |
+| `c` | Remote source inclusion |
+| `x` | Reverse tuning options (exclude) |
+
+So:
+
+```bash
+# Only run misconfig and info-disclosure checks (quietest useful scan)
+nikto -h https://target -Tuning 23
+
+# Skip DoS-class checks (you almost always want this)
+nikto -h https://target -Tuning x6
+```
+
+For a first-pass external recon, `-Tuning 123b` (interesting files, misconfig, info disclosure, software identification) is a sensible profile.
+
+## Authenticated scanning
+
+For anything past the login page, you need to pass credentials. Two options:
+
+**Basic auth:**
+
+```bash
+nikto -h https://target -id "user:password"
+```
+
+**Cookie:**
+
+```bash
+nikto -h https://target -Cookies "session=eyJhbGciOi..."
+```
+
+For form-based auth, log in via Burp / your browser, grab the session cookie, and pass it via `-Cookies`. Nikto doesn't have a full auth-flow handler like ZAP does.
+
+## Output formats
+
+```bash
+nikto -h https://target -o report.html -Format html
+nikto -h https://target -o report.json -Format json
+nikto -h https://target -o report.csv -Format csv
+```
+
+HTML is great for handing to a client. CSV / JSON for piping into a parser or ticketing integration.
+
+## IDS evasion
+
+Built-in evasion techniques (Whisker IDS evasion modes):
+
+```bash
+nikto -h https://target -evasion 1   # random URL encoding (non-UTF8)
+nikto -h https://target -evasion 2   # directory self-reference (/./)
+nikto -h https://target -evasion 3   # premature URL ending
+nikto -h https://target -evasion 4   # prepend long random string
+nikto -h https://target -evasion 5   # fake parameter
+nikto -h https://target -evasion 6   # TAB as request spacer
+nikto -h https://target -evasion 7   # change case of URL
+nikto -h https://target -evasion 8   # use Windows path separators
+```
+
+Stack them with commas:
+
+```bash
+nikto -h https://target -evasion 1,3,4
+```
+
+Evasion is situational. Default WAFs will catch many of these; sophisticated WAFs catch all of them. Use evasion when you have a specific reason, not by default.
+
+## Multiple targets
+
+```bash
+# From a file
+nikto -h targets.txt
+
+# Multiple ports
+nikto -h target -p 80,443,8080,8443
+```
+
+For long target lists, run Nikto with output to a per-host file:
+
+```bash
+while read host; do
+  nikto -h "$host" -o "nikto-${host//\//_}.html" -Format html
+done < targets.txt
+```
+
+## Common pitfalls
+
+- **Running default `nikto -h` on a customer's site and pasting the output into a report.** Most findings are noise. Triage.
+- **Treating "OSVDB-XXXX" entries as confirmed CVEs.** OSVDB shut down years ago and the references can be stale. Verify before reporting.
+- **Forgetting to update.** A two-year-old plugin database is missing recent checks. Run `nikto -update` periodically.
+- **Skipping `-Tuning` and being annoyed by the volume.** Tuning is the answer.
+- **Running on production at full speed.** Nikto can be aggressive; throttle or scope when needed.
+- **Reporting missing security headers from Nikto.** Modern tools (ZAP passive, [Nuclei](/scanners/nuclei) tech-fingerprinting templates) catch these more cleanly. Use Nikto's header findings as a hint, then verify with focused tooling.
+
+## When to use Nikto vs alternatives
+
+| Need | Reach for |
+|------|-----------|
+| Legacy web server config audit | Nikto |
+| Default-file / sensitive-file discovery | Nikto, or [Nuclei `exposures/`](/scanners/nuclei) |
+| CGI / classic vulns on old infrastructure | Nikto |
+| Application-layer vulns (SQLi, XSS, etc.) | [OWASP ZAP](/scanners/zap), Burp, or SQLmap |
+| Modern CVE coverage | [Nuclei](/scanners/nuclei), Trivy, vendor scanners |
+| Authenticated DAST | [OWASP ZAP](/scanners/zap) |
+
+Nikto's sweet spot is "this server has been running since 2014 and nobody's audited it" — it surfaces the things newer scanners assume aren't relevant anymore. Pair it with a modern DAST and you cover both eras.
+
+## Further reading
+
+- Nikto on GitHub — [github.com/sullo/nikto](https://github.com/sullo/nikto)
+- Tuning reference — [github.com/sullo/nikto/wiki](https://github.com/sullo/nikto/wiki)
+- DAST companion — [our ZAP active vs passive guide](/blog/owasp-zap-active-vs-passive-scan)

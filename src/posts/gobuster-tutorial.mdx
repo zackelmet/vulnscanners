@@ -1,0 +1,240 @@
+---
+title: "Gobuster Tutorial: Directory, DNS, and Vhost Enumeration"
+date: "2026-05-19"
+description: "A practical Gobuster tutorial — directory brute-forcing, DNS subdomain enumeration, vhost discovery, and wordlist choice that matters."
+author: "VulnScanners team"
+tags: ["gobuster", "enumeration", "recon"]
+---
+
+Gobuster is the brute-forcer most pentesters reach for when they need to enumerate directories, DNS subdomains, or virtual hosts. It's fast, scriptable, and the syntax is consistent across modes. Here's the working tutorial.
+
+## TL;DR
+
+- `gobuster dir` is the directory brute-forcer (replaces the old `dirb` / `dirbuster` workflow).
+- `gobuster dns` enumerates subdomains by querying DNS directly.
+- `gobuster vhost` discovers virtual hosts on a single IP.
+- Wordlist choice and threads matter more than any flag.
+
+## Install
+
+```bash
+# macOS
+brew install gobuster
+
+# Go (latest)
+go install github.com/OJ/gobuster/v3@latest
+
+# Debian / Ubuntu
+sudo apt install gobuster
+
+# Verify
+gobuster version
+```
+
+You'll also need wordlists. The community standard is **SecLists**:
+
+```bash
+git clone --depth 1 https://github.com/danielmiessler/SecLists.git ~/SecLists
+```
+
+That repo is referenced in nearly every Gobuster command you'll find online.
+
+## Mode 1: directory brute-forcing (`gobuster dir`)
+
+Find files and directories that exist but aren't linked:
+
+```bash
+gobuster dir \
+  -u https://target.example.com \
+  -w ~/SecLists/Discovery/Web-Content/common.txt \
+  -t 50
+```
+
+Output:
+
+```
+/admin                (Status: 301) [Size: 178]
+/.git/HEAD            (Status: 200) [Size: 23]
+/backup.zip           (Status: 200) [Size: 18432]
+```
+
+Flags worth knowing:
+
+| Flag | Effect |
+|------|--------|
+| `-u` | Target URL |
+| `-w` | Wordlist |
+| `-t` | Threads (default 10; bump to 50–100 on solid targets) |
+| `-x` | Extensions to append (`-x php,html,bak`) |
+| `-s` | Status codes to show (default 200,204,301,302,307,401,403) |
+| `-b` | Status codes to ignore (`-b 404`) |
+| `-r` | Follow redirects |
+| `-k` | Don't verify TLS cert (useful for self-signed) |
+| `-H` | Custom headers (`-H "Cookie: session=abc"`) |
+| `-o` | Output to file |
+| `--no-error` | Suppress connection errors |
+| `--exclude-length` | Hide responses of a given byte length (handy for soft-404s) |
+
+### Practical examples
+
+```bash
+# Look for backup and config files
+gobuster dir -u https://target.example.com \
+  -w ~/SecLists/Discovery/Web-Content/common.txt \
+  -x bak,old,backup,conf,config,zip,tar.gz \
+  -t 50
+
+# Authenticated brute force (cookie-based)
+gobuster dir -u https://target.example.com/account \
+  -w ~/SecLists/Discovery/Web-Content/raft-large-words.txt \
+  -H "Cookie: session=eyJhbGciOiJI..." \
+  -t 30
+
+# Skip the noisy soft-404 responses
+gobuster dir -u https://target.example.com \
+  -w ~/SecLists/Discovery/Web-Content/raft-small-words.txt \
+  --exclude-length 1234
+```
+
+### Wordlist choice
+
+Wordlists matter more than flag tuning. Reasonable starting points from SecLists:
+
+- `Discovery/Web-Content/common.txt` — ~4,700 entries, great first pass
+- `Discovery/Web-Content/raft-small-words.txt` — well-curated, mid-size
+- `Discovery/Web-Content/raft-large-words.txt` — bigger, broader coverage
+- `Discovery/Web-Content/directory-list-2.3-medium.txt` — large, slower
+- `Discovery/Web-Content/CMS/` — CMS-specific lists (WordPress, Joomla, Drupal)
+
+For a typical engagement: `common.txt` for the first sweep, then a CMS-specific list once you know the stack.
+
+## Mode 2: DNS subdomain enumeration (`gobuster dns`)
+
+Brute-force subdomains by querying the authoritative DNS:
+
+```bash
+gobuster dns \
+  -d example.com \
+  -w ~/SecLists/Discovery/DNS/subdomains-top1million-5000.txt \
+  -t 50
+```
+
+Output:
+
+```
+Found: api.example.com
+Found: dev.example.com
+Found: staging.example.com
+Found: vpn.example.com
+```
+
+Flags specific to DNS mode:
+
+| Flag | Effect |
+|------|--------|
+| `-d` | Target domain |
+| `-r` | Use a specific resolver (`-r 8.8.8.8`) |
+| `-i` | Show IPs of resolved subdomains |
+| `--wildcard` | Force wildcard handling (rare; usually auto) |
+
+### Practical examples
+
+```bash
+# Standard subdomain sweep with IP resolution
+gobuster dns -d example.com \
+  -w ~/SecLists/Discovery/DNS/subdomains-top1million-20000.txt \
+  -i -t 100
+
+# Use a specific resolver to dodge DNS rate limits
+gobuster dns -d example.com \
+  -w big-list.txt -r 1.1.1.1 -t 100
+```
+
+DNS brute-forcing is faster than HTTP brute-forcing — push threads up to 100+ if your resolver can keep up. Be mindful of rate limits from public resolvers; consider running your own (unbound, etc.) for big sweeps.
+
+## Mode 3: vhost discovery (`gobuster vhost`)
+
+When multiple sites share an IP, the responding application depends on the `Host:` header. `vhost` mode brute-forces hostnames against a single endpoint:
+
+```bash
+gobuster vhost \
+  -u http://203.0.113.10 \
+  -w ~/SecLists/Discovery/DNS/subdomains-top1million-5000.txt \
+  --append-domain example.com \
+  -t 50
+```
+
+Output (only when the response differs from the baseline):
+
+```
+Found: secret-admin.example.com Status: 200 [Size: 2341]
+```
+
+Flags specific to vhost mode:
+
+| Flag | Effect |
+|------|--------|
+| `-u` | Target IP / URL |
+| `--append-domain` | Append this to each wordlist entry |
+| `--exclude-length` | Hide responses matching given lengths |
+
+### When you'd use it
+
+- You've found an IP that hosts multiple apps, but only the main vhost is in DNS.
+- You're testing internal infrastructure where vhosts aren't publicly resolvable.
+- You suspect a "hidden" admin vhost behind the same load balancer as the public site.
+
+vhost mode is overlooked compared to dir / dns mode, but it's where you find admin panels that aren't linked from the main site or in DNS.
+
+## Threading guidance
+
+Threading is the biggest knob for speed. Realistic defaults:
+
+| Target | Threads |
+|--------|---------|
+| Public web app on managed infra | 30–50 |
+| Public web app on shared hosting | 10–20 |
+| DNS brute force (your resolver) | 100+ |
+| DNS brute force (public resolver) | 20–50 |
+| Internal target | 50–100 |
+
+If you start seeing connection errors or 5xx responses, dial threads down. Brute-forcing isn't useful if half your responses time out.
+
+## Output and resuming
+
+Save to file with `-o`:
+
+```bash
+gobuster dir -u https://target -w wordlist.txt -o results.txt
+```
+
+Resume an interrupted run:
+
+```bash
+gobuster dir -u https://target -w wordlist.txt --resume
+```
+
+This reads the existing output file and skips already-tested entries. Essential for long DNS sweeps.
+
+## Common pitfalls
+
+- **Soft 404s.** Many sites return `200 OK` with a "page not found" body. You'll get hundreds of false positives. Use `--exclude-length` after a baseline run to filter them out.
+- **Default wordlist for everything.** `common.txt` is fine for a first pass but misses CMS-specific endpoints. Switch wordlists when you fingerprint the stack.
+- **Forgetting extensions.** `gobuster dir` doesn't append extensions by default. `/admin` will be found; `/admin.php` won't unless you set `-x php`.
+- **Hitting rate limits unnoticed.** A WAF that silently rate-limits you produces a stream of 200/empty responses. Always sanity-check by running a known-good URL against the same target mid-scan.
+- **Threading too aggressively on shared hosting.** You'll either get banned or trigger their abuse desk.
+
+## When you'd use something else
+
+- **`ffuf`** is faster and has more flexible fuzzing (multiple wordlists per request, recursion, etc.). Many pentesters have switched.
+- **`dirsearch`** is a Python-based alternative with a built-in dictionary.
+- **`subfinder` + `httpx`** is the modern pairing for subdomain enumeration — passive sources first, then HTTP-probe the results. Faster and stealthier than DNS brute force for most targets.
+- **[Nuclei](/scanners/nuclei) with the `exposures/` template set** finds many of the same misconfigured directories Gobuster would, plus content-aware matching.
+
+Gobuster's strength is its simplicity. For a quick brute force without a configuration learning curve, it remains the easy reach.
+
+## Further reading
+
+- Gobuster project — [github.com/OJ/gobuster](https://github.com/OJ/gobuster)
+- SecLists — [github.com/danielmiessler/SecLists](https://github.com/danielmiessler/SecLists)
+- Related: [our Nuclei templates guide](/blog/nuclei-templates-guide) for exposure-style checks

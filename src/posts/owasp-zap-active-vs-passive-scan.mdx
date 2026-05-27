@@ -1,0 +1,140 @@
+---
+title: "OWASP ZAP Active vs Passive Scan: When to Use Each"
+date: "2026-05-24"
+description: "What ZAP's active and passive scanners actually do, the issues each detects, and which one belongs in which phase of an engagement."
+author: "VulnScanners team"
+tags: ["zap", "dast", "web-security"]
+---
+
+ZAP has two scanners and the difference matters. New users tend to run "scan" and expect everything; old hands know that active and passive are different tools for different jobs. This post is the working explanation: what each does, what each detects, and when to reach for which.
+
+## TL;DR
+
+- **Passive scan** watches traffic as it flows through ZAP. It doesn't send new requests. Cheap, safe, fast.
+- **Active scan** sends crafted payloads to probe for vulnerabilities. Slower, more findings, can break things.
+- Passive runs by default any time you proxy through ZAP. Active is opt-in.
+- Run passive on every engagement. Run active only on scope you have written permission to test.
+
+## What ZAP is
+
+Per [zaproxy.org](https://www.zaproxy.org/), ZAP — the Zed Attack Proxy — is "the world's most widely used web app scanner." A free, open-source DAST tool that began as an OWASP flagship project and is now stewarded by Checkmarx as an independent open-source project. The repo is at [github.com/zaproxy/zaproxy](https://github.com/zaproxy/zaproxy).
+
+ZAP operates as a man-in-the-middle proxy. You point your browser (or test traffic) through it; ZAP records every request and response. From that vantage point, two scanners can run:
+
+## Passive scan
+
+The passive scanner reads requests and responses as they flow through the proxy. It doesn't modify traffic and doesn't send any requests of its own. Think of it as a static analysis pass over network traffic in flight.
+
+**What passive scan typically catches:**
+
+- Missing security headers (`X-Frame-Options`, `Content-Security-Policy`, `Strict-Transport-Security`, etc.)
+- Cookies without `Secure`, `HttpOnly`, or `SameSite` flags
+- Information disclosure in responses (server banners, stack traces, debug info)
+- Mixed content (HTTPS pages loading HTTP resources)
+- Form fields that submit credentials over HTTP
+- Outdated framework / library versions visible in headers or body
+- Insecure JavaScript inclusion (no SRI)
+
+Passive findings are usually classified as "low" or "informational" but they tell you a lot about how seriously the team treats web hygiene.
+
+**Cost:** essentially zero. Passive scan runs in the background as you (or a spider) browse. No additional traffic, no risk of breaking the application.
+
+## Active scan
+
+The active scanner takes a request ZAP has seen and rewrites it — injecting payloads into parameters, headers, and the URL itself — then sends the modified request to see how the application responds.
+
+**What active scan catches:**
+
+- **SQL injection** (including time-based blind via the Advanced SQL Injection add-on)
+- **Cross-site scripting** (reflected, stored, DOM-based via the DOM XSS rule)
+- **Path traversal** and **file inclusion**
+- **Server-side request forgery** (SSRF) via path probes
+- **Command injection**
+- **XML external entity** (XXE) processing
+- **Authentication bypasses** in common patterns
+- **CSRF token absence** on state-changing requests
+- **Insecure direct object references** (limited)
+- **Buffer overflow** symptoms in some legacy stacks
+
+Findings range from informational to critical. Critical findings from active scan are the kind that go in a pentest report's executive summary.
+
+**Cost:** active scan sends a lot of traffic — easily 10,000+ requests against a modest application — and *can* break things. A vulnerable file-upload endpoint hit with active fuzzing might genuinely fill the disk. A state-changing endpoint with no CSRF protection might create thousands of records.
+
+## Active scan rules at a glance
+
+ZAP active rules ship in three add-ons: **standard**, **beta**, and **alpha**. Some commonly-discussed rules:
+
+| Rule | What it tests |
+|------|----------------|
+| Advanced SQL Injection | Time-based blind, error-based, boolean blind |
+| DOM XSS | Client-side XSS via DOM manipulation |
+| External Redirect | Unvalidated redirects |
+| Cross Site Scripting (Reflected) | Classic reflected XSS |
+| Path Traversal | `../` / encoded traversal patterns |
+| Remote OS Command Injection | Shell injection in parameters |
+| Server Side Code Injection | PHP / ASP / JSP code injection |
+| Source Code Disclosure | Backup files, `.git/`, etc. |
+| Buffer Overflow | Long-string responses |
+
+The full set lives in the [active scan rules add-on docs](https://www.zaproxy.org/docs/desktop/addons/active-scan-rules/).
+
+## Passive scan rules at a glance
+
+Some commonly-used passive rules:
+
+| Rule | What it surfaces |
+|------|------------------|
+| HTTPS Configuration | HSTS, mixed content, certificate hints |
+| Cookies | `Secure` / `HttpOnly` / `SameSite` flags |
+| Information Disclosure | Stack traces, debug info, version banners |
+| Cross Domain Misconfig | Missing or permissive CORS / CSP |
+| Insecure JSF ViewState | JSF-specific misconfig |
+| Anti-CSRF Tokens | Forms without CSRF tokens |
+
+## When to run which
+
+Here's the workflow that works:
+
+**Phase 1: Reconnaissance.** Run the spider (or AJAX spider for SPAs) with passive scan enabled. ZAP builds a map of the application; passive scan flags low-hanging hygiene issues without sending any extra traffic.
+
+**Phase 2: Auth setup.** Configure authentication so ZAP can crawl post-login. Passive scan immediately picks up new issues in authenticated surfaces.
+
+**Phase 3: Active scan, scoped.** Don't active-scan the whole site at once. Pick high-risk endpoints (anything that takes user input, anything in `/admin`, anything that mutates state) and active-scan those specifically. Watch the application logs and stop if the scan is creating garbage data.
+
+**Phase 4: Manual follow-up.** Active scan finds candidates, not confirmed exploits. Verify each finding by hand before reporting.
+
+## Spider vs AJAX spider
+
+You can't passive- or active-scan what ZAP hasn't seen, so the spider matters.
+
+- **Traditional spider** — parses HTML, follows `<a>` and `<form>` links. Fast, deterministic.
+- **AJAX spider** — drives a headless browser (Firefox or Chrome) to render JavaScript-heavy applications and capture dynamically-built URLs. Slower, but essential for SPAs.
+
+For React / Vue / Angular apps, the traditional spider misses most of the application. Always run the AJAX spider on SPAs.
+
+## Common pitfalls
+
+- **Active-scanning production without permission.** This is the cardinal sin. Even read-only-looking endpoints can have side effects under fuzzing.
+- **Forgetting to authenticate.** Most of the interesting attack surface is post-login. Without auth configured, ZAP only sees the public marketing site.
+- **Trusting the default scope.** Active scan with the wrong scope can hit shared infrastructure (CDNs, auth providers) you didn't intend to scan.
+- **Skipping passive scan because it "doesn't find vulns".** Passive is the fastest signal you'll get on overall security posture. The findings are often legitimate report content.
+- **Running active scan on the traditional spider's map of an SPA.** You're testing 5% of the app.
+
+## Running ZAP without the Java install
+
+The honest reason most people don't run ZAP regularly: it's a Java application. The desktop client is reliable but heavy; the headless / Docker version is more deployable but still feels like operating infrastructure.
+
+For recurring scans, hosted ZAP solves this:
+
+- No JVM to maintain.
+- Spider, AJAX spider, and active/passive rules pre-configured.
+- Static source IP for client allowlisting.
+- PDF report per scan with findings grouped by severity.
+
+See [our hosted ZAP page](/scanners/zap) for the runtime details.
+
+## Further reading
+
+- Active scan rules — [zaproxy.org/docs/desktop/addons/active-scan-rules](https://www.zaproxy.org/docs/desktop/addons/active-scan-rules/)
+- Passive scan rules — [zaproxy.org/docs/desktop/addons/passive-scan-rules](https://www.zaproxy.org/docs/desktop/addons/passive-scan-rules/)
+- ZAP getting started — [zaproxy.org/getting-started](https://www.zaproxy.org/getting-started/)

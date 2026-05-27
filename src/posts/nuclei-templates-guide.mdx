@@ -1,0 +1,254 @@
+---
+title: "Nuclei Templates: A Practical Guide"
+date: "2026-05-25"
+description: "How Nuclei templates work, how to read them, how to write your own, and how to keep the community feed current."
+author: "VulnScanners team"
+tags: ["nuclei", "templates", "yaml"]
+---
+
+Nuclei is fast and accurate because it's just an engine — the detections live in YAML templates. This post is a working tour: how the template format is structured, the categories you'll actually use, how to write one for a custom finding, and how to keep your local feed current.
+
+## TL;DR
+
+- Templates are YAML files describing requests, responses, and matchers.
+- Nuclei ships with thousands of community templates covering CVEs, misconfigs, default credentials, and exposed files.
+- A useful custom template is usually 15-30 lines. The complexity is in the matcher, not the syntax.
+- Always update templates before a scan: `nuclei -ut`.
+
+## What Nuclei is
+
+Per [the project README](https://github.com/projectdiscovery/nuclei), Nuclei is "a fast, template based vulnerability scanner focusing on extensive configurability, massive extensibility and ease of use." Maintained by ProjectDiscovery, MIT licensed.
+
+The community template repository is where the actual detections live — [github.com/projectdiscovery/nuclei-templates](https://github.com/projectdiscovery/nuclei-templates).
+
+## Install and update
+
+```bash
+# macOS
+brew install nuclei
+
+# Or via Go
+go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
+
+# Update templates (do this before every real scan)
+nuclei -ut
+
+# Verify
+nuclei -version
+nuclei -tl | head   # list installed templates
+```
+
+The first time you run `nuclei`, it'll download the template repo automatically. After that, `-ut` (update templates) is the one flag you should never skip.
+
+## A minimal first scan
+
+```bash
+nuclei -u https://example.com
+```
+
+By default this runs the full community template set against the URL. On a single host with the default rate limit it takes a few minutes. You'll see findings like:
+
+```
+[exposed-panels:adminer] [http] [info] https://example.com/adminer.php
+[CVE-2021-44228:log4shell-exception] [http] [critical] https://example.com/...
+```
+
+Format is `[template-id] [protocol] [severity] [matched URL]`.
+
+## Template categories worth knowing
+
+You don't have to run the whole set every time. Templates are organised by directory, and you can target categories with `-t`:
+
+```bash
+nuclei -u https://example.com -t cves/                  # all CVE detections
+nuclei -u https://example.com -t exposures/             # exposed config / files
+nuclei -u https://example.com -t default-logins/        # default credentials
+nuclei -u https://example.com -t misconfiguration/      # security misconfigs
+nuclei -u https://example.com -t takeovers/             # subdomain takeover
+nuclei -u https://example.com -t vulnerabilities/       # general vuln checks
+nuclei -u https://example.com -t technologies/          # tech stack fingerprinting
+```
+
+You can also filter by severity:
+
+```bash
+nuclei -u https://example.com -s critical,high
+```
+
+And by tag:
+
+```bash
+nuclei -u https://example.com -tags log4j
+nuclei -u https://example.com -tags wordpress
+nuclei -u https://example.com -tags rce
+```
+
+## Reading a template
+
+Here's a simplified template for detecting an exposed `.git/config`:
+
+```yaml
+id: git-config-exposed
+
+info:
+  name: Exposed .git/config
+  author: example
+  severity: medium
+  description: Detects an exposed .git/config file revealing repo metadata.
+  tags: exposure,git
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/.git/config"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "[core]"
+          - "repositoryformatversion"
+```
+
+Three sections:
+
+1. **`id`** — unique identifier, kebab-case, matches the filename.
+2. **`info`** — metadata. The `severity` field controls how it surfaces in reports. `tags` are how you filter at scan time.
+3. **`http`** (or `dns`, `tcp`, `ssl`, `file`, etc.) — the actual request and matcher logic.
+
+The matchers are what makes Nuclei accurate. Here we require **both** a `200` status **and** the specific strings that appear in a real `.git/config` (`matchers-condition: and`). Without that conjunction, every 200-OK soft-404 page would trigger a false positive.
+
+## Writing a custom template
+
+Say you want to detect a custom admin panel a client always deploys at `/admin-panel/login.php`, identifiable by a specific HTML title.
+
+```yaml
+id: client-x-admin-panel
+
+info:
+  name: Client X admin panel exposed
+  author: ops
+  severity: medium
+  description: Detects the Client X admin panel by title and path.
+  tags: exposure,client-x
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/admin-panel/login.php"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status: [200]
+
+      - type: word
+        part: body
+        words:
+          - "<title>Client X Admin</title>"
+```
+
+Save as `~/nuclei-templates/custom/client-x-admin-panel.yaml`. Run it with:
+
+```bash
+nuclei -u https://target.example.com -t ~/nuclei-templates/custom/
+```
+
+You can also pipe URLs from another tool:
+
+```bash
+subfinder -d example.com -silent | httpx -silent | nuclei -t cves/
+```
+
+## Matcher types you'll actually use
+
+| Matcher | Matches against | Common uses |
+|---------|-----------------|-------------|
+| `status` | HTTP response code | Filtering 200/302/etc. |
+| `word` | Strings in body or headers | Title text, error strings |
+| `regex` | Regular expressions | Version banner extraction |
+| `binary` | Hex bytes | File magic numbers |
+| `size` | Response length | Suspicious empty responses |
+| `dsl` | Expression language | Complex conditions |
+
+`matchers-condition` controls how multiple matchers combine: `and` (all must match) or `or` (any). Defaults to `or`, which is the source of many false-positive templates — always set `and` when you have specific signals.
+
+## Extractors
+
+If you also want to pull a value out of the response (a version, an internal ID, etc.), use `extractors`:
+
+```yaml
+extractors:
+  - type: regex
+    part: body
+    group: 1
+    regex:
+      - 'WordPress ([0-9.]+)'
+```
+
+This makes the matched version show up in the Nuclei output, which is invaluable when you're scanning a fleet of hosts and want to know which version a finding hit.
+
+## Severity calibration
+
+Nuclei templates self-declare severity. Treat it as a starting point, not gospel:
+
+- **critical** — RCE, authentication bypass on a sensitive path, hard-coded creds.
+- **high** — Disclosure of secrets, SQLi, exploitable misconfig.
+- **medium** — Exposed configs that don't directly compromise the target.
+- **low** — Information disclosure, missing security headers.
+- **info** — Tech-stack fingerprinting, generic exposures.
+
+When you're writing custom templates, err one level lower than your first instinct. Severity inflation across templates is how reports become noisy.
+
+## Running Nuclei in pipelines
+
+For CI / pre-deploy gates:
+
+```bash
+nuclei -u https://staging.example.com -severity critical,high -j -o nuclei.json
+```
+
+`-j` emits JSON-lines output, one finding per line. Pipe that into your favourite parser and gate on count of critical/high findings.
+
+For continuous scheduled scans, run Nuclei against a list of targets:
+
+```bash
+cat targets.txt | nuclei -t cves/ -severity critical,high -no-color -j -o daily-$(date +%F).jsonl
+```
+
+Set `-rate-limit` (requests per second) when scanning third-party assets you don't own:
+
+```bash
+nuclei -u https://example.com -rate-limit 50
+```
+
+The default is 150 — fine for assets you control, aggressive for third-party.
+
+## Common pitfalls
+
+- **Not updating templates.** Findings from a six-month-old template set are an outdated picture.
+- **Too-broad matchers.** A template that fires on "200 OK and the word `admin`" generates noise that drowns real findings.
+- **Skipping the `tags` field.** Tags are how operators filter at scan time. A template with no tags is hard to call selectively.
+- **Trusting severity blindly.** Calibrate against the actual impact on the target you're scanning.
+- **Running the full template set against assets you don't own.** Some templates fire intrusive payloads. Use `-severity` and `-tags` to scope, or run hosted.
+
+## When to run Nuclei hosted
+
+Three reasons:
+
+1. **Template currency.** Hosted services track the upstream feed so you don't have to remember `-ut`.
+2. **Static source IP.** Allowlist once on the client side.
+3. **Output format.** [VulnScanners](/scanners/nuclei) hands you a PDF per scan with findings grouped by severity, alongside the raw JSON.
+
+For one-off custom-template work, local Nuclei is great. For recurring scans against a fleet, hosted removes the maintenance overhead.
+
+## Further reading
+
+- Template syntax — [docs.projectdiscovery.io/templates/protocols/http](https://docs.projectdiscovery.io/templates/protocols/http/basic-http)
+- Template repository — [github.com/projectdiscovery/nuclei-templates](https://github.com/projectdiscovery/nuclei-templates)
+- Our scanner page — [hosted Nuclei scanning](/scanners/nuclei)
