@@ -110,7 +110,9 @@ export interface ScanSummary {
 
 export interface CreateScanRequest {
   type: ScanType;
-  targetId: string;
+  // Either provide `target` (ad-hoc string) or `targetId` (saved target lookup).
+  target?: string;
+  targetId?: string;
   options: NmapOptions | NucleiOptions | ZapOptions;
 }
 

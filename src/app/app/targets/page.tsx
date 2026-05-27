@@ -135,34 +135,34 @@ export default function TargetsPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 lg:p-8 space-y-6 max-w-full">
+      <div className="p-6 lg:p-8 space-y-6 max-w-full bg-[#07090d] min-h-screen">
         <div>
-          <h1 className="text-3xl font-bold text-[#0A1128]">Targets</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-light text-[#e6edf5]">Targets</h1>
+          <p className="text-[#9aa5b6] mt-1">
             Manage infrastructure, domains, and APIs to scan.
           </p>
         </div>
 
         {/* Create Target Form */}
         <form
-          className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm space-y-4"
+          className="bg-[#0d1117] border border-[#161b24] rounded-xl p-6 shadow-sm space-y-4"
           onSubmit={handleSubmit}
         >
-          <h2 className="text-xl font-semibold text-[#0A1128]">Add Target</h2>
+          <h2 className="text-xl font-semibold text-[#e6edf5]">Add Target</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <label className="flex flex-col">
-              <span className="text-sm font-semibold text-gray-700">Name</span>
+              <span className="text-sm font-semibold text-[#9aa5b6]">Name</span>
               <input
                 type="text"
                 required
                 value={formState.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
                 placeholder="Production API"
-                className="mt-2 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#0A1128]"
+                className="mt-2 px-3 py-2 border border-[#161b24] rounded-lg bg-[#11161f] text-[#e6edf5] focus:outline-none focus:ring-2 focus:ring-[#0366d6]"
               />
             </label>
             <label className="flex flex-col">
-              <span className="text-sm font-semibold text-gray-700">
+              <span className="text-sm font-semibold text-[#9aa5b6]">
                 Value (IP / URL / Domain)
               </span>
               <input
@@ -171,15 +171,15 @@ export default function TargetsPage() {
                 value={formState.value}
                 onChange={(e) => handleInputChange("value", e.target.value)}
                 placeholder="192.168.1.1 or api.example.com"
-                className="mt-2 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-[#0A1128]"
+                className="mt-2 px-3 py-2 border border-[#161b24] rounded-lg bg-[#11161f] font-mono text-sm text-[#e6edf5] focus:outline-none focus:ring-2 focus:ring-[#0366d6]"
               />
             </label>
             <label className="flex flex-col">
-              <span className="text-sm font-semibold text-gray-700">Type</span>
+              <span className="text-sm font-semibold text-[#9aa5b6]">Type</span>
               <select
                 value={formState.type}
                 onChange={(e) => handleInputChange("type", e.target.value)}
-                className="mt-2 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#0A1128]"
+                className="mt-2 px-3 py-2 border border-[#161b24] rounded-lg bg-[#11161f] text-[#e6edf5] focus:outline-none focus:ring-2 focus:ring-[#0366d6]"
               >
                 <option value="domain">Domain Name</option>
                 <option value="ip">IP Address</option>
@@ -189,7 +189,7 @@ export default function TargetsPage() {
           </div>
           <div>
             <label className="flex flex-col">
-              <span className="text-sm font-semibold text-gray-700">
+              <span className="text-sm font-semibold text-[#9aa5b6]">
                 Tags (comma separated)
               </span>
               <input
@@ -197,7 +197,7 @@ export default function TargetsPage() {
                 value={formState.tags}
                 onChange={(e) => handleInputChange("tags", e.target.value)}
                 placeholder="production, api"
-                className="mt-2 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#0A1128]"
+                className="mt-2 px-3 py-2 border border-[#161b24] rounded-lg bg-[#11161f] text-[#e6edf5] focus:outline-none focus:ring-2 focus:ring-[#0366d6]"
               />
             </label>
           </div>
@@ -205,14 +205,14 @@ export default function TargetsPage() {
             <button
               type="submit"
               disabled={saving || !formState.value.trim()}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#00FED9] text-[#0A1128] font-semibold rounded-lg hover:bg-[#00D4B8] transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#0366d6] text-white font-semibold rounded-lg hover:bg-[#4493f8] transition-colors disabled:opacity-50"
             >
               <FontAwesomeIcon icon={faPlus} />{" "}
               {saving ? "Saving…" : "Save target"}
             </button>
             {feedback && (
               <span
-                className={`text-sm ${feedback.type === "error" ? "text-red-600" : "text-green-600"}`}
+                className={`text-sm ${feedback.type === "error" ? "text-red-400" : "text-green-400"}`}
               >
                 {feedback.message}
               </span>
@@ -221,11 +221,11 @@ export default function TargetsPage() {
         </form>
 
         {/* Data Table */}
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-[#0d1117] border border-[#161b24] rounded-xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200 text-sm text-gray-600">
+                <tr className="bg-[#11161f] border-b border-[#161b24] text-sm text-[#9aa5b6]">
                   <th className="p-4 font-semibold">Target</th>
                   <th className="p-4 font-semibold">Type</th>
                   <th className="p-4 font-semibold">Health Score</th>
@@ -233,16 +233,16 @@ export default function TargetsPage() {
                   <th className="p-4 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[#161b24]">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="p-6 text-center text-gray-500">
+                    <td colSpan={5} className="p-6 text-center text-[#9aa5b6]">
                       Loading targets...
                     </td>
                   </tr>
                 ) : targets.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-6 text-center text-gray-500">
+                    <td colSpan={5} className="p-6 text-center text-[#9aa5b6]">
                       No targets found. Add one above.
                     </td>
                   </tr>
@@ -250,20 +250,20 @@ export default function TargetsPage() {
                   targets.map((t) => (
                     <tr
                       key={t.id}
-                      className="hover:bg-gray-50 transition-colors"
+                      className="hover:bg-[#11161f] transition-colors"
                     >
                       <td className="p-4">
                         <div className="flex flex-col">
-                          <span className="font-semibold text-[#0A1128]">
+                          <span className="font-semibold text-[#e6edf5]">
                             {t.name}
                           </span>
-                          <span className="text-sm font-mono text-gray-500">
+                          <span className="text-sm font-mono text-[#9aa5b6]">
                             {t.value}
                           </span>
                         </div>
                       </td>
                       <td className="p-4">
-                        <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700">
+                        <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md text-xs font-semibold bg-[#0366d6]/20 text-[#4493f8] border border-[#0366d6]/30">
                           <FontAwesomeIcon icon={getTargetIcon(t.type)} />
                           {t.type.toUpperCase()}
                         </span>
@@ -274,11 +274,11 @@ export default function TargetsPage() {
                             icon={faHeartPulse}
                             className={
                               t.healthScore === 100
-                                ? "text-green-500"
-                                : "text-yellow-500"
+                                ? "text-green-400"
+                                : "text-yellow-400"
                             }
                           />
-                          <span className="font-semibold text-gray-700">
+                          <span className="font-semibold text-[#e6edf5]">
                             {t.healthScore ?? 100}/100
                           </span>
                         </div>
@@ -288,7 +288,7 @@ export default function TargetsPage() {
                           {t.tags?.map((tag) => (
                             <span
                               key={tag}
-                              className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full"
+                              className="px-2 py-0.5 bg-[#11161f] text-[#9aa5b6] text-xs rounded-full border border-[#161b24]"
                             >
                               {tag}
                             </span>
@@ -297,7 +297,7 @@ export default function TargetsPage() {
                       </td>
                       <td className="p-4 text-right">
                         <button
-                          className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                          className="p-2 text-[#697080] hover:text-red-400 transition-colors"
                           onClick={() => handleDelete(t.id)}
                         >
                           <FontAwesomeIcon icon={faTrash} />

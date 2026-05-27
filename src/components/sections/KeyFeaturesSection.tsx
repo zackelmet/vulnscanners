@@ -1,6 +1,6 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faRocket,
+  faJetFighterUp,
   faCrosshairs,
   faChartLine,
   faDesktop,
@@ -9,7 +9,7 @@ import {
 export default function KeyFeaturesSection() {
   const keyFeatures = [
     {
-      icon: faRocket,
+      icon: faJetFighterUp,
       title: "Effortless Deployment & Maintenance",
       description:
         "As a fully hosted service, there is nothing to install or maintain. Launch your comprehensive security scans instantly from anywhere, whenever your operations demand it.",

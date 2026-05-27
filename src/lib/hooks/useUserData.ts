@@ -28,8 +28,29 @@ export function useUserData() {
       userRef,
       (doc) => {
         if (doc.exists()) {
-          const data = doc.data() as UserDocument;
-          console.log("📊 useUserData: User data updated:", {
+          const rawData = doc.data();
+          console.log("📊 useUserData: Raw Firestore data:", rawData);
+
+          // Ensure scanCredits has proper structure and numeric values
+          const scanCredits = {
+            nmap: Number(rawData?.scanCredits?.nmap ?? 0),
+            nuclei: Number(rawData?.scanCredits?.nuclei ?? 0),
+            zap: Number(rawData?.scanCredits?.zap ?? 0),
+          };
+
+          const scansUsed = {
+            nmap: Number(rawData?.scansUsed?.nmap ?? 0),
+            nuclei: Number(rawData?.scansUsed?.nuclei ?? 0),
+            zap: Number(rawData?.scansUsed?.zap ?? 0),
+          };
+
+          const data: UserDocument = {
+            ...rawData,
+            scanCredits,
+            scansUsed,
+          } as UserDocument;
+
+          console.log("📊 useUserData: Processed data:", {
             scanCredits: data.scanCredits,
             scansUsed: data.scansUsed,
           });

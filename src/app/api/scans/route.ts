@@ -46,29 +46,43 @@ export async function POST(request: NextRequest) {
 
     // Parse the request body
     const body: CreateScanRequest = await request.json();
-    const { type, targetId, options } = body;
+    const { type, target, targetId, options } = body;
 
     // Debug logging
-    console.log("Scan request received:", { userId, type, targetId, options });
+    console.log("Scan request received:", {
+      userId,
+      type,
+      target,
+      targetId,
+      options,
+    });
 
-    if (!targetId) {
+    // Resolve target value: prefer ad-hoc `target`, fall back to saved `targetId`.
+    let targetValue: string | undefined;
+    if (typeof target === "string" && target.trim()) {
+      targetValue = target.trim();
+    } else if (targetId) {
+      const targetDoc = await firestore
+        .collection("users")
+        .doc(userId)
+        .collection("targets")
+        .doc(targetId)
+        .get();
+      if (!targetDoc.exists) {
+        return NextResponse.json(
+          { error: "Target not found or unauthorized" },
+          { status: 404 },
+        );
+      }
+      targetValue = targetDoc.data()?.value;
+    } else {
       return NextResponse.json(
-        { error: "Missing required field: targetId" },
+        { error: "Missing required field: target (or targetId)" },
         { status: 400 },
       );
     }
 
-    // Fetch Target from Firestore
-    const targetDoc = await firestore.collection("targets").doc(targetId).get();
-    if (!targetDoc.exists || targetDoc.data()?.userId !== userId) {
-      return NextResponse.json(
-        { error: "Target not found or unauthorized" },
-        { status: 404 },
-      );
-    }
-
-    const targetValue = targetDoc.data()?.value;
-    const targetArray = [targetValue]; // Wrapping it in array to minimize downstream changes
+    const targetArray = [targetValue!]; // Wrapping it in array to minimize downstream changes
 
     // Normalize options (client may send empty string or null)
     const normalizedOptions =
@@ -221,13 +235,18 @@ export async function POST(request: NextRequest) {
           const scanData: any = {
             userId,
             type,
-            targetId,
             targetValue: normalizedTarget,
             options: normalizedOptions,
             status: "queued",
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           };
+
+          // Only include targetId if user picked a saved target.
+          // Firestore Admin rejects `undefined` field values.
+          if (targetId) {
+            scanData.targetId = targetId;
+          }
 
           // Only include batchId if it exists (multiple targets)
           if (batchId) {
@@ -283,13 +302,17 @@ export async function POST(request: NextRequest) {
           scanId: scanRef.id,
           status: "queued",
           type,
-          targetId,
           targetValue: normalizedTarget,
           startTime: admin.firestore.FieldValue.serverTimestamp(),
           resultsSummary: null,
           gcpStorageUrl: null,
           errorMessage: null,
         };
+
+        // Only include targetId if user picked a saved target.
+        if (targetId) {
+          userScanData.targetId = targetId;
+        }
 
         // Only include batchId if it exists
         if (batchId) {
@@ -431,18 +454,25 @@ export async function GET(request: NextRequest) {
 
     const userId = decodedToken.uid;
 
-    // Get user's scans
+    // Get user's scans (sort in memory to avoid composite index requirement)
     const scansSnapshot = await firestore
       .collection("scans")
       .where("userId", "==", userId)
-      .orderBy("createdAt", "desc")
-      .limit(50)
+      .limit(100)
       .get();
 
-    const scans = scansSnapshot.docs.map((doc: any) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const scans = scansSnapshot.docs
+      .map((doc: any) => ({
+        id: doc.id,
+        ...doc.data(),
+      }))
+      .sort((a, b) => {
+        // Sort by createdAt descending (newest first)
+        const aTime = a.createdAt?.toMillis?.() ?? 0;
+        const bTime = b.createdAt?.toMillis?.() ?? 0;
+        return bTime - aTime;
+      })
+      .slice(0, 50);
 
     return NextResponse.json({
       success: true,

@@ -40,11 +40,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const newTargetRef = firestore.collection("targets").doc();
+    const newTargetRef = firestore
+      .collection("users")
+      .doc(userId)
+      .collection("targets")
+      .doc();
     const now = admin.firestore.FieldValue.serverTimestamp();
 
-    const targetData: Omit<Target, "id"> = {
-      userId,
+    const targetData: Omit<Target, "id" | "userId"> = {
       name,
       value,
       type,
@@ -91,8 +94,9 @@ export async function GET(request: NextRequest) {
     const userId = decodedToken.uid;
 
     const targetsSnapshot = await firestore
+      .collection("users")
+      .doc(userId)
       .collection("targets")
-      .where("userId", "==", userId)
       .orderBy("createdAt", "desc")
       .get();
 

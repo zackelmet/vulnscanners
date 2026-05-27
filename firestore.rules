@@ -14,6 +14,13 @@ service cloud.firestore {
         // Updates/deletes should generally be server-only (Admin SDK).
         allow update, delete: if false;
       }
+
+      // Saved scan targets. All mutations go through /api/targets routes
+      // which use the Admin SDK, so client-side writes are denied.
+      match /targets/{targetId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
     }
 
     // Allow users to read their own global scans (used by fallback queries)

@@ -39,6 +39,52 @@ export interface ParsedNmapReport {
   rawOutput: string;
 }
 
+// ── Nuclei-specific parsed output ──────────────────────────────────────────────
+
+export type NucleiSeverity =
+  | "critical"
+  | "high"
+  | "medium"
+  | "low"
+  | "info"
+  | "unknown";
+
+export interface ParsedNucleiFinding {
+  templateId: string;
+  protocol: string;
+  severity: NucleiSeverity;
+  target: string;
+  extracted: string | null;
+}
+
+export interface ParsedNucleiReport {
+  totalFindings: number;
+  bySeverity: Record<NucleiSeverity, number>;
+  findings: ParsedNucleiFinding[];
+  rawOutput: string;
+}
+
+// ── ZAP-specific parsed output ─────────────────────────────────────────────────
+
+export type ZapAlertLevel = "PASS" | "WARN-NEW" | "WARN" | "FAIL" | "INFO";
+
+export interface ParsedZapAlert {
+  level: ZapAlertLevel;
+  ruleId: string | null;
+  name: string;
+  count: number;
+  details: string[]; // additional indented lines below the alert
+}
+
+export interface ParsedZapReport {
+  passed: number;
+  warnings: number;
+  failures: number;
+  totalUrls: number | null;
+  alerts: ParsedZapAlert[]; // non-PASS alerts surfaced for the report
+  rawOutput: string;
+}
+
 // ── Generic scan report payload (used by PDF generator) ───────────────────────
 
 export interface ScanReportPayload {
@@ -48,8 +94,8 @@ export interface ScanReportPayload {
   target: string;
   userId: string;
   generatedAt: string;
-  /** Parsed structured data (type-narrowed by scannerType) */
-  parsedData: ParsedNmapReport; // extend as union when nuclei/zap parsers added
-  /** Raw full output from the scanner */
+  /** Parsed structured data — type narrows by scannerType */
+  parsedData: ParsedNmapReport | ParsedNucleiReport | ParsedZapReport;
+  /** Raw full output from the scanner (or rawPreview if VM truncated) */
   rawOutput: string;
 }

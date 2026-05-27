@@ -3,6 +3,37 @@ import { initializeAdmin } from "@/lib/firebase/firebaseAdmin";
 import { ScanMetadata } from "@/lib/types/user";
 
 /**
+ * Upload raw scan output to Firebase Storage and return the gs:// URL.
+ * Returns null if upload fails or content is empty.
+ */
+async function uploadRawToStorage(
+  scanId: string,
+  filename: string,
+  content: string,
+  contentType: string,
+): Promise<string | null> {
+  if (!content) return null;
+  try {
+    const admin = initializeAdmin();
+    const bucket = admin.storage().bucket();
+    const objectPath = `scans/${scanId}/${filename}`;
+    const file = bucket.file(objectPath);
+    await file.save(Buffer.from(content, "utf-8"), {
+      contentType,
+      resumable: false,
+      metadata: { cacheControl: "private, max-age=0, no-transform" },
+    });
+    console.log(
+      `✅ Uploaded ${objectPath} (${content.length} bytes) to ${bucket.name}`,
+    );
+    return `gs://${bucket.name}/${objectPath}`;
+  } catch (err) {
+    console.error(`Failed to upload ${filename} to Storage:`, err);
+    return null;
+  }
+}
+
+/**
  * Generate a signed URL for a GCS path (gs://bucket/path)
  * Valid for 7 days
  */
@@ -99,6 +130,9 @@ export async function POST(request: NextRequest) {
       // legacy/alternate keys some workers may send:
       gcsPath,
       summary,
+      // full raw outputs from worker (worker no longer truncates)
+      rawStdout,
+      rawXml,
     } = result;
 
     console.log(`📥 Webhook received for scan ${scanId}:`, status);
@@ -125,8 +159,39 @@ export async function POST(request: NextRequest) {
       // Normalize fields and support alternate worker payloads (gcsPath, summary, 'done')
       const normalizedStatus =
         (status === "done" ? "completed" : status) || "completed";
-      const normalizedGcsUrl = gcpStorageUrl || gcsPath || null;
       const normalizedSummary = resultsSummary || summary || null;
+
+      // If the worker sent raw output inline, upload it to Firebase Storage so
+      // the existing gs:// → signed URL flow has something to point at.
+      let uploadedStdoutGcsUrl: string | null = null;
+      let uploadedXmlGcsUrl: string | null = null;
+      if (
+        normalizedStatus === "completed" &&
+        typeof rawStdout === "string" &&
+        rawStdout.length > 0
+      ) {
+        uploadedStdoutGcsUrl = await uploadRawToStorage(
+          scanId,
+          "output.txt",
+          rawStdout,
+          "text/plain; charset=utf-8",
+        );
+      }
+      if (
+        normalizedStatus === "completed" &&
+        typeof rawXml === "string" &&
+        rawXml.length > 0
+      ) {
+        uploadedXmlGcsUrl = await uploadRawToStorage(
+          scanId,
+          "output.xml",
+          rawXml,
+          "application/xml; charset=utf-8",
+        );
+      }
+
+      const normalizedGcsUrl =
+        gcpStorageUrl || gcsPath || uploadedStdoutGcsUrl || null;
 
       // Generate signed URLs if GCS URL provided but signed URL missing
       let normalizedSignedUrl = gcpSignedUrl || null;
@@ -143,7 +208,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Handle XML results
-      const normalizedXmlUrl = gcpXmlStorageUrl || null;
+      const normalizedXmlUrl = gcpXmlStorageUrl || uploadedXmlGcsUrl || null;
       let normalizedXmlSignedUrl = gcpXmlSignedUrl || null;
       let normalizedXmlSignedUrlExpires = gcpXmlSignedUrlExpires || null;
 

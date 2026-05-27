@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  faRocket,
+  faJetFighterUp,
   faUsers,
   faChartLine,
   faCreditCard,
@@ -162,7 +162,7 @@ export default function AdminDashboard() {
     <Section
       title="FireSaaS Dashboard"
       subtitle="Welcome to your all-in-one SaaS management platform!"
-      icon={faRocket}
+      icon={faJetFighterUp}
       mockup={true}
     >
       <div className="flex flex-col gap-6 w-full">
