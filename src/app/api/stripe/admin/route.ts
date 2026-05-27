@@ -1,7 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getStripeServerSide } from "@/lib/stripe/getStripeServerSide";
+import { requireAdmin } from "@/lib/firebase/serverAuth";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (!auth.ok) return auth.response;
+
   try {
     const stripe = await getStripeServerSide();
 
@@ -12,7 +16,6 @@ export async function GET() {
       );
     }
 
-    // Get the date 30 days ago
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -34,14 +37,12 @@ export async function GET() {
       100;
     const activeSubscriptionsCount = activeSubscriptions.data.length;
 
-    // Calculate MRR
     const mrr = activeSubscriptions.data.reduce(
       (sum, subscription) =>
         sum + (subscription.items.data[0].price.unit_amount ?? 0) / 100,
       0,
     );
 
-    // Calculate churn rate
     const canceledSubscriptionsCount = canceledSubscriptions.data.length;
     const churnRate = calculateChurnRate(
       activeSubscriptionsCount,

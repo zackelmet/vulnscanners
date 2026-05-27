@@ -1,7 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getStripeServerSide } from "@/lib/stripe/getStripeServerSide";
+import { requireAdmin } from "@/lib/firebase/serverAuth";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (!auth.ok) return auth.response;
+
   try {
     const { email } = await req.json();
     if (!email) {
@@ -17,9 +21,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const customer = await stripe.customers.create({
-      email: email,
-    });
+    const customer = await stripe.customers.create({ email });
 
     return NextResponse.json({ customerId: customer.id });
   } catch (error: any) {

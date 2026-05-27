@@ -14,6 +14,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Section from "../shared/Section";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/lib/context/AuthContext";
 const showToast = (type: "error" | "success", message: string) => {
   import("react-hot-toast")
     .then((mod) => {
@@ -33,9 +34,8 @@ interface DashboardData {
   churnRate: number;
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
-
 export default function AdminDashboard() {
+  const { currentUser } = useAuth();
   const [isGeneratingInvoice, setIsGeneratingInvoice] = useState(false);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
@@ -48,20 +48,34 @@ export default function AdminDashboard() {
   const [isAddCustomerModalOpen, setIsAddCustomerModalOpen] = useState(false);
   const [isAddingCustomer, setIsAddingCustomer] = useState(false);
 
-  // Fetch stripe dashboard data
+  // Authed SWR fetcher — gets a fresh Firebase ID token per request.
+  const authedFetcher = async (url: string) => {
+    if (!currentUser) throw new Error("not signed in");
+    const token = await currentUser.getIdToken();
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error(`${url} → ${res.status}`);
+    return res.json();
+  };
+
+  // Fetch stripe dashboard data (only once signed in)
   const {
     data: dashboardData,
     error: dashboardError,
     mutate: mutateDashboard,
-  } = useSWR<DashboardData>("/api/stripe/admin", fetcher);
+  } = useSWR<DashboardData>(
+    currentUser ? "/api/stripe/admin" : null,
+    authedFetcher,
+  );
 
   const {
     data: customers,
     error: customersError,
     mutate: mutateCustomers,
   } = useSWR<{ customers: Array<{ id: string; email: string }> }>(
-    "/api/stripe/customers",
-    fetcher,
+    currentUser ? "/api/stripe/customers" : null,
+    authedFetcher,
   );
 
   if (dashboardError) {
@@ -94,12 +108,19 @@ export default function AdminDashboard() {
       return;
     }
 
+    if (!currentUser) {
+      showToast("error", "Not signed in");
+      return;
+    }
+
     setIsGeneratingInvoice(true);
     try {
+      const token = await currentUser.getIdToken();
       const response = await fetch("/api/stripe/invoice", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           customerId: selectedCustomerId,
@@ -133,12 +154,19 @@ export default function AdminDashboard() {
       return;
     }
 
+    if (!currentUser) {
+      showToast("error", "Not signed in");
+      return;
+    }
+
     setIsAddingCustomer(true);
     try {
+      const token = await currentUser.getIdToken();
       const response = await fetch("/api/stripe/addCustomer", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ email: newCustomerEmail }),
       });

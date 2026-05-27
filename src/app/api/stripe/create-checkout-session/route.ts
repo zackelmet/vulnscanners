@@ -1,19 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripeServerSide } from "@/lib/stripe/getStripeServerSide";
 import { initializeAdmin } from "@/lib/firebase/firebaseAdmin";
+import { requireAuth } from "@/lib/firebase/serverAuth";
 
 const admin = initializeAdmin();
 
 export async function POST(req: NextRequest) {
+  // UID comes from the verified token, never from the request body.
+  const auth = await requireAuth(req);
+  if (!auth.ok) return auth.response;
+  const userId = auth.uid;
+
   try {
-    const { priceId, userId, email, quantity = 1, scanType } = await req.json();
+    const { priceId, email, quantity = 1, scanType } = await req.json();
 
     console.log("📥 Checkout request received:", { priceId, userId, email });
 
-    if (!priceId || !userId) {
-      console.error("❌ Missing required fields:", { priceId, userId });
+    if (!priceId) {
+      console.error("❌ Missing required fields:", { priceId });
       return NextResponse.json(
-        { error: "Missing priceId or userId" },
+        { error: "Missing priceId" },
         { status: 400 },
       );
     }

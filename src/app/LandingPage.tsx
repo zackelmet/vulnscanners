@@ -163,12 +163,15 @@ export default function LandingPage() {
 
     setLoadingTier(tier.id);
     try {
+      const token = await currentUser.getIdToken();
       const response = await fetch("/api/stripe/create-checkout-session", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           priceId: tier.priceId,
-          userId: currentUser.uid,
           email: currentUser.email,
           quantity: 1,
           metadata: { tier: tier.id },

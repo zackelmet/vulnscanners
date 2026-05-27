@@ -41,12 +41,15 @@ export default function PricingCard({
         email: currentUser.email,
       });
 
+      const token = await currentUser.getIdToken();
       const response = await fetch("/api/stripe/create-checkout-session", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           priceId,
-          userId: currentUser.uid,
           email: currentUser.email,
         }),
       });

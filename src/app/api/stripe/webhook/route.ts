@@ -65,6 +65,34 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Idempotency guard. Stripe will redeliver events on any non-2xx and
+  // occasionally on transient network issues. Reserve event.id atomically:
+  // create() fails with ALREADY_EXISTS (code 6) when the doc is present, so
+  // we know the previous attempt was processed (or in-flight).
+  const admin = initializeAdmin();
+  const db = admin.firestore();
+  const eventRef = db.collection("processedStripeEvents").doc(event.id);
+  try {
+    await eventRef.create({
+      type: event.type,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  } catch (err: any) {
+    const alreadyExists =
+      err?.code === 6 ||
+      err?.code === "already-exists" ||
+      /already exists/i.test(err?.message || "");
+    if (alreadyExists) {
+      console.log(`↩︎ Skipping duplicate Stripe event ${event.id}`);
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+    console.error("Failed to reserve Stripe event id, aborting:", err);
+    return NextResponse.json(
+      { error: "Failed to record event" },
+      { status: 500 },
+    );
+  }
+
   // Handle the event
   try {
     switch (event.type) {
@@ -82,6 +110,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true });
   } catch (error: any) {
     console.error("Error handling webhook:", error);
+    // Roll back the idempotency reservation so a retried delivery can
+    // re-attempt the work instead of being silently skipped.
+    try {
+      await eventRef.delete();
+    } catch (cleanupErr) {
+      console.error(
+        "Failed to roll back idempotency reservation:",
+        cleanupErr,
+      );
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

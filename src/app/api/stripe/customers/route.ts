@@ -1,7 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getStripeServerSide } from "@/lib/stripe/getStripeServerSide";
+import { requireAdmin } from "@/lib/firebase/serverAuth";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (!auth.ok) return auth.response;
+
   try {
     const stripe = await getStripeServerSide();
 

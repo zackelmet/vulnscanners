@@ -9,10 +9,8 @@ service cloud.firestore {
 
       match /completedScans/{scanId} {
         allow read: if request.auth != null && request.auth.uid == userId;
-        // Creation of user-visible entries can be allowed for client
-        allow create: if request.auth != null && request.auth.uid == userId;
-        // Updates/deletes should generally be server-only (Admin SDK).
-        allow update, delete: if false;
+        // All writes go through /api/scans (Admin SDK) — deny client writes.
+        allow write: if false;
       }
 
       // Saved scan targets. All mutations go through /api/targets routes

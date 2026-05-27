@@ -94,12 +94,13 @@ export async function POST(request: NextRequest) {
       sig4: sig4 ? `${sig4.slice(0, 4)}...` : null,
     });
 
-    if (webhookSecret && webhookSecret !== (sig1 || sig2 || sig3 || sig4)) {
+    // Fail closed: a missing or empty shared secret must NOT pass the check.
+    if (!webhookSecret || webhookSecret !== (sig1 || sig2 || sig3 || sig4)) {
       console.error(
-        "❌ Webhook signature mismatch - expected:",
-        webhookSecret?.slice(0, 4),
+        "❌ Webhook signature mismatch or secret unset — expected:",
+        webhookSecret ? webhookSecret.slice(0, 4) : "<unset>",
         "got:",
-        (sig1 || sig2 || sig3 || sig4)?.slice(0, 4),
+        (sig1 || sig2 || sig3 || sig4)?.slice(0, 4) || "<none>",
       );
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }

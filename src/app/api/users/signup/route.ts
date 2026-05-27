@@ -2,22 +2,20 @@ import { initializeAdmin } from "@/lib/firebase/firebaseAdmin";
 import { NextRequest, NextResponse } from "next/server";
 import { getStripeServerSide } from "@/lib/stripe/getStripeServerSide";
 import { UserDocument } from "@/lib/types/user";
+import { requireAuth } from "@/lib/firebase/serverAuth";
 
 const admin = initializeAdmin();
 
 export async function POST(req: NextRequest) {
-  try {
-    const {
-      uid,
-      secretCode,
-      name,
-      email,
-      provider = "firebase",
-    } = await req.json();
+  // Authenticated callers only — UID is taken from the verified token,
+  // never from the request body. Otherwise any caller could create user
+  // documents and Stripe customers for arbitrary Firebase UIDs.
+  const auth = await requireAuth(req);
+  if (!auth.ok) return auth.response;
+  const uid = auth.uid;
 
-    if (!uid) {
-      return NextResponse.json({ error: "UID is required" }, { status: 400 });
-    }
+  try {
+    const { secretCode, name, email, provider = "firebase" } = await req.json();
 
     // Check if the user document already exists
     const userDoc = await admin.firestore().collection("users").doc(uid).get();

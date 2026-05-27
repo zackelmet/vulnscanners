@@ -1,22 +1,22 @@
-import { initializeAdmin } from "@/lib/firebase/firebaseAdmin";
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
-
-const admin = initializeAdmin();
+import { initializeAdmin } from "@/lib/firebase/firebaseAdmin";
+import { requireAuth } from "@/lib/firebase/serverAuth";
 
 export async function GET(req: NextRequest) {
-  const searchParams = new URLSearchParams(req.nextUrl.search);
-  const uid = searchParams.get("uid");
+  const auth = await requireAuth(req);
+  if (!auth.ok) return auth.response;
 
-  if (!uid) {
-    return NextResponse.json({ isAdmin: false }, { status: 401 });
-  }
+  // Admin status is the user's own — never derived from a client-supplied uid.
+  const claimAdmin = (auth.token as any)?.admin === true;
+  if (claimAdmin) return NextResponse.json({ isAdmin: true });
 
   try {
-    const userDoc = await admin.firestore().collection("users").doc(uid).get();
-    const isAdmin = userDoc.data()?.isAdmin === true;
-
-    return NextResponse.json({ isAdmin });
+    const userDoc = await initializeAdmin()
+      .firestore()
+      .collection("users")
+      .doc(auth.uid)
+      .get();
+    return NextResponse.json({ isAdmin: userDoc.data()?.isAdmin === true });
   } catch (error) {
     console.error("Error checking admin status:", error);
     return NextResponse.json({ isAdmin: false }, { status: 500 });
