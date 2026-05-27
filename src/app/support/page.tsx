@@ -106,10 +106,13 @@ export default function SupportPage() {
 
       <main className="max-w-2xl mx-auto px-6 py-16">
         <div className="mb-10">
-          <h1 className="text-3xl font-semibold text-[#e6edf5] mb-3 tracking-tight">
-            Contact support
+          <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#4493f8] mb-3">
+            Support
+          </p>
+          <h1 className="text-3xl lg:text-4xl font-medium tracking-tight text-[#e6edf5] mb-3">
+            We&apos;re here to help.
           </h1>
-          <p className="text-[#9aa5b6] leading-relaxed">
+          <p className="text-[#9aa5b6] text-[15px] leading-relaxed">
             Questions about a scan, your account, or billing? Send us a note and
             we&apos;ll respond within 24–48 hours.
           </p>
@@ -258,13 +261,77 @@ export default function SupportPage() {
           )}
         </form>
 
+        <section className="mt-14 border-t border-[#161b24] pt-10">
+          <h2 className="text-xl font-medium tracking-tight text-[#e6edf5] mb-1">
+            Before you write
+          </h2>
+          <p className="text-sm text-[#697080] mb-6">
+            A few things people ask most often — might save you a round trip.
+          </p>
+          <dl className="divide-y divide-[#161b24]">
+            {[
+              {
+                q: "How quickly do you respond?",
+                a: "Most messages get a reply within 24–48 hours on weekdays. Active scan failures and billing problems are prioritized first.",
+              },
+              {
+                q: "Where do I find a scan I already ran?",
+                a: (
+                  <>
+                    Every scan you launch is in{" "}
+                    <Link
+                      href="/app/scans"
+                      className="text-[#4493f8] hover:text-[#0366d6] underline-offset-2 hover:underline"
+                    >
+                      your dashboard
+                    </Link>
+                    . Completed scans include the raw output and a downloadable
+                    PDF report.
+                  </>
+                ),
+              },
+              {
+                q: "How do scan credits work?",
+                a: "Credits are charged per scan, per scanner. Nmap, Nuclei, and ZAP each draw from your purchased credits, and credits never expire.",
+              },
+              {
+                q: "I think I found a security issue in VulnScanners itself.",
+                a: 'Use the form above and choose the "Security concern" category. We treat those reports with priority and follow up on the disclosure timeline.',
+              },
+              {
+                q: "Can I scan a target I don’t own?",
+                a: (
+                  <>
+                    No. VulnScanners is for authorized testing only. See the
+                    ethical-use details on our{" "}
+                    <Link
+                      href="/help-center"
+                      className="text-[#4493f8] hover:text-[#0366d6] underline-offset-2 hover:underline"
+                    >
+                      Trust &amp; Safety page
+                    </Link>
+                    .
+                  </>
+                ),
+              },
+            ].map((item, i) => (
+              <div key={i} className="py-4">
+                <dt className="text-[15px] text-[#e6edf5] mb-1.5">{item.q}</dt>
+                <dd className="text-sm text-[#9aa5b6] leading-relaxed">
+                  {item.a}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
         <section className="mt-10 border-t border-[#161b24] pt-8">
           <h2 className="text-base font-medium text-[#e6edf5] mb-2">
-            Trust & Safety
+            Trust &amp; Safety
           </h2>
-          <p className="text-sm text-[#9aa5b6] leading-relaxed mb-3">
-            For details on how we handle scan data, our ethical use policy, and
-            our compliance posture, see our{" "}
+          <p className="text-sm text-[#9aa5b6] leading-relaxed">
+            For the full picture on how we handle scan data, our ethical-use
+            policy, and our compliance posture, see our{" "}
             <Link
               href="/help-center"
               className="text-[#4493f8] hover:text-[#0366d6] underline-offset-2 hover:underline"

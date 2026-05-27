@@ -104,81 +104,74 @@ export default function HelpCenterPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-5xl mx-auto px-6 py-12 lg:py-16">
+      <main className="max-w-3xl mx-auto px-6 py-16">
         {/* Page Header */}
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-[#0366d6]/20 border border-[#0366d6]/30 mb-6">
-            <FontAwesomeIcon
-              icon={faShieldHalved}
-              className="text-4xl text-[#4493f8]"
-            />
-          </div>
-          <h1 className="text-4xl lg:text-5xl font-bold text-[#e6edf5] mb-4">
-            Trust & Safety
+        <div className="mb-14">
+          <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#4493f8] mb-3">
+            Trust &amp; Safety
+          </p>
+          <h1 className="text-4xl lg:text-5xl font-medium tracking-tight text-[#e6edf5] mb-3">
+            How we protect your data and our platform.
           </h1>
-          <p className="text-xl text-[#9aa5b6] max-w-3xl mx-auto">
+          <p className="text-[#9aa5b6] text-lg leading-relaxed max-w-2xl">
             Our commitment to protecting your data, ensuring ethical use, and
-            maintaining the highest security standards
+            maintaining the highest security standards.
           </p>
         </div>
 
         {/* Content Sections */}
-        <div className="space-y-12">
+        <div className="space-y-10">
           {sections.map((section, index) => (
-            <div
+            <section
               key={index}
-              className="bg-[#0d1117] border border-[#161b24] rounded-xl p-8 shadow-sm"
+              className="bg-[#0d1117]/60 border border-[#161b24] rounded-lg p-7 backdrop-blur"
             >
-              <div className="flex items-start gap-4 mb-4">
-                <div className="p-3 rounded-lg bg-[#0366d6]/20 border border-[#0366d6]/30 flex-shrink-0">
-                  <FontAwesomeIcon
-                    icon={section.icon}
-                    className="text-2xl text-[#4493f8]"
-                  />
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-[#e6edf5] mb-4">
-                    {section.title}
-                  </h2>
-                  <div className="space-y-4">
-                    {section.content.map((paragraph, pIndex) => (
-                      <p
-                        key={pIndex}
-                        className="text-[#9aa5b6] leading-relaxed whitespace-pre-line"
-                      >
-                        {paragraph}
-                      </p>
-                    ))}
-                  </div>
-                </div>
+              <div className="flex items-start gap-3 mb-3">
+                <FontAwesomeIcon
+                  icon={section.icon}
+                  className="text-base text-[#4493f8] mt-1.5 flex-shrink-0"
+                />
+                <h2 className="text-xl font-medium tracking-tight text-[#e6edf5]">
+                  {section.title}
+                </h2>
               </div>
-            </div>
+              <div className="space-y-3 pl-7">
+                {section.content.map((paragraph, pIndex) => (
+                  <p
+                    key={pIndex}
+                    className="text-[#9aa5b6] text-[15px] leading-relaxed"
+                  >
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+            </section>
           ))}
         </div>
 
         {/* Contact CTA */}
-        <div className="mt-16 bg-[#0d1117] border border-[#161b24] rounded-xl p-8 text-center">
-          <h3 className="text-2xl font-bold text-[#e6edf5] mb-3">
-            Questions or Concerns?
+        <div className="mt-14 border-t border-[#161b24] pt-10">
+          <h3 className="text-xl font-medium tracking-tight text-[#e6edf5] mb-2">
+            Questions or concerns?
           </h3>
-          <p className="text-[#9aa5b6] mb-6 max-w-2xl mx-auto">
+          <p className="text-[#9aa5b6] text-[15px] leading-relaxed mb-5 max-w-2xl">
             If you have questions about our security practices, data handling,
             or need to report a security concern, our team is here to help.
           </p>
-          <div className="flex justify-center">
+          <div>
             <Link
               href="/support"
-              className="inline-block px-6 py-3 bg-[#0366d6] hover:bg-[#4493f8] text-white font-semibold rounded-lg transition-colors"
+              className="inline-block px-5 py-2.5 bg-[#0366d6] hover:bg-[#4493f8] text-white text-sm font-medium rounded-md transition-colors"
             >
-              Contact Support
+              Contact support
             </Link>
           </div>
         </div>
 
         {/* Last Updated */}
-        <div className="mt-8 text-center">
-          <p className="text-sm text-[#697080]">
-            Last updated:{" "}
+        <div className="mt-10">
+          <p className="text-xs text-[#697080] font-mono">
+            Last updated{" "}
             {new Date().toLocaleDateString("en-US", {
               year: "numeric",
               month: "long",
