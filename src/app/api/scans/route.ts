@@ -63,10 +63,12 @@ export async function POST(request: NextRequest) {
       targetValue = target.trim();
     } else if (targetId) {
       const targetDoc = await firestore
+        .collection("users")
+        .doc(userId)
         .collection("targets")
         .doc(targetId)
         .get();
-      if (!targetDoc.exists || targetDoc.data()?.userId !== userId) {
+      if (!targetDoc.exists) {
         return NextResponse.json(
           { error: "Target not found or unauthorized" },
           { status: 404 },

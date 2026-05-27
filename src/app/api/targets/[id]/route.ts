@@ -34,10 +34,14 @@ export async function DELETE(
       );
     }
 
-    const targetRef = firestore.collection("targets").doc(targetId);
+    const targetRef = firestore
+      .collection("users")
+      .doc(userId)
+      .collection("targets")
+      .doc(targetId);
     const targetDoc = await targetRef.get();
 
-    if (!targetDoc.exists || targetDoc.data()?.userId !== userId) {
+    if (!targetDoc.exists) {
       return NextResponse.json({ error: "Target not found" }, { status: 404 });
     }
 
@@ -79,10 +83,14 @@ export async function PATCH(
     const targetId = params.id;
     const body = await request.json();
 
-    const targetRef = firestore.collection("targets").doc(targetId);
+    const targetRef = firestore
+      .collection("users")
+      .doc(userId)
+      .collection("targets")
+      .doc(targetId);
     const targetDoc = await targetRef.get();
 
-    if (!targetDoc.exists || targetDoc.data()?.userId !== userId) {
+    if (!targetDoc.exists) {
       return NextResponse.json({ error: "Target not found" }, { status: 404 });
     }
 

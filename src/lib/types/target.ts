@@ -4,7 +4,8 @@ export type TargetType = "domain" | "ip" | "url";
 
 export interface Target {
   id: string;
-  userId: string;
+  /** Optional: targets live under users/{uid}/targets/{id}; userId is implicit in the path. */
+  userId?: string;
   name: string;
   value: string; // The actual domain, IP, or URL string
   type: TargetType;
