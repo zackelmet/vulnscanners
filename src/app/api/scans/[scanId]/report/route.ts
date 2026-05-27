@@ -87,13 +87,38 @@ export async function GET(
     }
 
     // ── Extract raw scanner output ────────────────────────────────────────
-    // The VPS worker stores a preview in resultsSummary.rawPreview for all
-    // scanner types. Fall back to legacy fields for older nmap scans.
-    const rawOutput: string =
-      scan.resultsSummary?.rawPreview ||
-      scan.rawPayload?.stdout ||
-      scan.rawOutput ||
-      "";
+    // Preferred source: full output uploaded to Storage by the webhook
+    // (gcpStorageUrl as gs://bucket/path). Fall back to the inline preview
+    // for older scans that predate the Storage upload path.
+    let rawOutput = "";
+    const gcsUrl: string | null = scan.gcpStorageUrl || null;
+    if (gcsUrl) {
+      const match = gcsUrl.match(/^gs:\/\/([^\/]+)\/(.+)$/);
+      if (match) {
+        try {
+          const [, bucketName, filePath] = match;
+          const [buf] = await admin
+            .storage()
+            .bucket(bucketName)
+            .file(filePath)
+            .download();
+          rawOutput = buf.toString("utf-8");
+        } catch (err) {
+          console.error(
+            `Failed to download full scan output from ${gcsUrl}, falling back to preview:`,
+            err,
+          );
+        }
+      }
+    }
+
+    if (!rawOutput) {
+      rawOutput =
+        scan.resultsSummary?.rawPreview ||
+        scan.rawPayload?.stdout ||
+        scan.rawOutput ||
+        "";
+    }
 
     if (!rawOutput) {
       return NextResponse.json(

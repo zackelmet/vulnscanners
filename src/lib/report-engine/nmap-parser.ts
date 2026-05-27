@@ -22,6 +22,8 @@ const RE_DONE =
 const RE_START = /^Starting Nmap ([\d.]+)/;
 const RE_COMMAND = /^#\s*(.+nmap.+)$/i;
 const RE_OS = /^OS details?:\s+(.+)$/i;
+// Emitted by `nmap -sV`. Example: "Service Info: OS: Linux; Device: router; CPE: cpe:/o:linux:linux_kernel"
+const RE_SERVICE_INFO = /^Service Info:\s+(.+)$/i;
 const RE_LATENCY = /\(([\d.]+s)\s+latency\)/;
 const RE_DURATION = /scanned in ([\d.]+) seconds/;
 
@@ -121,6 +123,19 @@ export function parseNmapOutput(raw: string): ParsedNmapReport {
       const osM = RE_OS.exec(trimmed);
       if (osM) {
         currentHost.os = osM[1].trim();
+        continue;
+      }
+
+      // ── Service Info (-sV) ─────────────────────────────────────────────
+      // Only set OS if we don't already have a richer value from `OS details:`.
+      const svcM = RE_SERVICE_INFO.exec(trimmed);
+      if (svcM) {
+        if (!currentHost.os) {
+          const osSeg = svcM[1].split(/;\s*/).find((s) => /^OS:\s*/i.test(s));
+          if (osSeg) {
+            currentHost.os = osSeg.replace(/^OS:\s*/i, "").trim();
+          }
+        }
         continue;
       }
 
