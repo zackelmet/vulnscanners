@@ -33,24 +33,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  if (process.env.NEXT_PUBLIC_ENABLE_BLOG === "true") {
-    staticPages.push({
-      url: `${domain}/blog`,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.8,
-    });
+  staticPages.push({
+    url: `${domain}/blog`,
+    lastModified: now,
+    changeFrequency: "weekly",
+    priority: 0.8,
+  });
 
-    const posts = await getAllPosts();
-    staticPages.push(
-      ...posts.map((post) => ({
-        url: `${domain}/blog/${post.slug}`,
-        lastModified: now,
-        changeFrequency: "monthly" as const,
-        priority: 0.7,
-      })),
-    );
-  }
+  const posts = await getAllPosts(["slug", "date"]);
+  staticPages.push(
+    ...posts.map((post) => ({
+      url: `${domain}/blog/${post.slug}`,
+      lastModified: post.date ? new Date(post.date) : now,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    })),
+  );
 
   return staticPages;
 }

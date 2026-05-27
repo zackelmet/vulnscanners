@@ -28,7 +28,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [require("daisyui")],
+  plugins: [require("daisyui"), require("@tailwindcss/typography")],
   daisyui: {
     themes: [
       // These are the themes supported by daisyUI, only include the ones you want to use to minimize CSS file size

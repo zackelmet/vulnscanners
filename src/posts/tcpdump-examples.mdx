@@ -1,0 +1,245 @@
+---
+title: "Tcpdump Examples: A Practical Reference"
+date: "2026-05-22"
+description: "Working tcpdump examples for capturing, filtering, and writing pcaps — the commands you'll reach for during real incident response."
+author: "VulnScanners team"
+tags: ["tcpdump", "pcap", "network-analysis"]
+---
+
+`tcpdump` is the command-line tool for capturing network traffic. It's installed almost everywhere, works over SSH, and uses the same BPF filter syntax as Wireshark capture filters. Here are the commands worth keeping in muscle memory.
+
+## TL;DR
+
+- `sudo tcpdump -i any -nn -s 0 -w out.pcap` is the "capture everything" template.
+- `-w` writes pcap; without it tcpdump prints to stdout.
+- BPF filters go at the end as positional args, not flags.
+- `-n` disables DNS resolution. `-nn` also disables port-to-service resolution. Use it.
+
+## Basic capture
+
+```bash
+# Capture on the default interface, print to terminal
+sudo tcpdump
+
+# Pick an interface
+sudo tcpdump -i eth0
+sudo tcpdump -i any           # all interfaces (Linux)
+sudo tcpdump -D                # list available interfaces
+
+# Don't resolve hostnames or service names — much faster, much cleaner
+sudo tcpdump -nn -i eth0
+
+# Capture full packets (default truncates to 96 bytes on old systems)
+sudo tcpdump -nn -s 0 -i eth0
+```
+
+`-s 0` is the "capture full packet" flag. Older `tcpdump` builds default to snapshotting only the first 96 bytes, which silently truncates payloads. Always set `-s 0` when you want to keep the data.
+
+## Writing and reading pcaps
+
+```bash
+# Write to disk
+sudo tcpdump -nn -s 0 -i eth0 -w capture.pcap
+
+# Read back
+tcpdump -nn -r capture.pcap
+
+# Read and filter
+tcpdump -nn -r capture.pcap 'port 443'
+
+# Limit by size (rotate every 100MB, keep 5 files)
+sudo tcpdump -nn -s 0 -i eth0 -C 100 -W 5 -w capture.pcap
+```
+
+Rotation is essential for long-running captures. Without `-C`/`-W` you'll fill the disk.
+
+## BPF filters: the language
+
+Filters go at the end as positional arguments. They use BPF (Berkeley Packet Filter) syntax, which is much less expressive than Wireshark's display filter language — but applied at capture time, so it actually reduces what hits disk.
+
+### Hosts
+
+```bash
+sudo tcpdump host 10.0.0.1
+sudo tcpdump src host 10.0.0.1
+sudo tcpdump dst host 10.0.0.1
+sudo tcpdump host 10.0.0.1 and host 10.0.0.2
+sudo tcpdump net 10.0.0.0/24
+sudo tcpdump not src host 10.0.0.1
+```
+
+### Ports
+
+```bash
+sudo tcpdump port 22
+sudo tcpdump tcp port 443
+sudo tcpdump udp port 53
+sudo tcpdump portrange 1024-65535
+sudo tcpdump not port 22                  # exclude your SSH session
+sudo tcpdump 'port 80 or port 443'        # quote when using `or`
+```
+
+### Protocols
+
+```bash
+sudo tcpdump tcp
+sudo tcpdump udp
+sudo tcpdump icmp
+sudo tcpdump arp
+sudo tcpdump ip6                          # IPv6
+sudo tcpdump 'ether proto \arp'           # ARP at the link layer
+```
+
+### Combining
+
+```bash
+sudo tcpdump 'host 10.0.0.1 and (port 80 or port 443)'
+sudo tcpdump 'src host 10.0.0.1 and dst port 22 and tcp[tcpflags] & tcp-syn != 0'
+```
+
+Always quote complex filters — shells will eat the `()` and `&` characters otherwise.
+
+## Filtering by TCP flags
+
+This is where BPF stops being human-readable but starts being powerful.
+
+```bash
+# SYN-only packets (new connection attempts)
+sudo tcpdump 'tcp[tcpflags] == tcp-syn'
+
+# SYN-ACK (connection established responses)
+sudo tcpdump 'tcp[tcpflags] == (tcp-syn|tcp-ack)'
+
+# RST packets
+sudo tcpdump 'tcp[tcpflags] & tcp-rst != 0'
+
+# FIN packets
+sudo tcpdump 'tcp[tcpflags] & tcp-fin != 0'
+```
+
+The shorthand: `tcp[tcpflags]` indexes into the TCP flags byte. `&` is bitwise AND. The `tcp-syn`, `tcp-ack`, etc. macros expand to the appropriate bit positions.
+
+## Real-world one-liners
+
+### Find connection attempts to a port
+
+```bash
+sudo tcpdump -nn -i eth0 'tcp[tcpflags] == tcp-syn and dst port 22'
+```
+
+Useful for confirming "is this host being SSH-brute-forced from outside?"
+
+### Catch DNS queries
+
+```bash
+sudo tcpdump -nn -i eth0 -s 0 'udp port 53'
+```
+
+Lightweight way to see what hostnames a server is looking up.
+
+### Watch a specific conversation
+
+```bash
+sudo tcpdump -nn -i any -s 0 'host 10.0.0.5 and host 10.0.0.6'
+```
+
+### Capture HTTPS (TLS handshake, not the encrypted payload)
+
+```bash
+sudo tcpdump -nn -i eth0 -s 0 -w tls.pcap 'tcp port 443'
+```
+
+You can't see encrypted traffic without the session keys, but the handshake itself (including SNI) is in clear text.
+
+### Catch ARP weirdness
+
+```bash
+sudo tcpdump -nn -i eth0 arp
+```
+
+Useful when you suspect ARP spoofing.
+
+### Plaintext credentials hunt
+
+```bash
+sudo tcpdump -nn -i eth0 -A -s 0 'tcp port 80 or tcp port 21 or tcp port 23'
+```
+
+`-A` prints packet contents as ASCII. On modern networks this should be empty; on legacy networks you'll find FTP / Telnet / unencrypted HTTP credentials surprisingly often.
+
+### Save just one host's traffic over time
+
+```bash
+sudo tcpdump -nn -s 0 -i any -C 100 -W 10 -w 10-0-0-5-%Y%m%d-%H.pcap 'host 10.0.0.5'
+```
+
+`-W 10 -C 100` rotates among 10 files of 100MB each. The `%Y%m%d-%H` strftime tokens go in filenames if `-G` (rotate by time) is also set.
+
+## Output flags
+
+```bash
+-v / -vv / -vvv     # more verbose
+-x                   # print hex
+-X                   # print hex AND ASCII (useful for protocol inspection)
+-A                   # print ASCII only
+-e                   # include link-layer header (MAC addresses)
+-t                   # don't print timestamps
+-tttt                # human-readable absolute timestamps
+-S                   # absolute TCP sequence numbers (default is relative)
+```
+
+For incident analysis, `-nn -s 0 -tttt -X` is the kitchen-sink mode that gives you everything humanly readable.
+
+## tcpdump in a pipeline
+
+You can stream pcap from a remote host straight into local Wireshark:
+
+```bash
+ssh user@host "sudo tcpdump -i any -nn -s 0 -U -w - 'port not 22'" \
+  | wireshark -k -i -
+```
+
+`-U` flushes packet-by-packet (line-buffered); `-w -` writes pcap to stdout. The `port not 22` filter prevents your SSH session from being recorded into the capture, which would otherwise cause feedback noise.
+
+## Filtering pcap files after capture
+
+If you have a 5GB pcap and only want a slice:
+
+```bash
+tcpdump -nn -r big.pcap -w small.pcap 'host 10.0.0.5 and port 443'
+```
+
+Reads the existing file, applies the filter, writes the matching packets to a new file. Much faster than loading the whole thing in Wireshark.
+
+`editcap` (ships with Wireshark) is the more flexible tool for slicing pcaps by time, packet count, or merging:
+
+```bash
+editcap -A "2026-05-22 10:00:00" -B "2026-05-22 11:00:00" big.pcap window.pcap
+mergecap -w merged.pcap one.pcap two.pcap three.pcap
+```
+
+## Permissions
+
+`tcpdump` needs raw socket access. On Linux that means `root` (via `sudo`) or the `CAP_NET_RAW` capability:
+
+```bash
+sudo setcap cap_net_raw,cap_net_admin=eip $(which tcpdump)
+```
+
+After setting the capability, the `tcpdump` user account can capture without `sudo`. Useful on shared boxes.
+
+On macOS, the `bpf` devices are owned by `_chmod` group; you'll typically use `sudo`.
+
+## Common gotchas
+
+- **Forgetting `-s 0`.** Old defaults snapshot 96 bytes per packet, truncating payloads. Always set `-s 0` for full capture.
+- **`tcpdump -i any` shows different framing.** On Linux it uses the "Linux cooked" capture header, which behaves differently from per-interface captures. Use a specific interface when you can.
+- **DNS resolution kills tcpdump's display speed** on busy interfaces. Always use `-nn`.
+- **Forgetting to filter your own SSH session.** A capture that includes the SSH session you're running it from balloons fast.
+- **Running tcpdump on production without size limits.** Use `-C` / `-W` / `-G` to bound disk usage.
+
+## Further reading
+
+- BPF syntax — [biot.com/capstats/bpf.html](https://biot.com/capstats/bpf.html)
+- Manual page — [tcpdump.org/manpages/tcpdump.1.html](https://www.tcpdump.org/manpages/tcpdump.1.html)
+- The Wireshark companion — [our Wireshark cheat sheet](/blog/wireshark-cheat-sheet)

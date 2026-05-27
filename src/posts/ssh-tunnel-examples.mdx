@@ -1,0 +1,228 @@
+---
+title: "SSH Tunnel Examples: Local, Remote, and Dynamic Forwarding"
+date: "2026-05-21"
+description: "Practical SSH tunneling examples — local forwarding, remote forwarding, dynamic SOCKS proxies, and the syntax that makes sense the third time."
+author: "VulnScanners team"
+tags: ["ssh", "tunneling", "networking"]
+---
+
+SSH tunneling is one of those tools that's deceptively powerful — three flags handle 95% of what people install commercial VPN clients for. This is the reference for the three forms (`-L`, `-R`, `-D`), with concrete scenarios so the syntax sticks.
+
+## TL;DR
+
+- **`-L`** forwards a local port to a remote destination through the SSH host. "Bring something there to me here."
+- **`-R`** forwards a remote port to a local destination through the SSH host. "Expose something on my side over there."
+- **`-D`** opens a local SOCKS proxy that exits at the SSH host. "Make all my traffic look like it's coming from there."
+- Add `-N` to skip running a shell (tunnel-only) and `-f` to background.
+
+## The mental model
+
+Every SSH tunnel has three parties:
+
+1. **Your machine** (the one running `ssh`)
+2. **The SSH server** (the host you're connecting to)
+3. **The destination** (the thing you're actually trying to reach)
+
+The three flags differ on *which side* opens the listening port and *where the traffic ends up*.
+
+## Local forwarding (`-L`)
+
+**Syntax:** `ssh -L <local-port>:<destination-host>:<destination-port> <ssh-server>`
+
+**What it does:** opens a listening port on **your machine**. Anything connecting to that port gets tunnelled through the SSH server to the destination.
+
+**Mental model:** "I want to talk to X, but I can only reach it from the SSH server. Let me pretend it's on my localhost."
+
+### Examples
+
+```bash
+# Database on a server only reachable from your bastion host
+ssh -L 5432:database.internal:5432 bastion.example.com
+# Now psql -h localhost on your laptop talks to database.internal
+
+# Web admin panel only listening on the server's loopback
+ssh -L 8080:localhost:8080 admin-host
+# Now http://localhost:8080 on your laptop hits the server's localhost:8080
+
+# Redis on an internal host through a jumphost
+ssh -L 6379:redis.internal:6379 jumphost
+# redis-cli on your machine connects to the internal Redis
+
+# Bind to all interfaces (not just localhost) so other machines on your LAN can use it
+ssh -L 0.0.0.0:5432:db:5432 bastion
+```
+
+The destination host (`database.internal`) is resolved from the SSH server's perspective, not yours. That's the whole point — you don't have to be able to reach it directly.
+
+### Common gotcha
+
+`localhost` in the destination means "the SSH server's localhost", not yours. If the service is on the SSH server itself, write `localhost`:
+
+```bash
+ssh -L 8080:localhost:80 web-server   # forward to web-server's port 80
+```
+
+## Remote forwarding (`-R`)
+
+**Syntax:** `ssh -R <remote-port>:<destination-host>:<destination-port> <ssh-server>`
+
+**What it does:** opens a listening port on **the SSH server**. Anything connecting to that port on the SSH server gets tunnelled back through to a destination from **your** perspective.
+
+**Mental model:** "I want to expose something on my side to a machine on the other side."
+
+### Examples
+
+```bash
+# Expose your local dev server to a colleague's box you've SSH'd into
+ssh -R 8080:localhost:3000 colleague-host
+# Now on colleague-host, curl localhost:8080 hits your laptop's port 3000
+
+# Webhook to a local app from a server with an external IP
+ssh -R 9000:localhost:9000 public-server
+# An external service hitting public-server:9000 gets tunnelled to your local 9000
+
+# Forward to a different host inside your network (not just localhost)
+ssh -R 5432:internal-db:5432 outside-host
+# outside-host can now hit localhost:5432 and reach internal-db on your side
+```
+
+### The "gateway ports" wrinkle
+
+By default, the SSH server only binds remote-forward ports to its loopback — so only processes on the SSH server itself can reach the forwarded port. To expose to other machines, the SSH server needs `GatewayPorts yes` (or `GatewayPorts clientspecified`) in `/etc/ssh/sshd_config`, and you bind explicitly:
+
+```bash
+ssh -R 0.0.0.0:9000:localhost:9000 public-server
+```
+
+Without that, your remote forward will only be reachable from the SSH server itself.
+
+## Dynamic forwarding (`-D`) — SOCKS proxy
+
+**Syntax:** `ssh -D <local-port> <ssh-server>`
+
+**What it does:** opens a SOCKS5 proxy on your machine. Anything that speaks SOCKS5 can route arbitrary destinations through the SSH server.
+
+**Mental model:** "Route my traffic out through that server."
+
+### Examples
+
+```bash
+# Open a SOCKS5 proxy on local port 1080
+ssh -D 1080 -N -f jumphost.example.com
+
+# Use it from curl
+curl --socks5-hostname localhost:1080 https://api.internal.example.com
+
+# Use it from Firefox (Preferences → Network → Manual proxy → SOCKS5 localhost:1080)
+# Pair with "Proxy DNS when using SOCKS v5" so DNS goes through the tunnel too
+```
+
+Dynamic forwarding is the one to reach for when you don't know what destinations you'll need in advance. Internal admin panels, multiple internal APIs, an entire intranet — all addressable through the same SOCKS proxy without setting up individual `-L` forwards.
+
+## Useful additional flags
+
+```bash
+-N    # don't execute a remote command (tunnel only)
+-f    # go to background after auth
+-T    # don't allocate a TTY
+-q    # quiet (suppress most output)
+-v    # verbose (debug auth / tunnel issues)
+-C    # compression (helpful on slow links, harmful on fast ones)
+-o ServerAliveInterval=60   # keep-alive every 60s
+-o ExitOnForwardFailure=yes # exit immediately if forwarding fails
+```
+
+The combo you'll use most for long-running tunnels:
+
+```bash
+ssh -L 5432:db:5432 -N -f -o ServerAliveInterval=60 -o ExitOnForwardFailure=yes bastion
+```
+
+That backgrounds the tunnel, keeps it alive over idle connections, and fails fast if the forward can't be set up.
+
+## SSH config: stop typing the same thing
+
+If you're setting up the same tunnel repeatedly, put it in `~/.ssh/config`:
+
+```
+Host db-tunnel
+    HostName bastion.example.com
+    User ops
+    LocalForward 5432 database.internal:5432
+    ServerAliveInterval 60
+    ExitOnForwardFailure yes
+```
+
+Then:
+
+```bash
+ssh -N -f db-tunnel
+```
+
+## Reverse-tunnel-as-service
+
+For a persistent reverse tunnel (e.g. to expose a NATed host to a public bastion), pair SSH with `systemd`:
+
+```ini
+# /etc/systemd/system/reverse-tunnel.service
+[Unit]
+Description=Reverse tunnel to bastion
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/ssh -N -R 9000:localhost:9000 \
+  -o ServerAliveInterval=60 -o ExitOnForwardFailure=yes \
+  -o StrictHostKeyChecking=accept-new \
+  -i /home/ops/.ssh/id_ed25519 \
+  ops@bastion.example.com
+Restart=always
+RestartSec=10
+User=ops
+
+[Install]
+WantedBy=multi-user.target
+```
+
+`systemctl enable --now reverse-tunnel` and the tunnel survives reboots.
+
+## Multi-hop tunnels (`ProxyJump`)
+
+When you need to chain SSH connections:
+
+```bash
+ssh -J bastion.example.com internal.example.com
+```
+
+Or in `~/.ssh/config`:
+
+```
+Host internal
+    HostName internal.example.com
+    User ops
+    ProxyJump bastion.example.com
+```
+
+You can mix `ProxyJump` with `-L` / `-R` / `-D` normally — the jump is invisible to the tunneling logic.
+
+## Common gotchas
+
+- **`-L` destination is from the SSH server's perspective.** Resolution and reachability are on that side, not yours.
+- **`-R` defaults to loopback-only on the SSH server.** Set `GatewayPorts yes` if you need the forwarded port reachable from elsewhere.
+- **`-D` is SOCKS5, not HTTP proxy.** Tools that only support HTTP_PROXY need an HTTP-to-SOCKS shim.
+- **Dynamic forwarding leaks DNS by default in some clients.** Verify your DNS resolves through the tunnel, especially with `curl --socks5` vs `--socks5-hostname` (the latter sends hostnames over the tunnel).
+- **Tunnels are TCP-only.** UDP needs a different tool (WireGuard, OpenVPN, sshuttle).
+
+## Security considerations
+
+SSH tunneling moves traffic between security zones. Make sure that's what you actually want:
+
+- **`-R` exposes things.** A reverse tunnel from your laptop to a public host puts your local services on that public host. Make sure access controls catch up.
+- **Forwarded ports inherit the SSH session's lifetime.** Killing the SSH connection drops the tunnel.
+- **Audit `~/.ssh/config` for forgotten forwards.** `LocalForward` lines in config files set up tunnels on every connection, which can be surprising months later.
+- **`AllowTcpForwarding` / `AllowStreamLocalForwarding`** in `sshd_config` control whether forwarding is permitted server-side. Sometimes it's disabled on purpose.
+
+## Further reading
+
+- `man ssh_config` — full set of options, including all the `Forward*` directives
+- `sshuttle` — like a poor man's VPN over SSH, handy when `-D` isn't enough
+- [Our Wireshark cheat sheet](/blog/wireshark-cheat-sheet) for verifying tunnels carry the traffic you expect

@@ -1,81 +1,70 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import { getAllPosts } from "@/lib/blog/mdx";
 
-export const metadata = {
-  title: "A better vulnerability scanner — Blog",
+export const metadata: Metadata = {
+  title: "Blog — Vulnerability scanning, tools, and security playbooks",
   description:
-    "Security insights, vulnerability research, and scanner guides from the VulnScanners team.",
-  metadataBase: new URL("https://vulnscanners.com"),
+    "Practical guides, scanner cheat sheets, and security playbooks for Nmap, Nuclei, OWASP ZAP, and the rest of the modern open-source security stack.",
+  alternates: { canonical: "/blog" },
   openGraph: {
-    title: "A better vulnerability scanner — Blog",
+    title: "VulnScanners Blog",
     description:
-      "Security insights, vulnerability research, and scanner guides from the VulnScanners team.",
+      "Practical guides and scanner cheat sheets — Nmap, Nuclei, ZAP, and the rest of the open-source security stack.",
     url: "https://vulnscanners.com/blog",
     siteName: "VulnScanners",
+    type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "A better vulnerability scanner — Blog",
+    title: "VulnScanners Blog",
     description:
-      "Security insights, vulnerability research, and scanner guides from the VulnScanners team.",
+      "Practical guides and scanner cheat sheets for the open-source security stack.",
   },
 };
 
 export default function BlogPage() {
-  const posts = getAllPosts(["slug", "title", "date", "description", "image"]);
+  const posts = getAllPosts(["slug", "title", "date", "description"]);
 
   return (
-    <main className="min-h-screen bg-[#0a141f] text-white">
-      <div className="max-w-5xl mx-auto px-5 py-20">
-        <div className="mb-14 text-center">
-          <h1 className="text-5xl font-bold mb-4 text-white">Blog</h1>
-          <p className="text-[#8fa8c8] text-lg max-w-xl mx-auto">
-            Security insights, scanner guides, and vulnerability research.
+    <main className="min-h-screen bg-[#0a141f] text-[#e6edf5]">
+      <div className="max-w-4xl mx-auto px-5 py-20">
+        <header className="mb-14">
+          <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#4493f8] mb-3">
+            Blog
           </p>
-        </div>
+          <h1 className="text-4xl lg:text-5xl font-medium tracking-tight mb-3">
+            Field notes from a hosted scanning team.
+          </h1>
+          <p className="text-[#9aa5b6] text-lg max-w-2xl">
+            Practical guides, scanner cheat sheets, and security playbooks for
+            Nmap, Nuclei, OWASP ZAP, and the open-source security stack we run.
+          </p>
+        </header>
 
-        {posts.length === 0 && (
-          <div className="text-center py-24 text-[#8fa8c8]">
+        {posts.length === 0 ? (
+          <div className="py-24 text-[#697080]">
             <p className="text-xl mb-2">No posts yet.</p>
             <p className="text-sm">Check back soon.</p>
           </div>
-        )}
-
-        {posts.length > 0 && (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        ) : (
+          <ul className="divide-y divide-[#161b24]">
             {posts.map((post) => (
-              <Link
-                key={post.slug}
-                href={`/blog/${post.slug}`}
-                className="group flex flex-col bg-white/5 hover:bg-white/[0.08] border border-white/10 hover:border-[#0366d6]/40 rounded-xl overflow-hidden transition-all"
-              >
-                {post.image && (
-                  <div className="relative aspect-[1200/630] w-full">
-                    <Image
-                      src={post.image}
-                      alt={post.title || ""}
-                      fill
-                      sizes="(max-width: 640px) 100vw, 33vw"
-                      className="object-cover group-hover:scale-[1.02] transition-transform duration-300"
-                    />
-                  </div>
-                )}
-                <div className="p-5 flex flex-col flex-1">
-                  <p className="text-xs text-[#8fa8c8] mb-2">{post.date}</p>
-                  <h2 className="text-white font-bold text-lg mb-2 group-hover:text-[#60a5fa] transition-colors leading-snug">
+              <li key={post.slug}>
+                <Link href={`/blog/${post.slug}`} className="block py-6 group">
+                  <p className="text-xs text-[#697080] font-mono mb-1.5">
+                    {post.date}
+                  </p>
+                  <h2 className="text-xl lg:text-2xl font-medium tracking-tight text-[#e6edf5] group-hover:text-[#4493f8] transition-colors mb-2">
                     {post.title}
                   </h2>
-                  <p className="text-[#8fa8c8] text-sm line-clamp-3 flex-1">
+                  <p className="text-[#9aa5b6] text-sm leading-relaxed line-clamp-2">
                     {post.description}
                   </p>
-                  <span className="mt-4 text-sm font-semibold text-[#0366d6] group-hover:underline">
-                    Read more →
-                  </span>
-                </div>
-              </Link>
+                </Link>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
     </main>
