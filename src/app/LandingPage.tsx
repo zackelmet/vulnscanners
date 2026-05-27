@@ -121,6 +121,107 @@ function ArrowIcon() {
   );
 }
 
+function ServerIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <rect
+        x="3.5"
+        y="4"
+        width="17"
+        height="6"
+        rx="1.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+      />
+      <rect
+        x="3.5"
+        y="14"
+        width="17"
+        height="6"
+        rx="1.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+      />
+      <circle cx="7" cy="7" r="0.9" fill="currentColor" />
+      <circle cx="7" cy="17" r="0.9" fill="currentColor" />
+      <path
+        d="M11 7h6M11 17h6"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function DocIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M6 3.5h8l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M14 3.5V8h4"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M8 12h8M8 15h8M8 18h5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function StackIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M12 3.5 3.5 8 12 12.5 20.5 8 12 3.5Z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <path
+        d="m3.5 12 8.5 4.5L20.5 12"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <path
+        d="m3.5 16 8.5 4.5L20.5 16"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function CheckIcon() {
   return (
     <svg
@@ -304,6 +405,70 @@ export default function LandingPage() {
                 </div>
               </article>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Pain points ─────────────────────────────────────────── */}
+      <section className={styles.block} id="why" aria-labelledby="why-title">
+        <div className={styles.container}>
+          <div className={styles.sectionHead}>
+            <p className={styles.sectionKicker}>Why hosted</p>
+            <h2 id="why-title" className={styles.sectionTitle}>
+              Scanners are powerful. Running them isn&apos;t the job.
+            </h2>
+            <p className={styles.sectionSub}>
+              If you&apos;ve shipped a security report this quarter, you&apos;ve
+              probably fought one of these.
+            </p>
+          </div>
+          <div className={styles.painsGrid}>
+            <article className={styles.painCard}>
+              <div className={styles.painIcon} aria-hidden="true">
+                <ServerIcon />
+              </div>
+              <h3 className={styles.painH3}>
+                Scanner setup eats your billable hours
+              </h3>
+              <p className={styles.painP}>
+                Spin up a VM, install Nmap, keep Nuclei templates current, get
+                ZAP running headless, debug Docker, repeat per client. You
+                bought a scanner; you got a sysadmin job.
+              </p>
+            </article>
+
+            <article className={styles.painCard}>
+              <div className={styles.painIcon} aria-hidden="true">
+                <DocIcon />
+              </div>
+              <h3 className={styles.painH3}>
+                Raw output isn&apos;t a deliverable
+              </h3>
+              <p className={styles.painP}>
+                A 4,000-line Nuclei JSON dump or a terminal scroll isn&apos;t
+                what a client signs off on. You end up hand-formatting findings
+                into Word every engagement.
+              </p>
+            </article>
+
+            <article className={styles.painCard}>
+              <div className={styles.painIcon} aria-hidden="true">
+                <StackIcon />
+              </div>
+              <h3 className={styles.painH3}>
+                Three scanners, three consoles, zero memory
+              </h3>
+              <p className={styles.painP}>
+                Last quarter&apos;s scan history lives in three different
+                terminals. You can&apos;t diff today&apos;s results against last
+                month without re-running everything from scratch.
+              </p>
+            </article>
+          </div>
+          <div className={styles.painsFoot}>
+            <Link href="#pricing" className={styles.painsFootLink}>
+              Skip the setup — see pricing <ArrowIcon />
+            </Link>
           </div>
         </div>
       </section>
