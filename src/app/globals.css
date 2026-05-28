@@ -26,6 +26,12 @@
 body {
 	/*
 	 * Site-wide ambient grid background (matches the landing page).
+	 * Layers, top to bottom:
+	 *   1-2. Subtle radial blue glows (existing brand wash).
+	 *   3.   Diagonal blue tint to add depth.
+	 *   4-5. 48px white grid lines (vertical + horizontal).
+	 *   6.   Base color from --bg.
+	 * Pages that need a flat surface can opt out by setting their own background.
 	 */
 	background:
 		radial-gradient(circle at 20% 20%, rgba(3,102,214,0.07), transparent 25%),
@@ -37,8 +43,7 @@ body {
 	background-size: auto, auto, auto, 48px 48px, 48px 48px, auto;
 	color: var(--text);
 	min-height: 100vh;
-	font-family: var(--font-michroma), 'Michroma', var(--font-ibm-plex-sans), 'IBM Plex Sans', sans-serif;
-	font-weight: 400;
+	font-family: var(--font-ibm-plex-sans), 'IBM Plex Sans', sans-serif;
 	font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
@@ -51,38 +56,14 @@ textarea {
 	font: inherit;
 }
 
-/* Michroma is a single-weight (400) display font. H1 gets faux-bold via
- * font-weight: bold; everything else stays at 400 per design direction. */
-h1 {
-	font-family: var(--font-michroma), 'Michroma', sans-serif;
-	letter-spacing: -0.01em;
-	font-weight: 700;
-}
-
-h2,
-h3,
-h4,
-h5,
-h6,
-p,
-span,
-li,
-a,
-button,
-input,
-textarea,
-select,
-label {
-	font-weight: 400;
-}
-
+h1,
 h2,
 h3,
 h4,
 h5,
 h6 {
-	font-family: var(--font-michroma), 'Michroma', sans-serif;
-	letter-spacing: -0.01em;
+	font-family: var(--font-ibm-plex-sans), 'IBM Plex Sans', sans-serif;
+	letter-spacing: -0.02em;
 }
 
 /* DaisyUI override for the active theme (cupcake is set in layout)
