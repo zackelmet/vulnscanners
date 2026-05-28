@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import {
+  breadcrumbJsonLd,
+  scannerServiceJsonLd,
+  jsonLdString,
+} from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
   title: "Hosted OWASP ZAP Web Scanner",
@@ -64,9 +69,28 @@ const USE_CASES = [
   },
 ] as const;
 
+const jsonLd = jsonLdString(
+  breadcrumbJsonLd([
+    { name: "Home", url: "/" },
+    { name: "Scanners", url: "/scanners" },
+    { name: "OWASP ZAP", url: "/scanners/zap" },
+  ]),
+  scannerServiceJsonLd({
+    name: "Hosted OWASP ZAP Web Scanner",
+    description:
+      "Run OWASP ZAP DAST scans on hosted infrastructure. Active and passive scan rules, spider, AJAX spider, and authentication support — with a PDF report per scan.",
+    slug: "zap",
+    serviceType: "Web application vulnerability scanning",
+  }),
+);
+
 export default function ZapScannerPage() {
   return (
     <main className="min-h-screen text-[#e6edf5]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLd }}
+      />
       <div className="max-w-5xl mx-auto px-5 py-20 space-y-20">
         {/* Hero */}
         <header className="space-y-6">
@@ -83,10 +107,10 @@ export default function ZapScannerPage() {
             />
           </div>
           <h1 className="text-4xl lg:text-5xl font-medium tracking-tight leading-[1.05]">
-            Hosted OWASP ZAP.
+            OWASP ZAP Web Scanner.
             <br />
             <span className="text-[#9aa5b6]">
-              Dynamic web app scanning, without the Java jar wrangling.
+              Hosted. Without the Java jar.
             </span>
           </h1>
           <p className="text-[#9aa5b6] text-lg max-w-2xl leading-relaxed">
@@ -125,7 +149,7 @@ export default function ZapScannerPage() {
               id="about-zap"
               className="text-2xl lg:text-3xl font-medium tracking-tight"
             >
-              What you&apos;re actually running
+              What is OWASP ZAP?
             </h2>
             <p className="text-[#9aa5b6] leading-relaxed">
               ZAP is a community-driven open-source DAST tool. It ships as a

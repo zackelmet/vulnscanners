@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllPosts } from "@/lib/blog/mdx";
+import { breadcrumbJsonLd } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
   title: "Blog — Vulnerability scanning, tools, and security playbooks",
@@ -23,11 +24,20 @@ export const metadata: Metadata = {
   },
 };
 
+const breadcrumbs = breadcrumbJsonLd([
+  { name: "Home", url: "/" },
+  { name: "Blog", url: "/blog" },
+]);
+
 export default function BlogPage() {
   const posts = getAllPosts(["slug", "title", "date", "description"]);
 
   return (
     <main className="min-h-screen text-[#e6edf5]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+      />
       <div className="max-w-4xl mx-auto px-5 py-20">
         <header className="mb-14">
           <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#4493f8] mb-3">

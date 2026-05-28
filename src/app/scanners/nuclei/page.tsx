@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import {
+  breadcrumbJsonLd,
+  scannerServiceJsonLd,
+  jsonLdString,
+} from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
   title: "Hosted Nuclei CVE Scanner",
@@ -64,9 +69,28 @@ const USE_CASES = [
   },
 ] as const;
 
+const jsonLd = jsonLdString(
+  breadcrumbJsonLd([
+    { name: "Home", url: "/" },
+    { name: "Scanners", url: "/scanners" },
+    { name: "Nuclei", url: "/scanners/nuclei" },
+  ]),
+  scannerServiceJsonLd({
+    name: "Hosted Nuclei CVE Scanner",
+    description:
+      "Run Nuclei CVE and misconfiguration scans on hosted infrastructure. Community template feed kept current — PDF report per scan.",
+    slug: "nuclei",
+    serviceType: "CVE vulnerability scanning",
+  }),
+);
+
 export default function NucleiScannerPage() {
   return (
     <main className="min-h-screen text-[#e6edf5]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLd }}
+      />
       <div className="max-w-5xl mx-auto px-5 py-20 space-y-20">
         {/* Hero */}
         <header className="space-y-6">
@@ -83,10 +107,10 @@ export default function NucleiScannerPage() {
             />
           </div>
           <h1 className="text-4xl lg:text-5xl font-medium tracking-tight leading-[1.05]">
-            Hosted Nuclei.
+            Nuclei CVE Scanner.
             <br />
             <span className="text-[#9aa5b6]">
-              Template-based CVE detection, without the engine babysitting.
+              Hosted. Templates kept current.
             </span>
           </h1>
           <p className="text-[#9aa5b6] text-lg max-w-2xl leading-relaxed">
@@ -124,7 +148,7 @@ export default function NucleiScannerPage() {
               id="about-nuclei"
               className="text-2xl lg:text-3xl font-medium tracking-tight"
             >
-              What you&apos;re actually running
+              What is Nuclei?
             </h2>
             <p className="text-[#9aa5b6] leading-relaxed">
               ProjectDiscovery describes Nuclei as &ldquo;a fast, template based

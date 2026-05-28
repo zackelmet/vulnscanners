@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
 import { IBM_Plex_Sans } from "next/font/google";
+import { websiteJsonLd, jsonLdString } from "@/lib/seo/jsonld";
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -70,7 +71,7 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(organizationJsonLd),
+            __html: jsonLdString(organizationJsonLd, websiteJsonLd()),
           }}
         />
       </head>
