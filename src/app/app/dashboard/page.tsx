@@ -282,7 +282,7 @@ export default function DashboardPage() {
                 Recent Scans
               </h2>
               <Link
-                href="/app/scans"
+                href="/app/history"
                 className="text-[#4493f8] hover:text-[#0366d6] text-sm font-semibold transition-colors"
               >
                 View All →
@@ -312,7 +312,7 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <Link
-                    href="/app/scans"
+                    href="/app/history"
                     className="px-4 py-2 bg-[#0366d6]/20 hover:bg-[#0366d6]/30 text-[#4493f8] font-semibold rounded-lg border border-[#0366d6]/30 transition-colors text-sm"
                   >
                     View
