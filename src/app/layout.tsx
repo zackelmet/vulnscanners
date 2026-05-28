@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
-import { IBM_Plex_Sans } from "next/font/google";
+import { IBM_Plex_Sans, Michroma } from "next/font/google";
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
   variable: "--font-ibm-plex-sans",
+});
+
+const michroma = Michroma({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-michroma",
 });
 // ClientProviders and Navbar were temporarily disabled during prerender
 // diagnostics; restore them now.
@@ -65,7 +71,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={ibmPlexSans.variable}>
+    <html lang="en" className={`${ibmPlexSans.variable} ${michroma.variable}`}>
       <head>
         <script
           type="application/ld+json"
@@ -75,7 +81,7 @@ export default function RootLayout({
         />
       </head>
       {/* Change your theme HERE */}
-      <body data-theme="cupcake" className={ibmPlexSans.className}>
+      <body data-theme="cupcake" className={michroma.className}>
         <ClientProviders>
           <ConditionalNav>{children}</ConditionalNav>
         </ClientProviders>

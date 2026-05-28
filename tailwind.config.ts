@@ -10,8 +10,10 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans: [
-          '"Share Tech Mono"',
-          "Inter",
+          "var(--font-michroma)",
+          '"Michroma"',
+          "var(--font-ibm-plex-sans)",
+          '"IBM Plex Sans"',
           "ui-sans-serif",
           "system-ui",
           "-apple-system",
