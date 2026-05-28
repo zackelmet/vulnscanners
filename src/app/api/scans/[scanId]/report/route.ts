@@ -113,16 +113,10 @@ export async function GET(
         "";
     }
 
-    if (!rawOutput) {
-      return NextResponse.json(
-        {
-          error:
-            "Raw scan output not available for this scan. " +
-            "Older scans may not have stored the full output.",
-        },
-        { status: 422 },
-      );
-    }
+    // An empty rawOutput is legitimate — a completed scan that found nothing
+    // is still a valid deliverable. The template renders a "no findings" PDF
+    // gracefully for every section. Only the absence of the Firestore record
+    // itself (handled earlier) is a hard error.
 
     const target: string = scan.target || scan.targetValue || "Unknown target";
 
