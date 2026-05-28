@@ -251,8 +251,8 @@ export default function DashboardPage() {
                   Purchase Credits to Start Scanning
                 </h3>
                 <p className="text-[#9aa5b6] mb-4">
-                  Credits work across all three scanners — Nmap, Nuclei, and
-                  OWASP ZAP. Starting at $10 for 10 scans.
+                  Every credit grants one Nmap, one Nuclei, and one OWASP ZAP
+                  scan. Starting at $10 for 30 scans.
                 </p>
                 <div className="flex flex-wrap gap-3">
                   {CREDIT_PACKS.map((pack) => (
@@ -265,7 +265,7 @@ export default function DashboardPage() {
                           : "bg-[#11161f] hover:bg-[#161b24] text-[#e6edf5] border border-[#161b24]"
                       }`}
                     >
-                      {pack.name} — {pack.credits.toLocaleString()} credits
+                      {pack.name} — {(pack.credits * 3).toLocaleString()} scans
                     </button>
                   ))}
                 </div>
@@ -390,7 +390,8 @@ export default function DashboardPage() {
                   <div className="text-left">
                     <p className="font-bold text-[#e6edf5]">{pack.name}</p>
                     <p className="text-sm text-[#9aa5b6]">
-                      {pack.credits.toLocaleString()} scan credits
+                      {(pack.credits * 3).toLocaleString()} scans ·{" "}
+                      {pack.credits.toLocaleString()} per scanner
                     </p>
                   </div>
                   <div className="text-right">
@@ -398,7 +399,7 @@ export default function DashboardPage() {
                       ${pack.price}
                     </p>
                     <p className="text-xs text-[#697080]">
-                      ${(pack.price / pack.credits).toFixed(2)}/scan
+                      ${(pack.price / (pack.credits * 3)).toFixed(2)}/scan
                     </p>
                   </div>
                 </button>
