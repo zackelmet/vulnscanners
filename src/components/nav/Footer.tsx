@@ -56,6 +56,12 @@ export default function Footer() {
 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-sm text-gray-500">
           <div className="flex items-center gap-0 divide-x divide-gray-700">
+            <Link
+              href="/scanners"
+              className="hover:text-[#0366d6] transition px-4"
+            >
+              Scanners
+            </Link>
             <Link href="/blog" className="hover:text-[#0366d6] transition px-4">
               Blog
             </Link>
@@ -69,7 +75,7 @@ export default function Footer() {
               href="/help-center"
               className="hover:text-[#0366d6] transition px-4"
             >
-              Trust &amp; Safety
+              Help Center
             </Link>
             <Link
               href="/support"
