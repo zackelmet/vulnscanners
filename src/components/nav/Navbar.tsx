@@ -114,14 +114,14 @@ export default function Navbar() {
                 {scannersOpen && (
                   <div className="absolute right-0 top-full pt-2 w-72">
                     <div className="rounded-xl bg-[#0d1117] border border-[#1f2632] shadow-xl overflow-hidden">
-                      <ul className="py-2 space-y-1">
+                      <ul className="py-1.5">
                         {SCANNER_ITEMS.map(
                           ({ href, name, desc, logo, logoW, logoH }) => (
                             <li key={href}>
                               <Link
                                 href={href}
                                 onClick={() => setScannersOpen(false)}
-                                className="flex items-center gap-4 px-4 py-4 hover:bg-[#11161f] transition-colors group"
+                                className="flex items-center gap-3 px-4 py-3 hover:bg-[#11161f] transition-colors group"
                               >
                                 <span className="w-8 h-7 flex items-center justify-center shrink-0">
                                   <Image

@@ -73,7 +73,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-[#07090d] flex overflow-hidden">
+    <div className="h-screen bg-[#07090d] flex overflow-hidden">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -205,7 +205,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Mobile header with hamburger */}
         <header className="lg:hidden bg-[#0d1117] border-b border-[#161b24] px-4 py-3 flex items-center justify-between sticky top-0 z-30">
           <button
