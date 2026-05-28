@@ -10,7 +10,7 @@ import {
   where,
   limit,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase/firebaseClient";
+import { db } from "@/lib/firebase/firestoreClient";
 
 export function useUserScans(uid?: string | null) {
   const [scans, setScans] = useState<any[]>([]);

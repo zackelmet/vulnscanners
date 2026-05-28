@@ -1,5 +1,5 @@
 import { User, onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "../firebase/firebaseClient";
+import { auth } from "../firebase/firebaseClient";
 
 export class AuthService {
   onAuthStateChanged(callback: (user: User | null) => void) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/lib/context/AuthContext";
-import { db } from "@/lib/firebase/firebaseClient";
+import { db } from "@/lib/firebase/firestoreClient";
 import getStripe from "@/lib/stripe/getStripe";
 import {
   DocumentReference,
@@ -69,7 +69,7 @@ export default function PurchaseButton({
           price: priceId,
           success_url: `${window.location.origin}${successUrl}`,
           cancel_url: `${window.location.origin}${cancelUrl}`,
-        }
+        },
       );
 
       setCheckoutSessionDocRef(docRef);

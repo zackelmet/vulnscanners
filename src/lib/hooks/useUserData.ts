@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase/firebaseClient";
+import { db } from "@/lib/firebase/firestoreClient";
 import { useAuth } from "@/lib/context/AuthContext";
 import { UserDocument } from "@/lib/types/user";
 
