@@ -92,7 +92,7 @@ export default function Navbar() {
         </Link>
 
         <div className="flex items-center gap-3">
-          {!isLoadingAuth && !currentUser && (
+          {!isLoadingAuth && (
             <>
               <div
                 ref={dropdownRef}
@@ -171,22 +171,23 @@ export default function Navbar() {
               >
                 Pricing
               </Link>
-              <Link
-                href="/login"
-                className="px-4 py-2 text-sm font-semibold bg-[#0366d6] hover:bg-[#034ea1] text-white rounded-lg transition"
-              >
-                Sign In
-              </Link>
-            </>
-          )}
 
-          {!isLoadingAuth && currentUser && (
-            <Link
-              href="/app/dashboard"
-              className="px-4 py-2 text-sm font-semibold bg-[#0366d6] hover:bg-[#034ea1] text-white rounded-lg transition"
-            >
-              Dashboard
-            </Link>
+              {currentUser ? (
+                <Link
+                  href="/app/dashboard"
+                  className="px-4 py-2 text-sm font-semibold bg-[#0366d6] hover:bg-[#034ea1] text-white rounded-lg transition"
+                >
+                  Console
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  className="px-4 py-2 text-sm font-semibold bg-[#0366d6] hover:bg-[#034ea1] text-white rounded-lg transition"
+                >
+                  Sign In
+                </Link>
+              )}
+            </>
           )}
         </div>
       </div>
