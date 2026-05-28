@@ -263,6 +263,79 @@ export default function NmapScannerPage() {
           </div>
         </section>
 
+        {/* Related posts */}
+        <section aria-labelledby="related" className="space-y-6">
+          <div className="space-y-3">
+            <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#4493f8]">
+              From the blog
+            </p>
+            <h2
+              id="related"
+              className="text-2xl lg:text-3xl font-medium tracking-tight"
+            >
+              Nmap guides
+            </h2>
+          </div>
+          <ul className="grid sm:grid-cols-2 gap-4">
+            <li>
+              <Link
+                href="/blog/nmap-cheat-sheet"
+                className="block p-5 rounded-xl bg-[#0d1117] border border-[#1f2632] hover:border-[#2a3242] transition-colors"
+              >
+                <h3 className="font-medium text-[#e6edf5] mb-2">
+                  Nmap Cheat Sheet
+                </h3>
+                <p className="text-sm text-[#9aa5b6] leading-relaxed">
+                  The commands you&apos;ll actually use — TCP/UDP, NSE, timing,
+                  evasion.
+                </p>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/blog/nmap-tutorial"
+                className="block p-5 rounded-xl bg-[#0d1117] border border-[#1f2632] hover:border-[#2a3242] transition-colors"
+              >
+                <h3 className="font-medium text-[#e6edf5] mb-2">
+                  Nmap Tutorial
+                </h3>
+                <p className="text-sm text-[#9aa5b6] leading-relaxed">
+                  From install to your first useful scan — and how to read the
+                  output.
+                </p>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/blog/nmap-vs-nuclei-vs-zap"
+                className="block p-5 rounded-xl bg-[#0d1117] border border-[#1f2632] hover:border-[#2a3242] transition-colors"
+              >
+                <h3 className="font-medium text-[#e6edf5] mb-2">
+                  Nmap vs Nuclei vs ZAP
+                </h3>
+                <p className="text-sm text-[#9aa5b6] leading-relaxed">
+                  Three open-source scanners, three different jobs — and how to
+                  layer them.
+                </p>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/blog/best-open-source-vulnerability-scanners"
+                className="block p-5 rounded-xl bg-[#0d1117] border border-[#1f2632] hover:border-[#2a3242] transition-colors"
+              >
+                <h3 className="font-medium text-[#e6edf5] mb-2">
+                  Best Open-Source Vulnerability Scanners (2026)
+                </h3>
+                <p className="text-sm text-[#9aa5b6] leading-relaxed">
+                  An honest comparison — what each is good at and where it falls
+                  short.
+                </p>
+              </Link>
+            </li>
+          </ul>
+        </section>
+
         {/* Bottom CTA */}
         <section className="rounded-2xl border border-[#1f2632] bg-gradient-to-br from-[#0d1117] to-[#0a141f] p-10 text-center space-y-5">
           <h2 className="text-2xl lg:text-3xl font-medium tracking-tight">

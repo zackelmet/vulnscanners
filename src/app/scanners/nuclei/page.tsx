@@ -262,6 +262,78 @@ export default function NucleiScannerPage() {
           </div>
         </section>
 
+        {/* Related posts */}
+        <section aria-labelledby="related" className="space-y-6">
+          <div className="space-y-3">
+            <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#4493f8]">
+              From the blog
+            </p>
+            <h2
+              id="related"
+              className="text-2xl lg:text-3xl font-medium tracking-tight"
+            >
+              Nuclei guides
+            </h2>
+          </div>
+          <ul className="grid sm:grid-cols-2 gap-4">
+            <li>
+              <Link
+                href="/blog/nuclei-templates-guide"
+                className="block p-5 rounded-xl bg-[#0d1117] border border-[#1f2632] hover:border-[#2a3242] transition-colors"
+              >
+                <h3 className="font-medium text-[#e6edf5] mb-2">
+                  Nuclei Templates: A Practical Guide
+                </h3>
+                <p className="text-sm text-[#9aa5b6] leading-relaxed">
+                  Template syntax, matchers, custom templates, and how to keep
+                  the feed current.
+                </p>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/blog/nmap-vs-nuclei-vs-zap"
+                className="block p-5 rounded-xl bg-[#0d1117] border border-[#1f2632] hover:border-[#2a3242] transition-colors"
+              >
+                <h3 className="font-medium text-[#e6edf5] mb-2">
+                  Nmap vs Nuclei vs ZAP
+                </h3>
+                <p className="text-sm text-[#9aa5b6] leading-relaxed">
+                  When each tool is the right answer — and how to layer all
+                  three.
+                </p>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/blog/best-open-source-vulnerability-scanners"
+                className="block p-5 rounded-xl bg-[#0d1117] border border-[#1f2632] hover:border-[#2a3242] transition-colors"
+              >
+                <h3 className="font-medium text-[#e6edf5] mb-2">
+                  Best Open-Source Vulnerability Scanners (2026)
+                </h3>
+                <p className="text-sm text-[#9aa5b6] leading-relaxed">
+                  Honest comparison of Nmap, Nuclei, ZAP, OpenVAS, and Trivy.
+                </p>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/blog/vulnerability-management-slas-guide"
+                className="block p-5 rounded-xl bg-[#0d1117] border border-[#1f2632] hover:border-[#2a3242] transition-colors"
+              >
+                <h3 className="font-medium text-[#e6edf5] mb-2">
+                  Vulnerability Management SLAs
+                </h3>
+                <p className="text-sm text-[#9aa5b6] leading-relaxed">
+                  Setting realistic SLAs by severity and asset criticality — and
+                  hitting them.
+                </p>
+              </Link>
+            </li>
+          </ul>
+        </section>
+
         {/* Bottom CTA */}
         <section className="rounded-2xl border border-[#1f2632] bg-gradient-to-br from-[#0d1117] to-[#0a141f] p-10 text-center space-y-5">
           <h2 className="text-2xl lg:text-3xl font-medium tracking-tight">

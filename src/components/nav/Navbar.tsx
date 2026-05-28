@@ -11,7 +11,7 @@ export default function Navbar() {
     <header className="w-full border-b border-[#0366d6]/30 bg-[#0a141f] text-white relative z-40">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-6 px-5 py-4">
         <Link
-          href="https://vulnscanners.com"
+          href="/"
           className="flex items-center gap-3 hover:opacity-90 transition"
         >
           <Image
@@ -31,16 +31,16 @@ export default function Navbar() {
           {!isLoadingAuth && !currentUser && (
             <>
               <Link
+                href="/scanners"
+                className="text-sm font-medium text-gray-300 hover:text-[#0366d6] transition"
+              >
+                Scanners
+              </Link>
+              <Link
                 href="/blog"
                 className="text-sm font-medium text-gray-300 hover:text-[#0366d6] transition"
               >
                 Blog
-              </Link>
-              <Link
-                href="/#pricing"
-                className="text-sm font-medium text-gray-300 hover:text-[#0366d6] transition"
-              >
-                Pricing
               </Link>
               <Link
                 href="/login"
