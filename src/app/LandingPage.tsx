@@ -31,7 +31,7 @@ const TIERS: PricingTier[] = [
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ESSENTIAL || "",
     cta: "Get started",
     features: [
-      "10 Nmap + 10 Nuclei + 10 ZAP scans",
+      "10 of each scanner type",
       "Hosted infrastructure",
       "PDF report export",
       "Email support",
@@ -46,7 +46,7 @@ const TIERS: PricingTier[] = [
     popular: true,
     cta: "Get Pro",
     features: [
-      "100 Nmap + 100 Nuclei + 100 ZAP scans",
+      "100 of each scanner type",
       "Hosted infrastructure",
       "PDF report export",
       "Priority email support",
@@ -60,7 +60,7 @@ const TIERS: PricingTier[] = [
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_SCALE || "",
     cta: "Get Scale",
     features: [
-      "1,000 Nmap + 1,000 Nuclei + 1,000 ZAP scans",
+      "1,000 of each scanner type",
       "Hosted infrastructure",
       "PDF report export",
       "Dedicated support",
