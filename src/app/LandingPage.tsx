@@ -27,11 +27,11 @@ const TIERS: PricingTier[] = [
     id: "essential",
     name: "Essential",
     price: 10,
-    credits: "10 scan credits · $1.00 / scan",
+    credits: "30 scans · $0.33 / scan",
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ESSENTIAL || "",
     cta: "Get started",
     features: [
-      "10 × Nmap, Nuclei, or ZAP scans",
+      "10 Nmap + 10 Nuclei + 10 ZAP scans",
       "Hosted infrastructure",
       "PDF report export",
       "Email support",
@@ -41,27 +41,26 @@ const TIERS: PricingTier[] = [
     id: "pro",
     name: "Pro",
     price: 50,
-    credits: "100 scan credits · $0.50 / scan",
+    credits: "300 scans · $0.17 / scan",
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO || "",
     popular: true,
     cta: "Get Pro",
     features: [
-      "100 × Nmap, Nuclei, or ZAP scans",
+      "100 Nmap + 100 Nuclei + 100 ZAP scans",
       "Hosted infrastructure",
       "PDF report export",
       "Priority email support",
-      "Mix scanner types freely",
     ],
   },
   {
     id: "scale",
     name: "Scale",
     price: 200,
-    credits: "1,000 scan credits · $0.20 / scan",
+    credits: "3,000 scans · $0.07 / scan",
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_SCALE || "",
     cta: "Get Scale",
     features: [
-      "1,000 × Nmap, Nuclei, or ZAP scans",
+      "1,000 Nmap + 1,000 Nuclei + 1,000 ZAP scans",
       "Hosted infrastructure",
       "PDF report export",
       "Dedicated support",
@@ -480,8 +479,9 @@ export default function LandingPage() {
             <p className={styles.sectionKicker}>Pricing</p>
             <h2 className={styles.sectionTitle}>Credits, not subscriptions.</h2>
             <p className={styles.sectionSub}>
-              Buy a pack, run any scanner against any approved target. Credits
-              don&apos;t expire for 12 months. No seats, no overages.
+              Every credit covers one Nmap, one Nuclei, and one OWASP ZAP scan
+              against an approved target. Credits don&apos;t expire for 12
+              months. No seats, no overages.
             </p>
           </div>
           <div className={styles.pricingGrid}>
