@@ -95,7 +95,10 @@ export default function ScansPage() {
       if (!user) throw new Error("Not authenticated");
 
       const token = await user.getIdToken(true);
-      const nmapOptions = { topPorts: 100 };
+      // Match nmap's default coverage so reports include the well-known
+      // service ports (53, 443, 5060, 8080, 9929, etc.) — top-100 was missing
+      // most of the interesting surface area.
+      const nmapOptions = { topPorts: 1000 };
       const zapOptions = { scanProfile: zapProfile };
 
       const results = [];

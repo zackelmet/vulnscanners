@@ -135,7 +135,7 @@ const GENERIC: { impact: string; remediation: string[] } = {
   ],
 };
 
-function findingForPort(
+function findingForOpenPort(
   host: ParsedHost,
   port: ParsedPort,
   index: number,
@@ -178,6 +178,36 @@ function findingForPort(
   };
 }
 
+function findingForFilteredPort(
+  host: ParsedHost,
+  port: ParsedPort,
+  index: number,
+): ReportFinding {
+  const hostLabel = host.hostname
+    ? `${host.hostname} (${host.ip})`
+    : host.ip;
+  return {
+    id: `NM-${index}`,
+    title: `Filtered ${port.service || "unknown"} on ${port.protocol.toUpperCase()}/${port.port}`,
+    severity: "info",
+    state: "Unresolved",
+    description:
+      `Port ${port.port}/${port.protocol} on ${hostLabel} is filtered. A network device (firewall, security group, or NAT) is dropping inbound connection attempts to this port, so we cannot determine whether a service is listening behind it.`,
+    businessImpact:
+      "Filtered ports are not exposed services and do not represent a vulnerability on their own. They are listed here for completeness — they indicate that a firewall layer is present and active in front of this host.",
+    howToVerify: [
+      {
+        text: "Re-run nmap with a single-port probe to confirm the filtered state:",
+        code: `nmap -sV -Pn -p ${port.port} ${host.ip}`,
+      },
+    ],
+    remediation: [
+      "No action is required if the filter is intentional.",
+      "If you expected this port to be reachable, audit the upstream firewall / security-group rules.",
+    ],
+  };
+}
+
 function bannerProbe(port: ParsedPort): string {
   const svc = port.service.toLowerCase();
   if (svc === "http" || svc === "https" || svc === "http-proxy") {
@@ -199,9 +229,11 @@ export function mapNmapReport(args: {
   for (const host of args.parsed.hosts) {
     if (host.state !== "up") continue;
     for (const port of host.ports) {
-      if (port.state !== "open") continue;
-      findings.push(findingForPort(host, port, index));
-      index++;
+      if (port.state === "open") {
+        findings.push(findingForOpenPort(host, port, index++));
+      } else if (port.state === "filtered") {
+        findings.push(findingForFilteredPort(host, port, index++));
+      }
     }
   }
   // Sort by severity desc so PT-1 lines up with the highest severity in display order.

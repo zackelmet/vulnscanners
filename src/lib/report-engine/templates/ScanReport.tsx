@@ -346,13 +346,18 @@ const tableStyles = StyleSheet.create({
 // ────────────────────────────────────────────────────────────────────────────
 
 function DetailedFindings({ data }: { data: ScanReportData }) {
+  // Info-severity findings (e.g. nmap filtered-port observations) appear in
+  // the master findings table but don't get a per-finding detail page —
+  // they're observational notes, not actionable items, and a page each would
+  // bloat the report.
+  const detailed = data.findings.filter((f) => f.severity !== "info");
   return (
     <View>
       <Heading2>2.3 Detailed Findings</Heading2>
-      {data.findings.length === 0 ? (
-        <Paragraph muted>No findings to detail.</Paragraph>
+      {detailed.length === 0 ? (
+        <Paragraph muted>No actionable findings to detail.</Paragraph>
       ) : (
-        data.findings.map((f, i) => (
+        detailed.map((f, i) => (
           <View key={f.id} break={i > 0} style={{ marginBottom: 18 }}>
             <FindingDetail
               finding={f}
