@@ -1,1 +1,4 @@
 /functions
+# Hetzner scanner worker — Python Flask service deployed via worker/deploy.sh.
+# Not part of the Next.js / Vercel deployment.
+/worker

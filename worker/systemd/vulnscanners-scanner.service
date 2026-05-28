@@ -1,0 +1,17 @@
+[Unit]
+Description=VulnScanners Scanner API
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/vulnscanners/backend
+EnvironmentFile=/etc/vulnscanners/backend.env
+ExecStart=/opt/vulnscanners/backend/.venv/bin/python /opt/vulnscanners/backend/app.py
+Restart=always
+RestartSec=3
+StandardOutput=append:/opt/vulnscanners/logs/scanner.out.log
+StandardError=append:/opt/vulnscanners/logs/scanner.err.log
+
+[Install]
+WantedBy=multi-user.target
