@@ -4,15 +4,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { initializeAdmin } from "@/lib/firebase/firebaseAdmin";
-import { parseNmapOutput } from "@/lib/report-engine/nmap-parser";
-import { parseNucleiOutput } from "@/lib/report-engine/nuclei-parser";
-import { parseZapOutput } from "@/lib/report-engine/zap-parser";
-import {
-  generateNmapPdf,
-  generateNucleiPdf,
-  generateZapPdf,
-} from "@/lib/report-engine/pdf-generator";
-import { ScanReportPayload, ScannerType } from "@/lib/report-engine/types";
+import { renderScanReport } from "@/lib/report-engine/pdf-renderer";
+import { ScannerType } from "@/lib/report-engine/types";
 
 export const runtime = "nodejs";
 
@@ -133,32 +126,28 @@ export async function GET(
 
     const target: string = scan.target || scan.targetValue || "Unknown target";
 
-    // ── Parse & generate PDF (dispatch by scanner type) ───────────────────
-    const parsedData =
-      scannerType === "nmap"
-        ? parseNmapOutput(rawOutput)
-        : scannerType === "nuclei"
-          ? parseNucleiOutput(rawOutput)
-          : parseZapOutput(rawOutput);
+    // ── Render branded PDF via @react-pdf/renderer ───────────────────────
+    const startedAt =
+      scan.startTime?.toDate?.() ??
+      (scan.startTime ? new Date(scan.startTime) : new Date());
+    const completedAt =
+      scan.endTime?.toDate?.() ??
+      (scan.endTime ? new Date(scan.endTime) : new Date());
+    const command =
+      scan.rawPayload?.cmd ||
+      scan.resultsSummary?.command ||
+      null;
 
-    const payload: ScanReportPayload = {
-      reportId: `${scanId}-report`,
+    const pdfBuffer = await renderScanReport({
       scanId,
       scannerType,
       target,
-      userId,
-      generatedAt:
-        new Date().toLocaleString("en-US", { timeZone: "UTC" }) + " UTC",
-      parsedData,
       rawOutput,
-    };
-
-    const pdfBytes =
-      scannerType === "nmap"
-        ? await generateNmapPdf(payload)
-        : scannerType === "nuclei"
-          ? await generateNucleiPdf(payload)
-          : await generateZapPdf(payload);
+      startedAt,
+      completedAt,
+      command,
+    });
+    const pdfBytes = new Uint8Array(pdfBuffer);
 
     // ── Return as download ────────────────────────────────────────────────
     const safeTarget = target
