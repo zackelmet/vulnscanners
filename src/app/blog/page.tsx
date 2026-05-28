@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getAllPosts } from "@/lib/blog/mdx";
 
 export const metadata: Metadata = {
-  title: "Blog — Vulnerability scanning, tools, and security playbooks",
+  title: "Blog — Scanner guides, cheat sheets & playbooks",
   description:
     "Practical guides, scanner cheat sheets, and security playbooks for Nmap, Nuclei, OWASP ZAP, and the rest of the modern open-source security stack.",
   alternates: { canonical: "/blog" },
