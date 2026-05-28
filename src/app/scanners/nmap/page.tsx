@@ -358,6 +358,82 @@ export default function NmapScannerPage() {
           </ul>
         </section>
 
+        {/* Related recon utilities */}
+        <section aria-labelledby="recon-utils" className="space-y-6">
+          <div className="space-y-3">
+            <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#4493f8]">
+              Recon utilities
+            </p>
+            <h2
+              id="recon-utils"
+              className="text-2xl lg:text-3xl font-medium tracking-tight"
+            >
+              Tools that pair with Nmap
+            </h2>
+            <p className="text-[#9aa5b6] max-w-xl">
+              Nmap maps the surface. These utilities go deeper.
+            </p>
+          </div>
+          <ul className="grid sm:grid-cols-2 gap-4">
+            <li>
+              <Link
+                href="/blog/gobuster-tutorial"
+                className="block p-5 rounded-xl bg-[#0d1117] border border-[#1f2632] hover:border-[#2a3242] transition-colors"
+              >
+                <h3 className="font-medium text-[#e6edf5] mb-2">
+                  Gobuster Tutorial
+                </h3>
+                <p className="text-sm text-[#9aa5b6] leading-relaxed">
+                  Directory, DNS, and vhost enumeration — what to run once Nmap
+                  finds an HTTP service.
+                </p>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/blog/recon-ng-tutorial"
+                className="block p-5 rounded-xl bg-[#0d1117] border border-[#1f2632] hover:border-[#2a3242] transition-colors"
+              >
+                <h3 className="font-medium text-[#e6edf5] mb-2">
+                  Recon-NG Tutorial
+                </h3>
+                <p className="text-sm text-[#9aa5b6] leading-relaxed">
+                  OSINT recon as a framework — workspaces, modules, API keys,
+                  and a working pipeline.
+                </p>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/blog/tcpdump-examples"
+                className="block p-5 rounded-xl bg-[#0d1117] border border-[#1f2632] hover:border-[#2a3242] transition-colors"
+              >
+                <h3 className="font-medium text-[#e6edf5] mb-2">
+                  Tcpdump Examples
+                </h3>
+                <p className="text-sm text-[#9aa5b6] leading-relaxed">
+                  Practical capture and filter examples — the command-line
+                  companion to your Nmap output.
+                </p>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/blog/ssh-tunnel-examples"
+                className="block p-5 rounded-xl bg-[#0d1117] border border-[#1f2632] hover:border-[#2a3242] transition-colors"
+              >
+                <h3 className="font-medium text-[#e6edf5] mb-2">
+                  SSH Tunnel Examples
+                </h3>
+                <p className="text-sm text-[#9aa5b6] leading-relaxed">
+                  Local, remote, and dynamic forwarding — how to reach internal
+                  targets without a VPN.
+                </p>
+              </Link>
+            </li>
+          </ul>
+        </section>
+
         {/* Bottom CTA */}
         <section className="rounded-2xl border border-[#1f2632] bg-gradient-to-br from-[#0d1117] to-[#0a141f] p-10 text-center space-y-5">
           <h2 className="text-2xl lg:text-3xl font-medium tracking-tight">
