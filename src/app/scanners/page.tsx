@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import { breadcrumbJsonLd, jsonLdString } from "@/lib/seo/jsonld";
 
 export const metadata: Metadata = {
   title: "Scanners — Nmap, Nuclei & OWASP ZAP",
@@ -59,7 +60,7 @@ const SCANNERS = [
   },
 ] as const;
 
-const serviceJsonLd = {
+const itemListJsonLd = {
   "@context": "https://schema.org",
   "@type": "ItemList",
   itemListElement: SCANNERS.map((s, i) => ({
@@ -70,12 +71,20 @@ const serviceJsonLd = {
   })),
 };
 
+const jsonLd = jsonLdString(
+  itemListJsonLd,
+  breadcrumbJsonLd([
+    { name: "Home", url: "/" },
+    { name: "Scanners", url: "/scanners" },
+  ]),
+);
+
 export default function ScannersIndexPage() {
   return (
     <main className="min-h-screen text-[#e6edf5]">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLd }}
       />
       <div className="max-w-5xl mx-auto px-5 py-20 space-y-16">
         <header className="space-y-4">

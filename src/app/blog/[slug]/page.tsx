@@ -4,6 +4,7 @@ import matter from "gray-matter";
 import type { Metadata } from "next";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import BlogLayout from "@/components/blog/BlogLayout";
+import { breadcrumbJsonLd, jsonLdString } from "@/lib/seo/jsonld";
 
 const postsDirectory = path.join(process.cwd(), "src/posts");
 
@@ -69,7 +70,7 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
     readingTime,
   };
 
-  const jsonLd = {
+  const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: frontMatter.title,
@@ -91,11 +92,20 @@ export default function BlogPost({ params }: { params: { slug: string } }) {
     },
   };
 
+  const jsonLd = jsonLdString(
+    articleJsonLd,
+    breadcrumbJsonLd([
+      { name: "Home", url: "/" },
+      { name: "Blog", url: "/blog" },
+      { name: frontMatter.title, url: `/blog/${params.slug}` },
+    ]),
+  );
+
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLd }}
       />
       <BlogLayout frontMatter={frontMatter}>
         <MDXRemote source={content} />
