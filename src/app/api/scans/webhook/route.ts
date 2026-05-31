@@ -120,6 +120,10 @@ export async function POST(request: NextRequest) {
       gcpXmlStorageUrl,
       gcpXmlSignedUrl,
       gcpXmlSignedUrlExpires,
+      // JSON results (nuclei -jsonl / zap -J)
+      gcpJsonStorageUrl,
+      gcpJsonSignedUrl,
+      gcpJsonSignedUrlExpires,
       // optional PDF report links
       gcpReportStorageUrl,
       gcpReportSignedUrl,
@@ -134,6 +138,7 @@ export async function POST(request: NextRequest) {
       // full raw outputs from worker (worker no longer truncates)
       rawStdout,
       rawXml,
+      rawJson,
     } = result;
 
     console.log(`📥 Webhook received for scan ${scanId}:`, status);
@@ -190,6 +195,19 @@ export async function POST(request: NextRequest) {
           "application/xml; charset=utf-8",
         );
       }
+      let uploadedJsonGcsUrl: string | null = null;
+      if (
+        normalizedStatus === "completed" &&
+        typeof rawJson === "string" &&
+        rawJson.length > 0
+      ) {
+        uploadedJsonGcsUrl = await uploadRawToStorage(
+          scanId,
+          "output.json",
+          rawJson,
+          "application/json; charset=utf-8",
+        );
+      }
 
       const normalizedGcsUrl =
         gcpStorageUrl || gcsPath || uploadedStdoutGcsUrl || null;
@@ -218,6 +236,19 @@ export async function POST(request: NextRequest) {
         normalizedXmlSignedUrl = await generateSignedUrl(normalizedXmlUrl);
         if (normalizedXmlSignedUrl) {
           normalizedXmlSignedUrlExpires = new Date(
+            Date.now() + 7 * 24 * 60 * 60 * 1000,
+          ).toISOString();
+        }
+      }
+
+      // Handle JSON results (nuclei -jsonl / zap -J)
+      const normalizedJsonUrl = gcpJsonStorageUrl || uploadedJsonGcsUrl || null;
+      let normalizedJsonSignedUrl = gcpJsonSignedUrl || null;
+      let normalizedJsonSignedUrlExpires = gcpJsonSignedUrlExpires || null;
+      if (normalizedJsonUrl && !normalizedJsonSignedUrl) {
+        normalizedJsonSignedUrl = await generateSignedUrl(normalizedJsonUrl);
+        if (normalizedJsonSignedUrl) {
+          normalizedJsonSignedUrlExpires = new Date(
             Date.now() + 7 * 24 * 60 * 60 * 1000,
           ).toISOString();
         }
@@ -255,6 +286,10 @@ export async function POST(request: NextRequest) {
           gcpXmlStorageUrl: normalizedXmlUrl,
           gcpXmlSignedUrl: normalizedXmlSignedUrl,
           gcpXmlSignedUrlExpires: normalizedXmlSignedUrlExpires,
+          // JSON results (nuclei -jsonl / zap -J)
+          gcpJsonStorageUrl: normalizedJsonUrl,
+          gcpJsonSignedUrl: normalizedJsonSignedUrl,
+          gcpJsonSignedUrlExpires: normalizedJsonSignedUrlExpires,
           // PDF reports
           gcpReportStorageUrl: normalizedReportUrl,
           gcpReportSignedUrl: normalizedReportSignedUrl,
@@ -284,6 +319,10 @@ export async function POST(request: NextRequest) {
           gcpXmlStorageUrl: normalizedXmlUrl,
           gcpXmlSignedUrl: normalizedXmlSignedUrl,
           gcpXmlSignedUrlExpires: normalizedXmlSignedUrlExpires,
+          // JSON results (nuclei -jsonl / zap -J)
+          gcpJsonStorageUrl: normalizedJsonUrl,
+          gcpJsonSignedUrl: normalizedJsonSignedUrl,
+          gcpJsonSignedUrlExpires: normalizedJsonSignedUrlExpires,
           // PDF reports
           gcpReportStorageUrl: normalizedReportUrl,
           gcpReportSignedUrl: normalizedReportSignedUrl,

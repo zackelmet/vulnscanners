@@ -40,7 +40,8 @@ def summarize_output(scanner: str, output: str):
             "rawPreview": output[:4000],
         }
     if scanner == "nuclei":
-        findings = sum(1 for line in output.splitlines() if line.strip().startswith("["))
+        # Output is now JSONL — one JSON object per finding.
+        findings = sum(1 for line in output.splitlines() if line.strip().startswith("{"))
         return {"scanner": scanner, "findings": findings, "rawPreview": output[:4000]}
     if scanner == "zap":
         return {
@@ -72,7 +73,10 @@ def run_nmap(target: str, options: dict):
 
 
 def run_nuclei(target: str, options: dict):
-    args = ["nuclei", "-u", ensure_target_url(target), "-silent", "-no-color"]
+    # -jsonl emits one JSON object per finding so the report engine can parse
+    # structured fields (name, severity, CVE/CWE, matched-at) losslessly instead
+    # of scraping the human-readable text lines.
+    args = ["nuclei", "-u", ensure_target_url(target), "-silent", "-no-color", "-jsonl"]
     severity = options.get("severity") if isinstance(options, dict) else None
     if isinstance(severity, list) and severity:
         args.extend(["-severity", ",".join(str(s) for s in severity)])
@@ -82,14 +86,29 @@ def run_nuclei(target: str, options: dict):
 
 
 def run_zap(target: str, options: dict):
+    # ZAP always runs a FULL ACTIVE scan (spider + active scan) — no profile
+    # choice. `-J` writes a structured JSON report into the mounted wrk dir,
+    # which we read back and ship for lossless parsing. `-I` keeps a non-zero
+    # exit (warnings) from being treated as a hard failure.
+    OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
     target_url = ensure_target_url(target)
-    minutes = options.get("minutes") if isinstance(options, dict) else None
-    minutes = int(minutes) if str(minutes or "").isdigit() else 1
+    json_name = f"zap-{os.getpid()}-{int(time.time()*1000)}.json"
+    json_path = OUTPUT_ROOT / json_name
     args = [
         "docker", "run", "--rm", "-u", "root", "-v", f"{OUTPUT_ROOT}:/zap/wrk", "zaproxy/zap-stable",
-        "zap-baseline.py", "-t", target_url, "-m", str(minutes), "-I",
+        "zap-full-scan.py", "-t", target_url, "-J", json_name, "-I",
     ]
-    return subprocess.run(args, capture_output=True, text=True, timeout=MAX_TIMEOUT)
+    proc = subprocess.run(args, capture_output=True, text=True, timeout=MAX_TIMEOUT)
+    try:
+        proc.json_output = json_path.read_text(encoding="utf-8", errors="ignore")
+    except FileNotFoundError:
+        proc.json_output = ""
+    finally:
+        try:
+            json_path.unlink()
+        except FileNotFoundError:
+            pass
+    return proc
 
 
 def run_scan(scanner: str, target: str, options: dict):
@@ -151,6 +170,7 @@ def worker_loop(worker_id: int):
             completed_at = utc_now_iso()
             duration = int(time.time() - start_ts)
             xml_output = getattr(result, "xml_output", "") or ""
+            json_output = getattr(result, "json_output", "") or ""
             stdout_len = len(result.stdout or "")
             stderr_len = len(result.stderr or "")
             xml_len = len(xml_output)
@@ -188,6 +208,7 @@ def worker_loop(worker_id: int):
                 "errorMessage": None if ok else (result.stderr or "scan failed")[:2000],
                 "rawStdout": result.stdout or "",
                 "rawXml": xml_output or None,
+                "rawJson": json_output or None,
                 "rawPayload": {
                     "stdout": result.stdout[:12000],
                     "stderr": result.stderr[:4000],

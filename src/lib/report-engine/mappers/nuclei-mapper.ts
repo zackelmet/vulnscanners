@@ -33,7 +33,11 @@ function humanizeTemplate(id: string): string {
     .split("-")
     .map((part) => {
       if (/^[A-Z]{2,}$/.test(part)) return part; // initialism
-      if (/^(ssh|xss|sql|csrf|ssrf|ssti|lfi|rfi|dns|tls|ssl|cve|api|jwt|cors|smtp|ftp|http|https|udp|tcp|ws|wss)$/i.test(part)) {
+      if (
+        /^(ssh|xss|sql|csrf|ssrf|ssti|lfi|rfi|dns|tls|ssl|cve|api|jwt|cors|smtp|ftp|http|https|udp|tcp|ws|wss)$/i.test(
+          part,
+        )
+      ) {
         return part.toUpperCase();
       }
       return part[0]?.toUpperCase() + part.slice(1);
@@ -42,11 +46,32 @@ function humanizeTemplate(id: string): string {
 }
 
 function descriptionFor(finding: ParsedNucleiFinding): string {
-  const base = `Nuclei matched template "${finding.templateId}" against ${finding.target}.`;
+  // Prefer nuclei's own template description (from -jsonl) when available.
+  const lead = finding.description ? `${finding.description.trim()} ` : "";
+  const base = `${lead}Nuclei matched template "${finding.templateId}" against ${finding.target}.`;
   if (finding.extracted) {
     return `${base} The template extracted the following from the response: ${finding.extracted}.`;
   }
   return base;
+}
+
+function referencesFor(f: ParsedNucleiFinding): string[] | undefined {
+  const refs: string[] = [];
+  for (const cve of f.cves || []) {
+    refs.push(`https://nvd.nist.gov/vuln/detail/${cve}`);
+  }
+  for (const cwe of f.cwes || []) {
+    const id = cwe.replace(/[^0-9]/g, "");
+    if (id) refs.push(`https://cwe.mitre.org/data/definitions/${id}.html`);
+  }
+  for (const r of f.references || []) {
+    if (/^https?:\/\//.test(r)) refs.push(r);
+  }
+  // Legacy fallback: CVE encoded in the template id.
+  if (!refs.length && /^CVE-\d{4}-\d+/i.test(f.templateId)) {
+    refs.push(`https://nvd.nist.gov/vuln/detail/${f.templateId.split(":")[0]}`);
+  }
+  return refs.length ? Array.from(new Set(refs)) : undefined;
 }
 
 function businessImpactFor(severity: Severity): string {
@@ -85,7 +110,11 @@ function remediationFor(
       "Document the header policy in your platform's security baseline.",
     ];
   }
-  if (id.includes("detect") || id.includes("enumeration") || id.includes("fingerprint")) {
+  if (
+    id.includes("detect") ||
+    id.includes("enumeration") ||
+    id.includes("fingerprint")
+  ) {
     return [
       "Reduce service-banner verbosity where possible (remove version strings from responses).",
       "Confirm the detected service version is current and supported.",
@@ -134,7 +163,8 @@ export function mapNucleiReport(args: {
   // Map each parsed line to a finding.
   const reportFindings: ReportFinding[] = args.parsed.findings.map((f, i) => {
     const severity = NUCLEI_TO_SEV[f.severity];
-    const title = humanizeTemplate(f.templateId);
+    // Prefer nuclei's human-readable template name (from -jsonl) over the slug.
+    const title = f.name?.trim() || humanizeTemplate(f.templateId);
     return {
       id: `NU-${i + 1}`,
       title,
@@ -144,11 +174,7 @@ export function mapNucleiReport(args: {
       businessImpact: businessImpactFor(severity),
       howToVerify: verifyStepsFor(f),
       remediation: remediationFor(f, severity),
-      references: /^CVE-\d{4}-\d+/i.test(f.templateId)
-        ? [
-            `NVD entry: https://nvd.nist.gov/vuln/detail/${f.templateId.split(":")[0]}`,
-          ]
-        : undefined,
+      references: referencesFor(f),
     };
   });
 

@@ -13,12 +13,30 @@ import {
 } from "./_shared";
 
 const ZAP_TO_SEV: Record<ZapAlertLevel, Severity> = {
+  "FAIL-NEW": "high",
+  "FAIL-INPROG": "high",
   FAIL: "high",
   "WARN-NEW": "medium",
+  "WARN-INPROG": "medium",
   WARN: "low",
   INFO: "info",
+  IGNORE: "info",
   PASS: "info", // never used; PASS alerts are filtered out before mapping
 };
+
+// True ZAP risk level (from JSON) maps to severity more precisely than the
+// WARN/FAIL bucket, so prefer it when present.
+const RISK_TO_SEV: Record<string, Severity> = {
+  High: "high",
+  Medium: "medium",
+  Low: "low",
+  Informational: "info",
+};
+
+function severityForAlert(a: ParsedZapAlert): Severity {
+  if (a.riskLevel && RISK_TO_SEV[a.riskLevel]) return RISK_TO_SEV[a.riskLevel];
+  return ZAP_TO_SEV[a.level];
+}
 
 // Curated remediation per common ZAP rule ID. Falls back to the generic
 // list when we don't have specific guidance.
@@ -43,7 +61,7 @@ const RULE_GUIDE: Record<
     impact:
       "MIME-sniffing can promote a non-script response into executable JavaScript or expose XSS via uploaded files, depending on the surrounding application.",
     remediation: [
-      'Set `X-Content-Type-Options: nosniff` on every response.',
+      "Set `X-Content-Type-Options: nosniff` on every response.",
       "Audit Content-Type values on upload endpoints to ensure correct MIME types.",
     ],
   },
@@ -58,8 +76,7 @@ const RULE_GUIDE: Record<
     ],
   },
   "10038": {
-    description:
-      "No Content-Security-Policy header is set on responses.",
+    description: "No Content-Security-Policy header is set on responses.",
     impact:
       "Without CSP, the browser has no allowlist for script/style sources, materially raising the impact of any reflected or stored XSS that exists in the application.",
     remediation: [
@@ -100,8 +117,7 @@ const RULE_GUIDE: Record<
     ],
   },
   "10109": {
-    description:
-      "ZAP detected this as a modern single-page application.",
+    description: "ZAP detected this as a modern single-page application.",
     impact:
       "Informational — SPA detection is not a vulnerability. The advisory exists to flag that some passive scan rules give partial coverage on SPAs.",
     remediation: [
@@ -134,19 +150,29 @@ function descriptionFor(alert: ParsedZapAlert): string {
   if (alert.ruleId && RULE_GUIDE[alert.ruleId]) {
     return RULE_GUIDE[alert.ruleId].description;
   }
-  return `ZAP rule "${alert.name}" matched ${alert.count} time${alert.count === 1 ? "" : "s"} during the baseline scan.`;
+  // Prefer ZAP's own description from the JSON report.
+  if (alert.description) return alert.description;
+  return `ZAP rule "${alert.name}" matched ${alert.count} time${alert.count === 1 ? "" : "s"} during the active scan.`;
 }
 
 function impactFor(alert: ParsedZapAlert): string {
   if (alert.ruleId && RULE_GUIDE[alert.ruleId]) {
     return RULE_GUIDE[alert.ruleId].impact;
   }
-  return "Refer to the ZAP rule documentation for impact context. The presence of this alert indicates the rule fired during the baseline scan and warrants review.";
+  return "Refer to the ZAP rule documentation for impact context. The presence of this alert indicates the rule fired during the active scan and warrants review.";
 }
 
 function remediationFor(alert: ParsedZapAlert): string[] {
   if (alert.ruleId && RULE_GUIDE[alert.ruleId]) {
     return RULE_GUIDE[alert.ruleId].remediation;
+  }
+  // Prefer ZAP's own solution text (split into steps) from the JSON report.
+  if (alert.solution) {
+    const steps = alert.solution
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (steps.length) return steps;
   }
   return [
     "Review the ZAP rule documentation for this rule ID.",
@@ -164,8 +190,8 @@ export function mapZapReport(args: {
   command?: string | null;
 }): ScanReportData {
   const findings: ReportFinding[] = args.parsed.alerts.map((a, i) => {
-    const severity = ZAP_TO_SEV[a.level];
-    const sample = a.details.slice(0, 4);
+    const severity = severityForAlert(a);
+    const sample = a.details.slice(0, 8);
     const trailing =
       a.details.length > sample.length
         ? ` (… plus ${a.details.length - sample.length} more URL${a.details.length - sample.length === 1 ? "" : "s"})`
@@ -173,8 +199,14 @@ export function mapZapReport(args: {
     const description =
       descriptionFor(a) +
       (sample.length
-        ? ` Affected URLs include:\n${sample.map((s) => `  ${s}`).join("\n")}${trailing}`
+        ? `\n\nAffected URLs include:\n${sample.map((s) => `  ${s}`).join("\n")}${trailing}`
         : "");
+    const references = (a.references || []).filter((r) =>
+      /^https?:\/\//.test(r),
+    );
+    if (a.cweid && a.cweid !== "-1") {
+      references.push(`https://cwe.mitre.org/data/definitions/${a.cweid}.html`);
+    }
     return {
       id: `ZP-${i + 1}`,
       title: a.name,
@@ -184,15 +216,19 @@ export function mapZapReport(args: {
       businessImpact: impactFor(a),
       howToVerify: [
         {
-          text: "Re-run the ZAP baseline against the same target:",
-          code: `docker run --rm zaproxy/zap-stable zap-baseline.py -t ${args.target} -m 1 -I`,
+          text: "Re-run the ZAP active scan against the same target:",
+          code: `docker run --rm zaproxy/zap-stable zap-full-scan.py -t ${args.target} -I`,
         },
-        {
-          text:
-            "If you need to inspect the rule against a specific URL, use ZAP's full scan or browser-mode for deeper coverage.",
-        },
+        ...(a.instances && a.instances[0]?.evidence
+          ? [
+              {
+                text: `ZAP matched on evidence such as: ${a.instances[0].evidence}`,
+              },
+            ]
+          : []),
       ],
       remediation: remediationFor(a),
+      references: references.length ? references : undefined,
     };
   });
 

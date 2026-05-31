@@ -2,12 +2,119 @@
 // Parses plain-text nmap output (the default human-readable format) into a
 // strongly-typed ParsedNmapReport. Handles the common Nmap 7.x output style.
 
+import { XMLParser } from "fast-xml-parser";
 import {
   ParsedNmapReport,
   ParsedHost,
   ParsedPort,
   NmapScanMeta,
 } from "./types";
+
+// ── Nmap XML parser (-oX) ───────────────────────────────────────────────────
+// The worker captures full `-oX` XML, which is lossless (exact ports/services/
+// versions, CPEs, NSE script output, "extra ports" summary). Prefer it over the
+// fragile stdout text parser.
+
+const toArray = <T>(v: T | T[] | undefined | null): T[] =>
+  v == null ? [] : Array.isArray(v) ? v : [v];
+
+function buildVersion(svc: Record<string, string>): string {
+  const parts = [svc["@_product"], svc["@_version"]].filter(Boolean);
+  let s = parts.join(" ").trim();
+  if (svc["@_extrainfo"]) s += `${s ? " " : ""}(${svc["@_extrainfo"]})`;
+  return s.trim();
+}
+
+export function parseNmapXml(xml: string): ParsedNmapReport {
+  const parser = new XMLParser({
+    ignoreAttributes: false,
+    attributeNamePrefix: "@_",
+  });
+  let doc: Record<string, any>;
+  try {
+    doc = parser.parse(xml);
+  } catch {
+    // If XML is malformed, fall back to text parsing.
+    return parseNmapText(xml);
+  }
+  const run = doc?.nmaprun;
+  if (!run) return parseNmapText(xml);
+
+  const hosts: ParsedHost[] = [];
+  for (const h of toArray<Record<string, any>>(run.host)) {
+    const addrs = toArray<Record<string, string>>(h.address);
+    const ipAddr =
+      addrs.find((a) => a["@_addrtype"] === "ipv4") ||
+      addrs.find((a) => a["@_addrtype"] === "ipv6") ||
+      addrs[0];
+    const hostnames = toArray<Record<string, string>>(h.hostnames?.hostname);
+
+    const ports: ParsedPort[] = [];
+    for (const p of toArray<Record<string, any>>(h.ports?.port)) {
+      const svc = (p.service as Record<string, string>) || {};
+      ports.push({
+        port: parseInt(p["@_portid"], 10),
+        protocol: p["@_protocol"] || "tcp",
+        state: p.state?.["@_state"] || "unknown",
+        service: svc["@_name"] || "",
+        version: buildVersion(svc),
+        cpe: toArray<string | Record<string, string>>(svc.cpe).map((c) =>
+          typeof c === "string" ? c : c["#text"] || "",
+        ),
+        scripts: toArray<Record<string, string>>(p.script).map((s) => ({
+          id: s["@_id"] || "",
+          output: (s["@_output"] || "").trim(),
+        })),
+      });
+    }
+
+    const extraPorts = toArray<Record<string, string>>(h.ports?.extraports).map(
+      (e) => ({
+        state: e["@_state"] || "",
+        count: parseInt(e["@_count"], 10) || 0,
+      }),
+    );
+
+    const osMatch = toArray<Record<string, string>>(h.os?.osmatch)[0];
+
+    hosts.push({
+      ip: ipAddr?.["@_addr"] || "unknown",
+      hostname: hostnames[0]?.["@_name"] || null,
+      state: h.status?.["@_state"] || "unknown",
+      latency: null,
+      os: osMatch?.["@_name"] || null,
+      ports,
+      extraPorts: extraPorts.length ? extraPorts : undefined,
+    });
+  }
+
+  const runstats = run.runstats || {};
+  const hostsStat = runstats.hosts || {};
+  const finished = runstats.finished || {};
+  const totalHosts = parseInt(hostsStat["@_total"], 10) || hosts.length;
+  const hostsUp =
+    parseInt(hostsStat["@_up"], 10) ||
+    hosts.filter((h) => h.state === "up").length;
+
+  const meta: NmapScanMeta = {
+    startTime: run["@_start"] || null,
+    endTime: finished["@_time"] || null,
+    durationSec: finished["@_elapsed"]
+      ? parseFloat(finished["@_elapsed"])
+      : null,
+    command: run["@_args"] || null,
+    rawVersion: run["@_version"] || null,
+    totalHosts,
+    hostsUp,
+    hostsDown: parseInt(hostsStat["@_down"], 10) || totalHosts - hostsUp,
+    openPortsTotal: hosts.reduce(
+      (acc, h) => acc + h.ports.filter((p) => p.state === "open").length,
+      0,
+    ),
+  };
+
+  return { meta, hosts, rawOutput: xml };
+}
 
 // Regex patterns
 const RE_HOST_HEADER =
@@ -58,7 +165,16 @@ function parseHostHeader(
   return null;
 }
 
+/** Entry point — auto-detects nmap XML (preferred) vs legacy stdout text. */
 export function parseNmapOutput(raw: string): ParsedNmapReport {
+  const head = raw.slice(0, 200).trimStart();
+  if (head.startsWith("<?xml") || head.startsWith("<nmaprun")) {
+    return parseNmapXml(raw);
+  }
+  return parseNmapText(raw);
+}
+
+function parseNmapText(raw: string): ParsedNmapReport {
   const lines = raw.split("\n");
   const hosts: ParsedHost[] = [];
   let currentHost: ParsedHost | null = null;

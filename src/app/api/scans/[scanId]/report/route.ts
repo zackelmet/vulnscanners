@@ -83,34 +83,52 @@ export async function GET(
     // Preferred source: full output uploaded to Storage by the webhook
     // (gcpStorageUrl as gs://bucket/path). Fall back to the inline preview
     // for older scans that predate the Storage upload path.
-    let rawOutput = "";
-    const gcsUrl: string | null = scan.gcpStorageUrl || null;
-    if (gcsUrl) {
-      const match = gcsUrl.match(/^gs:\/\/([^\/]+)\/(.+)$/);
-      if (match) {
-        try {
-          const [, bucketName, filePath] = match;
-          const [buf] = await admin
-            .storage()
-            .bucket(bucketName)
-            .file(filePath)
-            .download();
-          rawOutput = buf.toString("utf-8");
-        } catch (err) {
-          console.error(
-            `Failed to download full scan output from ${gcsUrl}, falling back to preview:`,
-            err,
-          );
-        }
+    const downloadGcs = async (gsUrl: string | null): Promise<string> => {
+      if (!gsUrl) return "";
+      const match = gsUrl.match(/^gs:\/\/([^/]+)\/(.+)$/);
+      if (!match) return "";
+      try {
+        const [, bucketName, filePath] = match;
+        const [buf] = await admin
+          .storage()
+          .bucket(bucketName)
+          .file(filePath)
+          .download();
+        return buf.toString("utf-8");
+      } catch (err) {
+        console.error(`Failed to download scan artifact ${gsUrl}:`, err);
+        return "";
       }
-    }
+    };
 
+    // Prefer the STRUCTURED artifact for this scanner — XML for nmap, JSON for
+    // zap, JSONL stdout for nuclei — so parsers read lossless machine output
+    // instead of scraping the human-readable text. The parsers auto-detect the
+    // format, so legacy text scans still render via the fallback chain.
+    const primaryUrl: string | null =
+      scannerType === "nmap"
+        ? scan.gcpXmlStorageUrl || scan.gcpStorageUrl || null
+        : scannerType === "zap"
+          ? scan.gcpJsonStorageUrl || scan.gcpStorageUrl || null
+          : scan.gcpStorageUrl || null; // nuclei stdout is JSONL
+
+    let rawOutput = await downloadGcs(primaryUrl);
+
+    // Fall back to the stdout artifact, then the inline (truncated) preview.
+    if (!rawOutput && primaryUrl !== scan.gcpStorageUrl) {
+      rawOutput = await downloadGcs(scan.gcpStorageUrl || null);
+    }
     if (!rawOutput) {
       rawOutput =
         scan.resultsSummary?.rawPreview ||
         scan.rawPayload?.stdout ||
         scan.rawOutput ||
         "";
+      if (rawOutput) {
+        console.warn(
+          `[report] scan ${scanId} (${scannerType}) built from inline preview/truncated output — full artifact unavailable; findings may be incomplete.`,
+        );
+      }
     }
 
     // An empty rawOutput is legitimate — a completed scan that found nothing
@@ -128,9 +146,7 @@ export async function GET(
       scan.endTime?.toDate?.() ??
       (scan.endTime ? new Date(scan.endTime) : new Date());
     const command =
-      scan.rawPayload?.cmd ||
-      scan.resultsSummary?.command ||
-      null;
+      scan.rawPayload?.cmd || scan.resultsSummary?.command || null;
 
     const pdfBuffer = await renderScanReport({
       scanId,

@@ -10,6 +10,10 @@ export interface ParsedPort {
   state: "open" | "closed" | "filtered" | string;
   service: string;
   version: string;
+  /** CPE identifiers from `-sV` (XML only). */
+  cpe?: string[];
+  /** NSE/script output keyed by script id (XML only). */
+  scripts?: { id: string; output: string }[];
 }
 
 export interface ParsedHost {
@@ -19,6 +23,8 @@ export interface ParsedHost {
   latency: string | null;
   os: string | null;
   ports: ParsedPort[];
+  /** Summary of non-listed ports, e.g. "995 closed tcp ports" (XML only). */
+  extraPorts?: { state: string; count: number }[];
 }
 
 export interface NmapScanMeta {
@@ -55,6 +61,14 @@ export interface ParsedNucleiFinding {
   severity: NucleiSeverity;
   target: string;
   extracted: string | null;
+  /** Rich fields, populated from -jsonl output (absent for legacy text). */
+  name?: string;
+  description?: string;
+  cves?: string[];
+  cwes?: string[];
+  cvss?: number | null;
+  references?: string[];
+  matcherName?: string | null;
 }
 
 export interface ParsedNucleiReport {
@@ -66,14 +80,32 @@ export interface ParsedNucleiReport {
 
 // ── ZAP-specific parsed output ─────────────────────────────────────────────────
 
-export type ZapAlertLevel = "PASS" | "WARN-NEW" | "WARN" | "FAIL" | "INFO";
+export type ZapAlertLevel =
+  | "PASS"
+  | "WARN-NEW"
+  | "WARN-INPROG"
+  | "WARN"
+  | "FAIL-NEW"
+  | "FAIL-INPROG"
+  | "FAIL"
+  | "INFO"
+  | "IGNORE";
 
 export interface ParsedZapAlert {
   level: ZapAlertLevel;
   ruleId: string | null;
   name: string;
   count: number;
-  details: string[]; // additional indented lines below the alert
+  details: string[]; // additional indented lines below the alert (text mode)
+  /** Rich fields, populated from -J JSON output (absent for legacy text). */
+  riskLevel?: "High" | "Medium" | "Low" | "Informational" | string;
+  confidence?: string;
+  description?: string;
+  solution?: string;
+  references?: string[];
+  cweid?: string | null;
+  /** Affected URL instances from JSON. */
+  instances?: { uri: string; method?: string; evidence?: string }[];
 }
 
 export interface ParsedZapReport {

@@ -14,9 +14,6 @@ export default function ScansPage() {
   const [selectedScanners, setSelectedScanners] = useState<
     ("nmap" | "nuclei" | "zap")[]
   >(["nmap"]);
-  const [zapProfile, setZapProfile] = useState<"quick" | "active" | "full">(
-    "active",
-  );
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
@@ -99,7 +96,6 @@ export default function ScansPage() {
       // service ports (53, 443, 5060, 8080, 9929, etc.) — top-100 was missing
       // most of the interesting surface area.
       const nmapOptions = { topPorts: 1000 };
-      const zapOptions = { scanProfile: zapProfile };
 
       const results = [];
       const errors = [];
@@ -115,12 +111,7 @@ export default function ScansPage() {
             body: JSON.stringify({
               type: scannerType,
               target: trimmedTarget,
-              options:
-                scannerType === "nmap"
-                  ? nmapOptions
-                  : scannerType === "zap"
-                    ? zapOptions
-                    : {},
+              options: scannerType === "nmap" ? nmapOptions : {},
             }),
           });
 
@@ -346,29 +337,14 @@ export default function ScansPage() {
                   )}
                 </div>
 
-                {/* ZAP Profile */}
+                {/* ZAP always runs a full active scan (spider + active scan);
+                    no user-selectable profile. */}
                 {selectedScanners.includes("zap") && (
-                  <div>
-                    <label className="block text-sm font-semibold text-[#e6edf5] mb-2">
-                      Scan Profile
-                    </label>
-                    <select
-                      className="w-full px-4 py-3 border border-[#161b24] rounded-lg bg-[#11161f] text-[#e6edf5] focus:ring-2 focus:ring-[#0366d6] focus:border-transparent"
-                      value={zapProfile}
-                      onChange={(e) =>
-                        setZapProfile(
-                          e.target.value as "quick" | "active" | "full",
-                        )
-                      }
-                    >
-                      <option value="quick">Quick - Spider only</option>
-                      <option value="active">
-                        Active - Spider + active scan
-                      </option>
-                      <option value="full">
-                        Full - AJAX spider + active scan
-                      </option>
-                    </select>
+                  <div className="rounded-lg border border-[#0366d6]/30 bg-[#0366d6]/10 p-4">
+                    <p className="text-sm text-[#e6edf5]">
+                      <strong>OWASP ZAP:</strong> runs a full active scan
+                      (spider + active scan) for the most thorough coverage.
+                    </p>
                   </div>
                 )}
 
