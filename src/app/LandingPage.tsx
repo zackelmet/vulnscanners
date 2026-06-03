@@ -159,68 +159,6 @@ function ServerIcon() {
   );
 }
 
-function DocIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M6 3.5h8l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M14 3.5V8h4"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M8 12h8M8 15h8M8 18h5"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function StackIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M12 3.5 3.5 8 12 12.5 20.5 8 12 3.5Z"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinejoin="round"
-      />
-      <path
-        d="m3.5 12 8.5 4.5L20.5 12"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinejoin="round"
-      />
-      <path
-        d="m3.5 16 8.5 4.5L20.5 16"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 function CheckIcon() {
   return (
     <svg
@@ -241,6 +179,429 @@ function CheckIcon() {
     </svg>
   );
 }
+
+/* ── Icons for ported sections (inline SVG — no FA dependency) ───── */
+
+function ShieldIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M12 3.5l7 2.4v4.9c0 4.3-2.9 7.4-7 9-4.1-1.6-7-4.7-7-9V5.9l7-2.4Z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M12 3.7V20"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        opacity="0.45"
+      />
+    </svg>
+  );
+}
+function NetworkIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="5" r="2.3" stroke="currentColor" strokeWidth="1.4" />
+      <circle
+        cx="5.5"
+        cy="19"
+        r="2.3"
+        stroke="currentColor"
+        strokeWidth="1.4"
+      />
+      <circle
+        cx="18.5"
+        cy="19"
+        r="2.3"
+        stroke="currentColor"
+        strokeWidth="1.4"
+      />
+      <path
+        d="M10.6 6.8 6.8 16.9M13.4 6.8 17.2 16.9"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+function BoltIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M13 3 6 13h4.5L10 21l8-11h-5l0-7Z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+function RefreshIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M5.5 9a7 7 0 0 1 11.4-2.7L19 8"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M19 4.5V8.2h-3.7"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M18.5 15a7 7 0 0 1-11.4 2.7L5 16"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5 19.5V15.8h3.7"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+function ClockIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.4" />
+      <path
+        d="M12 7.5V12l3 1.8"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+function RocketIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M5 19c0-3 1-6 3.5-8.5C11 8 14.5 6.6 18.5 6c-.6 4-2 7.5-4.5 10C11.5 18.5 8 19 5 19Z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <circle
+        cx="13.7"
+        cy="10.4"
+        r="1.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+      />
+      <path
+        d="M5 19l2.6-.9M5 19l.9-2.6"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+function TargetIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="6.5" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="12" cy="12" r="2" stroke="currentColor" strokeWidth="1.4" />
+      <path
+        d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+function ChartIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M4 4v16h16"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+      <path
+        d="M7 15l3.5-4 3 2.5L19 8"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+function DesktopIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <rect
+        x="3.5"
+        y="4.5"
+        width="17"
+        height="11"
+        rx="1.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+      />
+      <path
+        d="M9 19h6M12 15.5V19"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+function CoinsIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <ellipse
+        cx="12"
+        cy="7"
+        rx="6.5"
+        ry="2.7"
+        stroke="currentColor"
+        strokeWidth="1.4"
+      />
+      <path
+        d="M5.5 7v6c0 1.5 2.9 2.7 6.5 2.7s6.5-1.2 6.5-2.7V7"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+      <path
+        d="M5.5 10.2c0 1.5 2.9 2.7 6.5 2.7s6.5-1.2 6.5-2.7"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        opacity="0.55"
+      />
+    </svg>
+  );
+}
+function BugIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <rect
+        x="8"
+        y="8"
+        width="8"
+        height="9"
+        rx="4"
+        stroke="currentColor"
+        strokeWidth="1.4"
+      />
+      <path
+        d="M12 8V6M9.6 6.6 8.6 5M14.4 6.6 15.4 5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+      <path
+        d="M8 11H4.6M16 11h3.4M8 14H5.2M16 14h2.8M8.4 16.6 6.2 18.6M15.6 16.6 17.8 18.6"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+function HourglassIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M7 4h10M7 20h10"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+      <path
+        d="M7.5 4c0 4 4.5 5 4.5 8s-4.5 4-4.5 8M16.5 4c0 4-4.5 5-4.5 8s4.5 4 4.5 8"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/* ── Ported section data (copy from the prior landing) ───────────── */
+
+const CAPABILITIES = [
+  {
+    icon: ShieldIcon,
+    badge: "Network security perspective",
+    title: "Internet-facing vulnerability scanners",
+    sub: "Attacker's-perspective testing",
+    desc: "Proactively hunt for security weaknesses by simulating real-world security events and assessing vulnerabilities from the attacker's viewpoint.",
+  },
+  {
+    icon: ServerIcon,
+    badge: "Trusted security tools",
+    title: "Security-professional standard",
+    sub: "Trusted industry tools",
+    desc: "Find security holes using trusted open-source tools — the same powerful scanners used by penetration testers and security professionals around the world.",
+  },
+  {
+    icon: NetworkIcon,
+    badge: "Network discovery",
+    title: "Full network visibility",
+    sub: "Complete attack-surface discovery",
+    desc: "Discover and map your entire attack surface using a combination of scanning tools and open-source intelligence for improved visibility into your network footprint.",
+  },
+  {
+    icon: BoltIcon,
+    badge: "High-performance servers",
+    title: "Fast & hassle-free",
+    sub: "Zero maintenance, optimized performance",
+    desc: "Leverage fast servers optimized for vulnerability scanning across the Internet — zero software installation, setup, or maintenance on your end.",
+  },
+  {
+    icon: RefreshIcon,
+    badge: "Security workflow cycle",
+    title: "Continuous security improvement",
+    sub: "Identify, remediate, re-test",
+    desc: "Fixing security issues is a process: quickly identify the issue, remediate the risk using actionable data, and test again to be completely sure.",
+  },
+  {
+    icon: ClockIcon,
+    badge: "Proven technology",
+    title: "Proven since 1997",
+    sub: "Deep experience, refined tooling",
+    desc: "Your security relies on decades of refinement. The underlying open-source technology, such as Nmap, has been trusted by the security community since the late 1990s.",
+  },
+];
+
+const KEY_FEATURES = [
+  {
+    icon: RocketIcon,
+    badge: "Effortless deployment",
+    title: "Effortless deployment & maintenance",
+    desc: "As a fully hosted service, there's nothing to install or maintain. Launch comprehensive security scans instantly from anywhere, whenever your operations demand it.",
+  },
+  {
+    icon: TargetIcon,
+    badge: "Attack-surface discovery",
+    title: "Complete attack-surface discovery",
+    desc: "Eliminate blind spots. Find forgotten assets and expose poorly maintained endpoints for full network visibility — actionable intelligence for both Red Team testing and Blue Team defense.",
+  },
+  {
+    icon: ChartIcon,
+    badge: "Vulnerability management",
+    title: "Advanced vulnerability management",
+    desc: "Gain continuous oversight of your security posture. Easily schedule industry-leading tools like Nuclei and Nmap for ongoing vulnerability detection and proactive monitoring.",
+  },
+  {
+    icon: DesktopIcon,
+    badge: "Simple interface",
+    title: "Intuitive, simple interface",
+    desc: "Security testing shouldn't be complicated. Launch powerful scans via a simple, configuration-driven form and get results quickly, without the hassle.",
+  },
+];
+
+const PAINS = [
+  {
+    icon: CoinsIcon,
+    title: "High hidden costs",
+    desc: "Licenses, servers, power, cooling, and the engineer stuck babysitting scanner uptime — all add invisible, recurring costs.",
+  },
+  {
+    icon: BugIcon,
+    title: "Outdated threat coverage",
+    desc: "Missed patches and stale feeds mean critical vulnerabilities go undetected until it's too late.",
+  },
+  {
+    icon: HourglassIcon,
+    title: "Wasted time & focus",
+    desc: "Security teams get pulled into infrastructure firefights instead of triaging and fixing real vulnerabilities.",
+  },
+];
 
 /* ── Page ─────────────────────────────────────────────────────────── */
 /*
@@ -408,66 +769,103 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Capabilities (internet-facing scanners) ─────────────── */}
+      <section className={styles.block} id="capabilities">
+        <div className={styles.container}>
+          <div className={styles.sectionHead}>
+            <p className={styles.sectionKicker}>Platform</p>
+            <h2 className={styles.sectionTitle}>
+              A complete security assessment platform
+            </h2>
+            <p className={styles.sectionSub}>
+              Proactive vulnerability detection with industry-leading tools.
+            </p>
+          </div>
+          <div className={styles.painsGrid}>
+            {CAPABILITIES.map((c) => {
+              const Icon = c.icon;
+              return (
+                <article key={c.title} className={styles.painCard}>
+                  <div className={styles.painIcon} aria-hidden="true">
+                    <Icon />
+                  </div>
+                  <div className={styles.featBody}>
+                    <span className={styles.featBadge}>{c.badge}</span>
+                    <h3 className={styles.painH3}>{c.title}</h3>
+                    <p className={styles.featSub}>{c.sub}</p>
+                    <p className={styles.painP}>{c.desc}</p>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* ── Pain points ─────────────────────────────────────────── */}
       <section className={styles.block} id="why" aria-labelledby="why-title">
         <div className={styles.container}>
           <div className={styles.sectionHead}>
-            <p className={styles.sectionKicker}>Why hosted</p>
+            <p className={styles.sectionKicker}>The problem</p>
             <h2 id="why-title" className={styles.sectionTitle}>
-              Scanners are powerful. Running them isn&apos;t the job.
+              Stop fighting self-hosted scanners
             </h2>
             <p className={styles.sectionSub}>
-              If you&apos;ve shipped a security report this quarter, you&apos;ve
-              probably fought one of these.
+              Stop relying on clunky, self-hosted security software that demands
+              dedicated servers, endless patching, and constant manual upkeep.
             </p>
           </div>
           <div className={styles.painsGrid}>
-            <article className={styles.painCard}>
-              <div className={styles.painIcon} aria-hidden="true">
-                <ServerIcon />
-              </div>
-              <h3 className={styles.painH3}>
-                Scanner setup eats your billable hours
-              </h3>
-              <p className={styles.painP}>
-                Spin up a VM, install Nmap, keep Nuclei templates current, get
-                ZAP running headless, debug Docker, repeat per client. You
-                bought a scanner; you got a sysadmin job.
-              </p>
-            </article>
-
-            <article className={styles.painCard}>
-              <div className={styles.painIcon} aria-hidden="true">
-                <DocIcon />
-              </div>
-              <h3 className={styles.painH3}>
-                Raw output isn&apos;t a deliverable
-              </h3>
-              <p className={styles.painP}>
-                A 4,000-line Nuclei JSON dump or a terminal scroll isn&apos;t
-                what a client signs off on. You end up hand-formatting findings
-                into Word every engagement.
-              </p>
-            </article>
-
-            <article className={styles.painCard}>
-              <div className={styles.painIcon} aria-hidden="true">
-                <StackIcon />
-              </div>
-              <h3 className={styles.painH3}>
-                Three scanners, three consoles, zero memory
-              </h3>
-              <p className={styles.painP}>
-                Last quarter&apos;s scan history lives in three different
-                terminals. You can&apos;t diff today&apos;s results against last
-                month without re-running everything from scratch.
-              </p>
-            </article>
+            {PAINS.map((p) => {
+              const Icon = p.icon;
+              return (
+                <article key={p.title} className={styles.painCard}>
+                  <div className={styles.painIcon} aria-hidden="true">
+                    <Icon />
+                  </div>
+                  <h3 className={styles.painH3}>{p.title}</h3>
+                  <p className={styles.painP}>{p.desc}</p>
+                </article>
+              );
+            })}
           </div>
           <div className={styles.painsFoot}>
             <Link href="#pricing" className={styles.painsFootLink}>
               Skip the setup — see pricing <ArrowIcon />
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Key features ────────────────────────────────────────── */}
+      <section className={styles.block} id="features">
+        <div className={styles.container}>
+          <div className={styles.sectionHead}>
+            <p className={styles.sectionKicker}>Key features</p>
+            <h2 className={styles.sectionTitle}>
+              Key features driving annual renewals
+            </h2>
+            <p className={styles.sectionSub}>
+              The capabilities that lead security teams, agencies, and IT
+              professionals to renew year after year.
+            </p>
+          </div>
+          <div className={styles.featGrid2}>
+            {KEY_FEATURES.map((f) => {
+              const Icon = f.icon;
+              return (
+                <article key={f.title} className={styles.painCard}>
+                  <div className={styles.painIcon} aria-hidden="true">
+                    <Icon />
+                  </div>
+                  <div className={styles.featBody}>
+                    <span className={styles.featBadge}>{f.badge}</span>
+                    <h3 className={styles.painH3}>{f.title}</h3>
+                    <p className={styles.painP}>{f.desc}</p>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>

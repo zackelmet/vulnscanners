@@ -608,6 +608,31 @@
   justify-content: center;
 }
 
+/* ─── FEATURE CARDS (ported capability + key-feature sections) ───── */
+.featGrid2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+@media (max-width: 900px) {
+  .featGrid2 { grid-template-columns: 1fr; }
+}
+.featBody { display: flex; flex-direction: column; gap: 8px; }
+.featBadge {
+  align-self: flex-start;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text3);
+  border: 1px solid var(--hair2);
+  background: var(--bg2);
+  border-radius: 5px;
+  padding: 3px 8px;
+  font-weight: 500;
+}
+.featSub { font-size: 13px; font-weight: 500; color: var(--blue2); margin: 0; }
+
 /* ─── REDUCED MOTION ─────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .eyebrowPulse { animation: none; }
