@@ -317,109 +317,6 @@ function ClockIcon() {
     </svg>
   );
 }
-function RocketIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M5 19c0-3 1-6 3.5-8.5C11 8 14.5 6.6 18.5 6c-.6 4-2 7.5-4.5 10C11.5 18.5 8 19 5 19Z"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinejoin="round"
-      />
-      <circle
-        cx="13.7"
-        cy="10.4"
-        r="1.5"
-        stroke="currentColor"
-        strokeWidth="1.4"
-      />
-      <path
-        d="M5 19l2.6-.9M5 19l.9-2.6"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-function TargetIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="6.5" stroke="currentColor" strokeWidth="1.4" />
-      <circle cx="12" cy="12" r="2" stroke="currentColor" strokeWidth="1.4" />
-      <path
-        d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-function ChartIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M4 4v16h16"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-      <path
-        d="M7 15l3.5-4 3 2.5L19 8"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-function DesktopIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <rect
-        x="3.5"
-        y="4.5"
-        width="17"
-        height="11"
-        rx="1.5"
-        stroke="currentColor"
-        strokeWidth="1.4"
-      />
-      <path
-        d="M9 19h6M12 15.5V19"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
 function CoinsIcon() {
   return (
     <svg
@@ -517,88 +414,81 @@ const CAPABILITIES = [
   {
     icon: ShieldIcon,
     badge: "Network security perspective",
-    title: "Internet-facing vulnerability scanners",
-    sub: "Attacker's-perspective testing",
+    title: "Internet Facing Vulnerability Scanners",
+    sub: "Attacker's Perspective Testing",
     desc: "Proactively hunt for security weaknesses by simulating real-world security events and assessing vulnerabilities from the attacker's viewpoint.",
   },
   {
     icon: ServerIcon,
     badge: "Trusted security tools",
-    title: "Security-professional standard",
-    sub: "Trusted industry tools",
-    desc: "Find security holes using trusted open-source tools — the same powerful scanners used by penetration testers and security professionals around the world.",
+    title: "Security Professional Standard",
+    sub: "Trusted Industry Tools",
+    desc: "Find security holes using trusted open-source tools—the same powerful scanners utilized by penetration testers and security professionals around the world.",
   },
   {
     icon: NetworkIcon,
     badge: "Network discovery",
-    title: "Full network visibility",
-    sub: "Complete attack-surface discovery",
-    desc: "Discover and map your entire attack surface using a combination of scanning tools and open-source intelligence for improved visibility into your network footprint.",
+    title: "Full Network Visibility",
+    sub: "Complete Attack Surface Discovery",
+    desc: "Discover and map your entire attack surface using a combination of scanning tools and open-source intelligence to gain improved visibility into your network footprint.",
   },
   {
     icon: BoltIcon,
-    badge: "High-performance servers",
-    title: "Fast & hassle-free",
-    sub: "Zero maintenance, optimized performance",
-    desc: "Leverage fast servers optimized for vulnerability scanning across the Internet — zero software installation, setup, or maintenance on your end.",
+    badge: "High performance servers",
+    title: "Fast & Hassle-Free",
+    sub: "Zero Maintenance & Optimized Performance",
+    desc: "Leverage fast servers optimized for vulnerability scanning across the Internet, requiring zero software installation, setup, or maintenance on your end.",
   },
   {
     icon: RefreshIcon,
     badge: "Security workflow cycle",
-    title: "Continuous security improvement",
-    sub: "Identify, remediate, re-test",
+    title: "Continuous Security Improvement",
+    sub: "Identify, Remediate, Re-Test Cycle",
     desc: "Fixing security issues is a process: quickly identify the issue, remediate the risk using actionable data, and test again to be completely sure.",
   },
   {
     icon: ClockIcon,
     badge: "Proven technology",
-    title: "Proven since 1997",
-    sub: "Deep experience, refined tooling",
-    desc: "Your security relies on decades of refinement. The underlying open-source technology, such as Nmap, has been trusted by the security community since the late 1990s.",
+    title: "Since 1997",
+    sub: "Proven Technology & Deep Experience",
+    desc: "Your security relies on decades of refinement. The underlying open-source technology, such as Nmap, has been actively developed and trusted by the security community since the late 1990s.",
   },
 ];
 
+// Key-features showcase items (bullets shown beside the product screenshots).
 const KEY_FEATURES = [
   {
-    icon: RocketIcon,
-    badge: "Effortless deployment",
-    title: "Effortless deployment & maintenance",
-    desc: "As a fully hosted service, there's nothing to install or maintain. Launch comprehensive security scans instantly from anywhere, whenever your operations demand it.",
+    title: "Attack Surface Discovery",
+    desc: "Identify forgotten assets and poorly maintained endpoints. Complete network visibility for both Red and Blue Teams.",
   },
   {
-    icon: TargetIcon,
-    badge: "Attack-surface discovery",
-    title: "Complete attack-surface discovery",
-    desc: "Eliminate blind spots. Find forgotten assets and expose poorly maintained endpoints for full network visibility — actionable intelligence for both Red Team testing and Blue Team defense.",
+    title: "Zero Installation",
+    desc: "Fully hosted service with nothing to install or maintain. Launch scans whenever you need, from anywhere.",
   },
   {
-    icon: ChartIcon,
-    badge: "Vulnerability management",
-    title: "Advanced vulnerability management",
-    desc: "Gain continuous oversight of your security posture. Easily schedule industry-leading tools like Nuclei and Nmap for ongoing vulnerability detection and proactive monitoring.",
+    title: "Continuous Vulnerability Management",
+    desc: "Nuclei and Nmap scans for ongoing vulnerability detection and firewall monitoring.",
   },
   {
-    icon: DesktopIcon,
-    badge: "Simple interface",
-    title: "Intuitive, simple interface",
-    desc: "Security testing shouldn't be complicated. Launch powerful scans via a simple, configuration-driven form and get results quickly, without the hassle.",
+    title: "Intuitive Interface",
+    desc: "Launch comprehensive vulnerability scans with a simple form. Select your options and receive detailed results.",
   },
 ];
 
 const PAINS = [
   {
     icon: CoinsIcon,
-    title: "High hidden costs",
-    desc: "Licenses, servers, power, cooling, and the engineer stuck babysitting scanner uptime — all add invisible, recurring costs.",
+    title: "High Hidden Costs",
+    desc: "Licenses, servers, power, cooling and the engineer stuck babysitting scanner uptime — all add invisible, recurring costs.",
   },
   {
     icon: BugIcon,
-    title: "Outdated threat coverage",
+    title: "Outdated Threat Coverage",
     desc: "Missed patches and stale feeds mean critical vulnerabilities go undetected until it's too late.",
   },
   {
     icon: HourglassIcon,
-    title: "Wasted time & focus",
+    title: "Wasted Time & Focus",
     desc: "Security teams get pulled into infrastructure firefights instead of triaging and fixing real vulnerabilities.",
   },
 ];
@@ -775,7 +665,7 @@ export default function LandingPage() {
           <div className={styles.sectionHead}>
             <p className={styles.sectionKicker}>Platform</p>
             <h2 className={styles.sectionTitle}>
-              A complete security assessment platform
+              Complete Security Assessment Platform
             </h2>
             <p className={styles.sectionSub}>
               Proactive vulnerability detection with industry-leading tools.
@@ -837,35 +727,51 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Key features ────────────────────────────────────────── */}
+      {/* ── Key features (screenshot showcase) ──────────────────── */}
       <section className={styles.block} id="features">
         <div className={styles.container}>
           <div className={styles.sectionHead}>
             <p className={styles.sectionKicker}>Key features</p>
-            <h2 className={styles.sectionTitle}>
-              Key features driving annual renewals
-            </h2>
-            <p className={styles.sectionSub}>
-              The capabilities that lead security teams, agencies, and IT
-              professionals to renew year after year.
-            </p>
+            <h2 className={styles.sectionTitle}>Key Features</h2>
           </div>
-          <div className={styles.featGrid2}>
-            {KEY_FEATURES.map((f) => {
-              const Icon = f.icon;
-              return (
-                <article key={f.title} className={styles.painCard}>
-                  <div className={styles.painIcon} aria-hidden="true">
-                    <Icon />
+          <div className={styles.kfGrid}>
+            <ul className={styles.kfList}>
+              {KEY_FEATURES.map((f) => (
+                <li key={f.title} className={styles.kfItem}>
+                  <CheckIcon />
+                  <div>
+                    <h3 className={styles.kfItemTitle}>{f.title}</h3>
+                    <p className={styles.kfItemDesc}>{f.desc}</p>
                   </div>
-                  <div className={styles.featBody}>
-                    <span className={styles.featBadge}>{f.badge}</span>
-                    <h3 className={styles.painH3}>{f.title}</h3>
-                    <p className={styles.painP}>{f.desc}</p>
-                  </div>
-                </article>
-              );
-            })}
+                </li>
+              ))}
+            </ul>
+            {/* Placeholder product screenshots — swap for current VS captures. */}
+            <div className={styles.kfMedia}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                className={styles.kfImgMain}
+                src="/images/screenshots/dashboard.png"
+                alt="VulnScanners console — dashboard overview"
+                loading="lazy"
+              />
+              <div className={styles.kfImgRow}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  className={styles.kfImgSmall}
+                  src="/images/screenshots/targets-newscan.png"
+                  alt="VulnScanners — configuring a new scan"
+                  loading="lazy"
+                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  className={styles.kfImgSmall}
+                  src="/images/screenshots/targets-scanhistory.png"
+                  alt="VulnScanners — scan history"
+                  loading="lazy"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>

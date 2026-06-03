@@ -26,6 +26,19 @@ function ChevronIcon({ open }: { open: boolean }) {
   );
 }
 
+const RESOURCES_ITEMS = [
+  {
+    href: "/blog",
+    name: "Blog",
+    desc: "Guides, tutorials & analysis",
+  },
+  {
+    href: "/red-team-tools",
+    name: "Red-team tools",
+    desc: "Offensive security tool directory",
+  },
+] as const;
+
 const SCANNER_ITEMS = [
   {
     href: "/scanners/nmap",
@@ -56,7 +69,9 @@ const SCANNER_ITEMS = [
 export default function Navbar() {
   const { currentUser, isLoadingAuth } = useAuth();
   const [scannersOpen, setScannersOpen] = useState(false);
+  const [resourcesOpen, setResourcesOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const resourcesRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -65,6 +80,12 @@ export default function Navbar() {
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setScannersOpen(false);
+      }
+      if (
+        resourcesRef.current &&
+        !resourcesRef.current.contains(event.target as Node)
+      ) {
+        setResourcesOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -159,12 +180,48 @@ export default function Navbar() {
                 )}
               </div>
 
-              <Link
-                href="/blog"
-                className="text-sm font-medium text-gray-300 hover:text-[#0366d6] transition"
+              <div
+                ref={resourcesRef}
+                className="relative"
+                onMouseEnter={() => setResourcesOpen(true)}
+                onMouseLeave={() => setResourcesOpen(false)}
               >
-                Blog
-              </Link>
+                <button
+                  type="button"
+                  onClick={() => setResourcesOpen((v) => !v)}
+                  aria-haspopup="true"
+                  aria-expanded={resourcesOpen}
+                  className="flex items-center gap-1.5 text-sm font-medium text-gray-300 hover:text-[#0366d6] transition"
+                >
+                  Resources
+                  <ChevronIcon open={resourcesOpen} />
+                </button>
+
+                {resourcesOpen && (
+                  <div className="absolute right-0 top-full pt-2 w-72">
+                    <div className="rounded-xl bg-[#0d1117] border border-[#1f2632] shadow-xl overflow-hidden">
+                      <ul className="py-1.5">
+                        {RESOURCES_ITEMS.map(({ href, name, desc }) => (
+                          <li key={href}>
+                            <Link
+                              href={href}
+                              onClick={() => setResourcesOpen(false)}
+                              className="flex flex-col gap-0.5 px-4 py-3 hover:bg-[#11161f] transition-colors"
+                            >
+                              <span className="text-sm font-medium text-[#e6edf5]">
+                                {name}
+                              </span>
+                              <span className="text-xs text-[#697080]">
+                                {desc}
+                              </span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
               <Link
                 href="/#pricing"
                 className="text-sm font-medium text-gray-300 hover:text-[#0366d6] transition"

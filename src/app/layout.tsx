@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import Script from "next/script";
-import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 
 // GA4 Measurement ID. Public by design (visible in page source), overridable
-// via env. Loaded only on the production deployment (see RootLayout) so dev
-// and preview traffic don't pollute analytics.
+// via env. The gtag snippet is rendered in <body> below, skipped only in local
+// dev so it doesn't pollute the property.
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID || "G-7107KHBD8G";
 import { IBM_Plex_Sans } from "next/font/google";
 import { websiteJsonLd, jsonLdString } from "@/lib/seo/jsonld";
@@ -89,12 +88,22 @@ export default function RootLayout({
         <Script id="apollo-tracker" strategy="afterInteractive">
           {`function initApollo(){var n=Math.random().toString(36).substring(7),o=document.createElement("script");o.src="https://assets.apollo.io/micro/website-tracker/tracker.iife.js?nocache="+n,o.async=!0,o.defer=!0,o.onload=function(){window.trackingFunctions.onLoad({appId:"6a0b4046e86a4e0010a1ab14"})},document.head.appendChild(o)}initApollo();`}
         </Script>
+        {/* Google tag (gtag.js) — skipped only in local dev. */}
+        {process.env.NODE_ENV === "production" && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="gtag-init" strategy="afterInteractive">
+              {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${GA_ID}');`}
+            </Script>
+          </>
+        )}
       </body>
-      {/* GA4 — only on the production deployment so localhost + preview
-          traffic stays out of the new vulnscanners.com property. */}
-      {process.env.VERCEL_ENV === "production" && GA_ID ? (
-        <GoogleAnalytics gaId={GA_ID} />
-      ) : null}
     </html>
   );
 }

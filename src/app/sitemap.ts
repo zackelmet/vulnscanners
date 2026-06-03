@@ -1,4 +1,5 @@
 import { getAllPosts } from "@/lib/blog/mdx";
+import { getToolSlugs } from "@/data/redteam-tools";
 import type { MetadataRoute } from "next";
 
 const domain = "https://vulnscanners.com";
@@ -65,6 +66,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: post.date ? new Date(post.date) : now,
       changeFrequency: "monthly" as const,
       priority: 0.7,
+    })),
+  );
+
+  // Red-team tools directory
+  staticPages.push({
+    url: `${domain}/red-team-tools`,
+    lastModified: now,
+    changeFrequency: "weekly",
+    priority: 0.8,
+  });
+  staticPages.push(
+    ...getToolSlugs().map((slug) => ({
+      url: `${domain}/red-team-tools/${slug}`,
+      lastModified: now,
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
     })),
   );
 
