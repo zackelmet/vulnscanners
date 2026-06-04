@@ -303,39 +303,8 @@ export async function POST(request: NextRequest) {
         { merge: true },
       );
 
-      // Also update (or create) the global scan document for audit
-      const globalScanRef = firestore.collection("scans").doc(scanId);
-      await globalScanRef.set(
-        {
-          scanId,
-          userId,
-          status: normalizedStatus,
-          resultsSummary: normalizedSummary,
-          gcpStorageUrl: normalizedGcsUrl,
-          // store signed urls on global doc too for convenience (may expire)
-          gcpSignedUrl: normalizedSignedUrl,
-          gcpSignedUrlExpires: normalizedSignedUrlExpires,
-          // XML results
-          gcpXmlStorageUrl: normalizedXmlUrl,
-          gcpXmlSignedUrl: normalizedXmlSignedUrl,
-          gcpXmlSignedUrlExpires: normalizedXmlSignedUrlExpires,
-          // JSON results (nuclei -jsonl / zap -J)
-          gcpJsonStorageUrl: normalizedJsonUrl,
-          gcpJsonSignedUrl: normalizedJsonSignedUrl,
-          gcpJsonSignedUrlExpires: normalizedJsonSignedUrlExpires,
-          // PDF reports
-          gcpReportStorageUrl: normalizedReportUrl,
-          gcpReportSignedUrl: normalizedReportSignedUrl,
-          gcpReportSignedUrlExpires: normalizedReportSignedUrlExpires,
-          errorMessage: errorMessage || null,
-          scannerType: scannerType || null,
-          billingUnits: typeof billingUnits === "number" ? billingUnits : null,
-          endTime: now,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        },
-        { merge: true },
-      );
+      // Scans live solely under the user (users/{uid}/completedScans) — no
+      // global mirror to keep in sync.
 
       // NOTE: usage counters are incremented at scan creation time to enforce
       // per-scanner quotas immediately. The worker webhook writes scan

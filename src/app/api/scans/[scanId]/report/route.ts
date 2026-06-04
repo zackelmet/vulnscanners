@@ -35,8 +35,8 @@ export async function GET(
     const userId = decoded.uid;
 
     // ── Fetch scan record ─────────────────────────────────────────────────
-    // Try user subcollection first (preferred), fall back to global scans collection
-    let scanDoc = await firestore
+    // Scans live under the user: users/{uid}/completedScans/{scanId}.
+    const scanDoc = await firestore
       .collection("users")
       .doc(userId)
       .collection("completedScans")
@@ -44,15 +44,7 @@ export async function GET(
       .get();
 
     if (!scanDoc.exists) {
-      scanDoc = await firestore.collection("scans").doc(scanId).get();
-      if (!scanDoc.exists) {
-        return NextResponse.json({ error: "Scan not found" }, { status: 404 });
-      }
-      // Ensure the scan belongs to this user
-      const globalData = scanDoc.data() as any;
-      if (globalData?.userId !== userId) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
+      return NextResponse.json({ error: "Scan not found" }, { status: 404 });
     }
 
     const scan = scanDoc.data() as any;

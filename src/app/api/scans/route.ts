@@ -227,19 +227,28 @@ export async function POST(request: NextRequest) {
           throw new Error("QuotaExceeded");
         }
 
-        const scansCollectionRef = firestore.collection("scans");
+        // Scans live under the user: users/{uid}/completedScans/{scanId}.
+        const completedScansRef = userDocRef.collection("completedScans");
 
         // Create one scan doc per target
         for (const normalizedTarget of normalizedTargets) {
-          const newScanRef = scansCollectionRef.doc();
+          const newScanRef = completedScansRef.doc();
           const scanData: any = {
+            scanId: newScanRef.id,
             userId,
             type,
+            // `target` and `targetValue` are kept as aliases: the dashboard /
+            // history UI reads `scan.target`, the report route reads either.
+            target: normalizedTarget,
             targetValue: normalizedTarget,
             options: normalizedOptions,
             status: "queued",
+            startTime: admin.firestore.FieldValue.serverTimestamp(),
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            resultsSummary: null,
+            gcpStorageUrl: null,
+            errorMessage: null,
           };
 
           // Only include targetId if user picked a saved target.
@@ -286,45 +295,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create per-user subcollection docs for all scans
-    try {
-      const batch = firestore.batch();
-      for (let i = 0; i < scanRefs.length; i++) {
-        const scanRef = scanRefs[i];
-        const normalizedTarget = normalizedTargets[i];
-        const userScanRef = firestore
-          .collection("users")
-          .doc(userId)
-          .collection("completedScans")
-          .doc(scanRef.id);
-
-        const userScanData: any = {
-          scanId: scanRef.id,
-          status: "queued",
-          type,
-          targetValue: normalizedTarget,
-          startTime: admin.firestore.FieldValue.serverTimestamp(),
-          resultsSummary: null,
-          gcpStorageUrl: null,
-          errorMessage: null,
-        };
-
-        // Only include targetId if user picked a saved target.
-        if (targetId) {
-          userScanData.targetId = targetId;
-        }
-
-        // Only include batchId if it exists
-        if (batchId) {
-          userScanData.batchId = batchId;
-        }
-
-        batch.set(userScanRef, userScanData);
-      }
-      await batch.commit();
-    } catch (err) {
-      console.error("Failed to write user subcollection scan docs:", err);
-    }
+    // (Scan docs were created under the user inside the transaction above.)
 
     // Enqueue all scan jobs
     let enqueueSuccessCount = 0;
@@ -361,12 +332,6 @@ export async function POST(request: NextRequest) {
           const now = admin.firestore.FieldValue.serverTimestamp();
 
           for (const scanId of successfulScanIds) {
-            batch.update(firestore.collection("scans").doc(scanId as string), {
-              status: "in_progress",
-              startTime: now,
-              updatedAt: now,
-            });
-
             batch.update(
               firestore
                 .collection("users")
@@ -454,10 +419,12 @@ export async function GET(request: NextRequest) {
 
     const userId = decodedToken.uid;
 
-    // Get user's scans (sort in memory to avoid composite index requirement)
+    // Get the user's scans from their subcollection (sort in memory to avoid
+    // a composite-index requirement).
     const scansSnapshot = await firestore
-      .collection("scans")
-      .where("userId", "==", userId)
+      .collection("users")
+      .doc(userId)
+      .collection("completedScans")
       .limit(100)
       .get();
 
@@ -467,9 +434,9 @@ export async function GET(request: NextRequest) {
         ...doc.data(),
       }))
       .sort((a, b) => {
-        // Sort by createdAt descending (newest first)
-        const aTime = a.createdAt?.toMillis?.() ?? 0;
-        const bTime = b.createdAt?.toMillis?.() ?? 0;
+        // Sort by createdAt (fall back to startTime) descending (newest first)
+        const aTime = (a.createdAt ?? a.startTime)?.toMillis?.() ?? 0;
+        const bTime = (b.createdAt ?? b.startTime)?.toMillis?.() ?? 0;
         return bTime - aTime;
       })
       .slice(0, 50);
