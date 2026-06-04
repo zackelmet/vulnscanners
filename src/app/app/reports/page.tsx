@@ -6,6 +6,7 @@ import {
   faFileLines,
   faSpinner,
   faSatelliteDish,
+  faEnvelope,
 } from "@fortawesome/free-solid-svg-icons";
 import { useUserScans } from "@/lib/hooks/useUserScans";
 import { useAuth } from "@/lib/context/AuthContext";
@@ -19,6 +20,7 @@ export default function ReportsPage() {
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [generating, setGenerating] = useState(false);
+  const [emailing, setEmailing] = useState(false);
 
   // Only completed scans can go into a report.
   const completed = useMemo(
@@ -102,6 +104,32 @@ export default function ReportsPage() {
     }
   };
 
+  const emailReport = async () => {
+    if (!currentUser || selected.size === 0) return;
+    setEmailing(true);
+    try {
+      const token = await currentUser.getIdToken();
+      const res = await fetch("/api/reports/combined/email", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ scanIds: Array.from(selected) }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data?.error || "Failed to email report");
+        return;
+      }
+      alert(`Report emailed to ${data.sentTo}.`);
+    } catch (err: any) {
+      alert(err?.message || "Failed to email report");
+    } finally {
+      setEmailing(false);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="p-6 lg:p-8 space-y-6 max-w-full bg-[#07090d] min-h-screen">
@@ -120,14 +148,25 @@ export default function ReportsPage() {
             </span>
             <button
               onClick={generate}
-              disabled={generating || selected.size === 0}
+              disabled={generating || emailing || selected.size === 0}
               className="flex items-center gap-2 px-4 py-2 bg-[#0366d6] hover:bg-[#0356b6] text-white text-sm font-semibold rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <FontAwesomeIcon
                 icon={generating ? faSpinner : faFileLines}
                 className={generating ? "animate-spin" : ""}
               />
-              {generating ? "Generating…" : "Generate combined report"}
+              {generating ? "Generating…" : "Download combined report"}
+            </button>
+            <button
+              onClick={emailReport}
+              disabled={emailing || generating || selected.size === 0}
+              className="flex items-center gap-2 px-4 py-2 border border-[#21262d] hover:border-[#0366d6] text-[#e6edf5] text-sm font-semibold rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <FontAwesomeIcon
+                icon={emailing ? faSpinner : faEnvelope}
+                className={emailing ? "animate-spin" : ""}
+              />
+              {emailing ? "Sending…" : "Email it to me"}
             </button>
           </div>
         </div>

@@ -1,6 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { initializeAdmin } from "@/lib/firebase/firebaseAdmin";
 import { ScanMetadata } from "@/lib/types/user";
+import {
+  sendScanCompleteEmail,
+  sendScanFailedEmail,
+} from "@/lib/email/resend";
+import {
+  buildScanPdfFromDoc,
+  scanPdfFilename,
+} from "@/lib/report-engine/render-from-doc";
+
+// Short human summary line for the scan-complete email, by scanner.
+function scanSummaryLine(rs: any): string | null {
+  if (!rs || typeof rs !== "object") return null;
+  if (typeof rs.findings === "number")
+    return `${rs.findings} finding${rs.findings === 1 ? "" : "s"} identified.`;
+  if (typeof rs.alertsMentioned === "number")
+    return `${rs.alertsMentioned} alert${rs.alertsMentioned === 1 ? "" : "s"} reported.`;
+  if (typeof rs.openPorts === "number")
+    return `${rs.openPorts} open port${rs.openPorts === 1 ? "" : "s"} found.`;
+  return null;
+}
 
 /**
  * Upload raw scan output to Firebase Storage and return the gs:// URL.
@@ -67,6 +87,10 @@ async function generateSignedUrl(gcsUrl: string): Promise<string | null> {
     return null;
   }
 }
+
+export const runtime = "nodejs";
+// Rendering the report PDF + sending email adds work beyond the DB update.
+export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   try {
@@ -363,6 +387,45 @@ export async function POST(request: NextRequest) {
         }
       } catch (err: any) {
         console.error("Failed to reconcile billing units on webhook:", err);
+      }
+
+      // ── Notify the user by email (best-effort; never fails the webhook) ────
+      try {
+        const userRecord = await admin
+          .auth()
+          .getUser(userId)
+          .catch(() => null);
+        const toEmail = userRecord?.email;
+        if (toEmail) {
+          const freshScan = (await userScanRef.get()).data() as any;
+          const sType = (freshScan?.scannerType ||
+            freshScan?.type ||
+            scannerType ||
+            "nmap") as string;
+          const target =
+            freshScan?.target || freshScan?.targetValue || "your target";
+
+          if (normalizedStatus === "completed") {
+            const pdf = await buildScanPdfFromDoc(admin, freshScan, scanId);
+            await sendScanCompleteEmail({
+              to: toEmail,
+              scannerType: sType,
+              target,
+              summaryLine: scanSummaryLine(freshScan?.resultsSummary),
+              pdf,
+              filename: scanPdfFilename(freshScan, scanId),
+            });
+          } else if (normalizedStatus === "failed") {
+            await sendScanFailedEmail({
+              to: toEmail,
+              scannerType: sType,
+              target,
+              errorMessage: errorMessage || freshScan?.errorMessage,
+            });
+          }
+        }
+      } catch (err: any) {
+        console.error("Failed to send scan notification email:", err);
       }
 
       console.log(`✅ Updated scan ${scanId} status to ${status}`);
