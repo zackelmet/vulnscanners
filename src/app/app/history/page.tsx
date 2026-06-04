@@ -6,6 +6,7 @@ import {
   faSatelliteDish,
   faFileAlt,
   faSpinner,
+  faDownload,
 } from "@fortawesome/free-solid-svg-icons";
 import { useUserScans } from "@/lib/hooks/useUserScans";
 import { useAuth } from "@/lib/context/AuthContext";
@@ -18,29 +19,53 @@ export default function HistoryPage() {
   );
 
   const [generatingReport, setGeneratingReport] = useState<string | null>(null);
+  const [downloadingRaw, setDownloadingRaw] = useState<string | null>(null);
+
+  // Fetch a protected scan artifact with the user's token, then trigger a
+  // browser download from the returned blob (the API requires an auth header,
+  // so a plain <a href> link can't be used).
+  const downloadWithAuth = async (url: string, fallbackName: string) => {
+    if (!currentUser) return;
+    const token = await currentUser.getIdToken();
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.error || "Download failed");
+    }
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    const cd = res.headers.get("content-disposition") || "";
+    const fnMatch = cd.match(/filename="([^"]+)"/);
+    a.download = fnMatch?.[1] || fallbackName;
+    a.click();
+    URL.revokeObjectURL(objectUrl);
+  };
+
+  const downloadRaw = async (scanId: string) => {
+    setDownloadingRaw(scanId);
+    try {
+      await downloadWithAuth(
+        `/api/scans/${scanId}/raw`,
+        `raw-${scanId.slice(0, 8)}.txt`,
+      );
+    } catch (err: any) {
+      alert(err?.message || "Failed to download raw output");
+    } finally {
+      setDownloadingRaw(null);
+    }
+  };
 
   const generateReport = async (scanId: string) => {
-    if (!currentUser) return;
     setGeneratingReport(scanId);
     try {
-      const token = await currentUser.getIdToken();
-      const res = await fetch(`/api/scans/${scanId}/report`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        alert(err?.error || "Failed to generate report");
-        return;
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      const cd = res.headers.get("content-disposition") || "";
-      const fnMatch = cd.match(/filename="([^"]+)"/);
-      a.download = fnMatch?.[1] || `report-${scanId.slice(0, 8)}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
+      await downloadWithAuth(
+        `/api/scans/${scanId}/report`,
+        `report-${scanId.slice(0, 8)}.pdf`,
+      );
     } catch (err: any) {
       alert(err?.message || "Report generation failed");
     } finally {
@@ -52,26 +77,6 @@ export default function HistoryPage() {
     if (!ts) return "-";
     if (typeof ts.toDate === "function") return ts.toDate().toLocaleString();
     return new Date(ts).toLocaleString();
-  };
-
-  const formatDuration = (startTime: any, endTime: any) => {
-    if (!startTime || !endTime) return "-";
-    let start = startTime;
-    let end = endTime;
-    if (typeof startTime.toDate === "function") start = startTime.toDate();
-    else start = new Date(startTime);
-    if (typeof endTime.toDate === "function") end = endTime.toDate();
-    else end = new Date(endTime);
-
-    const diffMs = end.getTime() - start.getTime();
-    if (diffMs < 0) return "-";
-
-    const seconds = Math.floor(diffMs / 1000);
-    if (seconds < 60) return `${seconds}s`;
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m ${seconds % 60}s`;
-    const hours = Math.floor(minutes / 60);
-    return `${hours}h ${minutes % 60}m`;
   };
 
   return (
@@ -108,10 +113,10 @@ export default function HistoryPage() {
                 <thead className="bg-[#11161f] border-b border-[#161b24]">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-[#9aa5b6] uppercase">
-                      ID
+                      Type
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-[#9aa5b6] uppercase">
-                      Type
+                      Scan Started
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-[#9aa5b6] uppercase">
                       Target
@@ -120,16 +125,10 @@ export default function HistoryPage() {
                       Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-[#9aa5b6] uppercase">
-                      Started
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-[#9aa5b6] uppercase">
-                      Duration
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-[#9aa5b6] uppercase">
                       Result Files
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-[#9aa5b6] uppercase">
-                      Reports
+                      Report
                     </th>
                   </tr>
                 </thead>
@@ -139,23 +138,21 @@ export default function HistoryPage() {
                       key={scan.scanId}
                       className={`hover:bg-[#11161f] ${scan.batchId ? "border-l-4 border-l-[#0366d6]" : ""}`}
                     >
-                      <td className="px-6 py-4 text-sm text-[#e6edf5]">
-                        <div className="font-mono">
-                          {scan.scanId.substring(0, 8)}
-                        </div>
+                      <td className="px-6 py-4">
+                        <span className="px-2 py-1 bg-[#0366d6] text-white text-xs font-semibold rounded uppercase">
+                          {scan.type}
+                        </span>
                         {scan.batchId && (
                           <div className="text-xs text-[#4493f8] mt-1">
                             batch: {scan.batchId.substring(0, 8)}
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4">
-                        <span className="px-2 py-1 bg-[#0366d6] text-white text-xs font-semibold rounded uppercase">
-                          {scan.type}
-                        </span>
+                      <td className="px-6 py-4 text-sm text-[#9aa5b6]">
+                        {formatDate(scan.startTime || scan.createdAt)}
                       </td>
                       <td className="px-6 py-4 text-sm text-[#e6edf5]">
-                        {scan.target}
+                        {scan.target || scan.targetValue}
                       </td>
                       <td className="px-6 py-4">
                         <span
@@ -170,38 +167,30 @@ export default function HistoryPage() {
                           {scan.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-[#9aa5b6]">
-                        {formatDate(scan.startTime || scan.createdAt)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-[#9aa5b6] font-mono">
-                        {formatDuration(scan.startTime, scan.endTime)}
-                      </td>
                       <td className="px-6 py-4">
-                        {scan.gcpSignedUrl || scan.gcpXmlSignedUrl ? (
-                          <div className="flex gap-2">
-                            {scan.gcpSignedUrl && (
-                              <a
-                                href={scan.gcpSignedUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-[#4493f8] hover:text-[#0366d6] text-sm font-semibold"
-                                title="Download JSON results"
-                              >
-                                JSON
-                              </a>
-                            )}
-                            {scan.gcpXmlSignedUrl && (
-                              <a
-                                href={scan.gcpXmlSignedUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-[#4493f8] hover:text-[#0366d6] text-sm font-semibold"
-                                title="Download XML results"
-                              >
-                                XML
-                              </a>
-                            )}
-                          </div>
+                        {scan.status === "completed" ? (
+                          <button
+                            onClick={() => downloadRaw(scan.scanId)}
+                            disabled={downloadingRaw === scan.scanId}
+                            className="flex items-center gap-1 text-[#4493f8] hover:text-[#0366d6] text-sm font-semibold disabled:opacity-50"
+                            title="Download raw scanner output"
+                          >
+                            <FontAwesomeIcon
+                              icon={
+                                downloadingRaw === scan.scanId
+                                  ? faSpinner
+                                  : faDownload
+                              }
+                              className={
+                                downloadingRaw === scan.scanId
+                                  ? "animate-spin"
+                                  : ""
+                              }
+                            />
+                            {downloadingRaw === scan.scanId
+                              ? "Fetching…"
+                              : "Raw output"}
+                          </button>
                         ) : (
                           <span className="text-[#697080] text-sm">—</span>
                         )}
