@@ -18,6 +18,8 @@ import {
   faChevronUp,
   faHistory,
   faShieldHalved,
+  faFileLines,
+  faClock,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "@/lib/context/AuthContext";
 import signout from "@/lib/firebase/signout";
@@ -64,7 +66,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { href: "/app/dashboard", label: "Dashboard", icon: faHome },
     { href: "/app/targets", label: "Targets", icon: faBullseye },
     { href: "/app/scans", label: "Launch Scan", icon: faJetFighterUp },
+    { href: "/app/scheduled", label: "Scheduled Scans", icon: faClock },
     { href: "/app/history", label: "Scan History", icon: faHistory },
+    { href: "/app/reports", label: "Reports", icon: faFileLines },
   ];
 
   const bottomItems = [

@@ -22,10 +22,16 @@ export function CoverPage({
   scannerType,
   target,
   date,
+  titleOverride,
+  subtitleOverride,
 }: {
   scannerType: "nmap" | "nuclei" | "zap";
   target: string;
   date: Date;
+  /** When set, replaces the scanner-derived title (used by combined reports). */
+  titleOverride?: string;
+  /** When set, replaces the "For {target}" subtitle. */
+  subtitleOverride?: string;
 }) {
   const dateStr = date.toLocaleDateString("en-US", {
     year: "numeric",
@@ -52,8 +58,12 @@ export function CoverPage({
         <View style={coverStyles.datePill}>
           <Text style={coverStyles.datePillText}>{dateStr}</Text>
         </View>
-        <Text style={coverStyles.title}>{titles[scannerType]}</Text>
-        <Text style={coverStyles.subtitle}>For {target}</Text>
+        <Text style={coverStyles.title}>
+          {titleOverride ?? titles[scannerType]}
+        </Text>
+        <Text style={coverStyles.subtitle}>
+          {subtitleOverride ?? `For ${target}`}
+        </Text>
       </View>
     </Page>
   );
@@ -112,17 +122,22 @@ export function PageFooter({
   scannerType,
   target,
   date,
+  labelOverride,
 }: {
   scannerType: "nmap" | "nuclei" | "zap";
   target: string;
   date: Date;
+  /** When set, replaces the scanner-derived footer label. */
+  labelOverride?: string;
 }) {
   const dateStr = date.toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
-  const label = `${scannerType[0].toUpperCase() + scannerType.slice(1)} Scan Report`;
+  const label =
+    labelOverride ??
+    `${scannerType[0].toUpperCase() + scannerType.slice(1)} Scan Report`;
   return (
     <View style={footerStyles.bar} fixed>
       <View style={footerStyles.left}>
@@ -167,16 +182,24 @@ export function ContentPage({
   target,
   date,
   children,
+  footerLabel,
 }: {
   scannerType: "nmap" | "nuclei" | "zap";
   target: string;
   date: Date;
   children: React.ReactNode;
+  /** Overrides the footer label (used by combined reports). */
+  footerLabel?: string;
 }) {
   return (
     <Page size="LETTER" style={contentStyles.page}>
       <View style={contentStyles.body}>{children}</View>
-      <PageFooter scannerType={scannerType} target={target} date={date} />
+      <PageFooter
+        scannerType={scannerType}
+        target={target}
+        date={date}
+        labelOverride={footerLabel}
+      />
     </Page>
   );
 }

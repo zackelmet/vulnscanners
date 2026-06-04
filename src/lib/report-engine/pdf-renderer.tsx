@@ -4,13 +4,18 @@
 import React from "react";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { ScanReport } from "./templates/ScanReport";
+import {
+  CombinedReport,
+  CombinedReportData,
+  CombinedReportScan,
+} from "./templates/CombinedReport";
 import { parseNmapOutput } from "./nmap-parser";
 import { parseNucleiOutput } from "./nuclei-parser";
 import { parseZapOutput } from "./zap-parser";
 import { mapNmapReport } from "./mappers/nmap-mapper";
 import { mapNucleiReport } from "./mappers/nuclei-mapper";
 import { mapZapReport } from "./mappers/zap-mapper";
-import { ScanReportData } from "./report-data";
+import { ScanReportData, Severity } from "./report-data";
 import { ScannerType } from "./types";
 
 export interface RenderArgs {
@@ -52,4 +57,52 @@ export function buildReportData(args: RenderArgs): ScanReportData {
 export async function renderScanReport(args: RenderArgs): Promise<Buffer> {
   const data = buildReportData(args);
   return renderToBuffer(<ScanReport data={data} />);
+}
+
+// ── Combined multi-scan report ────────────────────────────────────────────────
+
+const SEVERITIES: Severity[] = ["critical", "high", "medium", "low", "info"];
+
+/** One scan's inputs for a combined report (same shape as RenderArgs). */
+export type CombinedScanArgs = RenderArgs;
+
+export interface CombinedRenderArgs {
+  generatedAt: Date;
+  scans: CombinedScanArgs[];
+}
+
+export async function renderCombinedReport(
+  args: CombinedRenderArgs,
+): Promise<Buffer> {
+  const scans: CombinedReportScan[] = args.scans.map((scanArgs) => ({
+    scanId: scanArgs.scanId,
+    scannerType: scanArgs.scannerType,
+    target: scanArgs.target,
+    data: buildReportData(scanArgs),
+  }));
+
+  const aggregateSeverityCounts = SEVERITIES.reduce(
+    (acc, sev) => {
+      acc[sev] = scans.reduce(
+        (sum, s) => sum + (s.data.severityCounts[sev] || 0),
+        0,
+      );
+      return acc;
+    },
+    {} as Record<Severity, number>,
+  );
+
+  const totalFindings = scans.reduce(
+    (sum, s) => sum + s.data.findings.length,
+    0,
+  );
+
+  const data: CombinedReportData = {
+    generatedAt: args.generatedAt,
+    scans,
+    aggregateSeverityCounts,
+    totalFindings,
+  };
+
+  return renderToBuffer(<CombinedReport data={data} />);
 }

@@ -19,13 +19,13 @@ service cloud.firestore {
         allow read: if request.auth != null && request.auth.uid == userId;
         allow write: if false;
       }
-    }
 
-    // Allow users to read their own global scans (used by fallback queries)
-    match /scans/{scanId} {
-      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
-      // Prevent client-side writes to global scans (server/admin only)
-      allow write: if false;
+      // Recurring scan schedules. Reads/writes go through /api/scheduled-scans
+      // (Admin SDK); client reads own, client writes denied.
+      match /scheduledScans/{scheduleId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
     }
   }
 }

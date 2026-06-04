@@ -246,7 +246,20 @@ function MasterFindingsTable({ data }: { data: ScanReportData }) {
   return (
     <View>
       <Heading2>2.2 Master Findings Table</Heading2>
-      {data.findings.length === 0 ? (
+      <FindingsTable findings={data.findings} />
+    </View>
+  );
+}
+
+// Bordered findings table (no section heading) — reused by the combined report.
+export function FindingsTable({
+  findings,
+}: {
+  findings: import("../report-data").ReportFinding[];
+}) {
+  return (
+    <View>
+      {findings.length === 0 ? (
         <Paragraph muted>No findings to list.</Paragraph>
       ) : (
         <View
@@ -280,10 +293,10 @@ function MasterFindingsTable({ data }: { data: ScanReportData }) {
               Severity
             </Text>
           </View>
-          {data.findings.map((f, i) => {
+          {findings.map((f, i) => {
             const fixed = f.state === "Fixed";
             const rowStyle =
-              i < data.findings.length - 1
+              i < findings.length - 1
                 ? [
                     tableStyles.row,
                     {
@@ -361,7 +374,7 @@ function DetailedFindings({ data }: { data: ScanReportData }) {
           <View key={f.id} break={i > 0} style={{ marginBottom: 18 }}>
             <FindingDetail
               finding={f}
-              index={i + 1}
+              numberLabel={`2.3.${i + 1}`}
               completedAt={data.completedAt}
             />
           </View>
@@ -371,13 +384,16 @@ function DetailedFindings({ data }: { data: ScanReportData }) {
   );
 }
 
-function FindingDetail({
+// Detailed write-up for a single finding. `numberLabel` is the section number
+// shown before the title (e.g. "2.3.1" for single reports, "1.2" per-scan in
+// combined reports). Exported for reuse by the combined report template.
+export function FindingDetail({
   finding,
-  index,
+  numberLabel,
   completedAt,
 }: {
   finding: import("../report-data").ReportFinding;
-  index: number;
+  numberLabel: string;
   completedAt: Date;
 }) {
   const date = completedAt.toLocaleDateString("en-US", {
@@ -396,7 +412,7 @@ function FindingDetail({
           marginBottom: 8,
         }}
       >
-        2.3.{index} {finding.id} – {finding.title}
+        {numberLabel} {finding.id} – {finding.title}
       </Text>
       <SeverityPill
         severity={finding.severity}
