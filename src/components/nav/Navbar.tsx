@@ -232,14 +232,14 @@ export default function Navbar() {
               {currentUser ? (
                 <Link
                   href="/app/dashboard"
-                  className="px-4 py-2 text-sm font-semibold bg-[#0366d6] hover:bg-[#034ea1] text-white rounded-lg transition"
+                  className="px-4 py-2 text-sm font-semibold bg-[#0a2540] hover:bg-[#123a63] text-white rounded-lg transition"
                 >
                   Console
                 </Link>
               ) : (
                 <Link
                   href="/login"
-                  className="px-4 py-2 text-sm font-semibold bg-[#0366d6] hover:bg-[#034ea1] text-white rounded-lg transition"
+                  className="px-4 py-2 text-sm font-semibold bg-[#0a2540] hover:bg-[#123a63] text-white rounded-lg transition"
                 >
                   Sign In
                 </Link>

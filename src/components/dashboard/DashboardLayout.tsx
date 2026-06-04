@@ -200,7 +200,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Upgrade button */}
           <Link
             href="/app/dashboard?purchase=true"
-            className="block w-full px-4 py-3 bg-[#0366d6] text-white font-semibold rounded-lg text-center hover:bg-[#4493f8] transition-colors"
+            className="block w-full px-4 py-3 bg-[#0a2540] text-white font-semibold rounded-lg text-center hover:bg-[#123a63] transition-colors"
           >
             <FontAwesomeIcon icon={faJetFighterUp} className="mr-2" />
             Buy Credits

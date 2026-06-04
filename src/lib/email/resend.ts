@@ -59,6 +59,7 @@ const C = {
   ink2: "#3d4757",
   ink3: "#6b7686",
   brand: "#0366d6",
+  button: "#0a2540",
   navy: "#0a141f",
   badgeOk: "#1f9d57",
   badgeBad: "#c0392b",
@@ -85,7 +86,7 @@ function preheader(text: string): string {
 // Bulletproof, table-based CTA button.
 function button(href: string, label: string): string {
   return `<table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin:8px 0 4px;">
-    <tr><td align="center" bgcolor="${C.brand}" style="border-radius:8px;">
+    <tr><td align="center" bgcolor="${C.button}" style="border-radius:8px;">
       <a href="${href}" target="_blank" style="display:inline-block;padding:12px 24px;font-family:${FONT};font-size:14px;font-weight:600;line-height:1;color:#ffffff;text-decoration:none;border-radius:8px;">${label}</a>
     </td></tr>
   </table>`;
