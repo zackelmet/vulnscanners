@@ -38,13 +38,29 @@ export async function GET(request: NextRequest) {
   const admin = initializeAdmin();
   const firestore = admin.firestore();
   const now = admin.firestore.Timestamp.now();
+  const nowMs = now.toMillis();
 
-  // Single-field inequality on a collection-group field — no composite index
-  // needed. We filter `enabled` in code to avoid a composite index.
-  const dueSnap = await firestore
-    .collectionGroup("scheduledScans")
-    .where("nextRunAt", "<=", now)
-    .get();
+  // Read every schedule across users, then filter due+enabled in code. A
+  // filter-less collection-group read needs no manual index; schedules are
+  // low-volume so this is cheap. (Switch to a `where(nextRunAt<=now)` query +
+  // collection-group index if this ever grows large.)
+  let allSnap;
+  try {
+    allSnap = await firestore.collectionGroup("scheduledScans").get();
+  } catch (err: any) {
+    console.error("scheduled-scans cron: query failed:", err);
+    return NextResponse.json(
+      { error: err?.message || "query failed" },
+      { status: 500 },
+    );
+  }
+
+  const dueDocs = allSnap.docs.filter((doc: any) => {
+    const d = doc.data();
+    if (d.enabled === false) return false;
+    const due = d.nextRunAt?.toMillis?.() ?? 0;
+    return due <= nowMs;
+  });
 
   const results: {
     scheduleId: string;
@@ -54,12 +70,11 @@ export async function GET(request: NextRequest) {
     reason?: string;
   }[] = [];
 
-  for (const doc of dueSnap.docs) {
+  for (const doc of dueDocs) {
     const sched = doc.data() as any;
     const scheduleId = doc.id;
     const userId: string = sched.userId || doc.ref.parent.parent?.id;
 
-    if (sched.enabled === false) continue; // paused
     if (!userId) {
       results.push({ scheduleId, userId: "?", status: "error", reason: "no userId" });
       continue;
@@ -112,7 +127,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     success: true,
     sweptAt: now.toDate().toISOString(),
-    due: dueSnap.size,
+    due: dueDocs.length,
     launched: results.filter((r) => r.status === "launched").length,
     skipped: results.filter((r) => r.status === "skipped").length,
     results,
