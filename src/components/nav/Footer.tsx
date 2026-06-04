@@ -66,6 +66,12 @@ export default function Footer() {
               Blog
             </Link>
             <Link
+              href="/msp-pentesting"
+              className="hover:text-[#0366d6] transition px-4"
+            >
+              MSP Partners
+            </Link>
+            <Link
               href="/#pricing"
               className="hover:text-[#0366d6] transition px-4"
             >
