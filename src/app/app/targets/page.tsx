@@ -158,7 +158,7 @@ export default function TargetsPage() {
                 value={formState.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
                 placeholder="Production API"
-                className="mt-2 px-3 py-2 border border-[#161b24] rounded-lg bg-[#11161f] text-[#e6edf5] focus:outline-none focus:ring-2 focus:ring-[#0366d6]"
+                className="mt-2 px-3 py-2 border border-[#161b24] rounded-lg bg-[#11161f] text-[#e6edf5] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]"
               />
             </label>
             <label className="flex flex-col">
@@ -171,7 +171,7 @@ export default function TargetsPage() {
                 value={formState.value}
                 onChange={(e) => handleInputChange("value", e.target.value)}
                 placeholder="192.168.1.1 or api.example.com"
-                className="mt-2 px-3 py-2 border border-[#161b24] rounded-lg bg-[#11161f] font-mono text-sm text-[#e6edf5] focus:outline-none focus:ring-2 focus:ring-[#0366d6]"
+                className="mt-2 px-3 py-2 border border-[#161b24] rounded-lg bg-[#11161f] font-mono text-sm text-[#e6edf5] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]"
               />
             </label>
             <label className="flex flex-col">
@@ -179,7 +179,7 @@ export default function TargetsPage() {
               <select
                 value={formState.type}
                 onChange={(e) => handleInputChange("type", e.target.value)}
-                className="mt-2 px-3 py-2 border border-[#161b24] rounded-lg bg-[#11161f] text-[#e6edf5] focus:outline-none focus:ring-2 focus:ring-[#0366d6]"
+                className="mt-2 px-3 py-2 border border-[#161b24] rounded-lg bg-[#11161f] text-[#e6edf5] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]"
               >
                 <option value="domain">Domain Name</option>
                 <option value="ip">IP Address</option>
@@ -197,7 +197,7 @@ export default function TargetsPage() {
                 value={formState.tags}
                 onChange={(e) => handleInputChange("tags", e.target.value)}
                 placeholder="production, api"
-                className="mt-2 px-3 py-2 border border-[#161b24] rounded-lg bg-[#11161f] text-[#e6edf5] focus:outline-none focus:ring-2 focus:ring-[#0366d6]"
+                className="mt-2 px-3 py-2 border border-[#161b24] rounded-lg bg-[#11161f] text-[#e6edf5] focus:outline-none focus:ring-2 focus:ring-[#7c3aed]"
               />
             </label>
           </div>
@@ -205,7 +205,7 @@ export default function TargetsPage() {
             <button
               type="submit"
               disabled={saving || !formState.value.trim()}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#0366d6] text-white font-semibold rounded-lg hover:bg-[#4493f8] transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#7c3aed] text-white font-semibold rounded-lg hover:bg-[#a78bfa] transition-colors disabled:opacity-50"
             >
               <FontAwesomeIcon icon={faPlus} />{" "}
               {saving ? "Saving…" : "Save target"}
@@ -263,7 +263,7 @@ export default function TargetsPage() {
                         </div>
                       </td>
                       <td className="p-4">
-                        <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md text-xs font-semibold bg-[#0366d6]/20 text-[#4493f8] border border-[#0366d6]/30">
+                        <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md text-xs font-semibold bg-[#7c3aed]/20 text-[#a78bfa] border border-[#7c3aed]/30">
                           <FontAwesomeIcon icon={getTargetIcon(t.type)} />
                           {t.type.toUpperCase()}
                         </span>

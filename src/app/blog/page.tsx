@@ -40,7 +40,7 @@ export default function BlogPage() {
       />
       <div className="max-w-4xl mx-auto px-5 py-20">
         <header className="mb-14">
-          <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#4493f8] mb-3">
+          <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#a78bfa] mb-3">
             Blog
           </p>
           <h1 className="text-4xl lg:text-5xl font-medium tracking-tight mb-3">
@@ -65,7 +65,7 @@ export default function BlogPage() {
                   <p className="text-xs text-[#697080] font-mono mb-1.5">
                     {post.date}
                   </p>
-                  <h2 className="text-xl lg:text-2xl font-medium tracking-tight text-[#e6edf5] group-hover:text-[#4493f8] transition-colors mb-2">
+                  <h2 className="text-xl lg:text-2xl font-medium tracking-tight text-[#e6edf5] group-hover:text-[#a78bfa] transition-colors mb-2">
                     {post.title}
                   </h2>
                   <p className="text-[#9aa5b6] text-sm leading-relaxed line-clamp-2">

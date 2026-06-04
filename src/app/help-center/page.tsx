@@ -83,7 +83,7 @@ export default function HelpCenterPage() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-[#4493f8] hover:text-[#0366d6] transition-colors"
+            className="inline-flex items-center gap-2 text-[#a78bfa] hover:text-[#7c3aed] transition-colors"
           >
             <svg
               className="w-5 h-5"
@@ -107,7 +107,7 @@ export default function HelpCenterPage() {
       <main className="max-w-3xl mx-auto px-6 py-16">
         {/* Page Header */}
         <div className="mb-14">
-          <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#4493f8] mb-3">
+          <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#a78bfa] mb-3">
             Trust &amp; Safety
           </p>
           <h1 className="text-4xl lg:text-5xl font-medium tracking-tight text-[#e6edf5] mb-3">
@@ -129,7 +129,7 @@ export default function HelpCenterPage() {
               <div className="flex items-start gap-3 mb-3">
                 <FontAwesomeIcon
                   icon={section.icon}
-                  className="text-base text-[#4493f8] mt-1.5 flex-shrink-0"
+                  className="text-base text-[#a78bfa] mt-1.5 flex-shrink-0"
                 />
                 <h2 className="text-xl font-medium tracking-tight text-[#e6edf5]">
                   {section.title}
@@ -161,7 +161,7 @@ export default function HelpCenterPage() {
           <div>
             <Link
               href="/support"
-              className="inline-block px-5 py-2.5 bg-[#0366d6] hover:bg-[#4493f8] text-white text-sm font-medium rounded-md transition-colors"
+              className="inline-block px-5 py-2.5 bg-[#7c3aed] hover:bg-[#a78bfa] text-white text-sm font-medium rounded-md transition-colors"
             >
               Contact support
             </Link>

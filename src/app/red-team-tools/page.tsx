@@ -48,7 +48,7 @@ export default function RedTeamToolsIndexPage() {
       />
       <div className="max-w-5xl mx-auto px-5 py-20 space-y-16">
         <header className="space-y-5">
-          <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#4493f8]">
+          <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#a78bfa]">
             Resources · Reference
           </p>
           <h1 className="text-4xl lg:text-5xl font-medium tracking-tight leading-[1.05]">
@@ -107,7 +107,7 @@ export default function RedTeamToolsIndexPage() {
           <div className="flex justify-center gap-3 flex-wrap pt-1">
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[#0366d6] hover:bg-[#034ea1] text-white font-medium transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[#7c3aed] hover:bg-[#034ea1] text-white font-medium transition-colors"
             >
               Start scanning →
             </Link>

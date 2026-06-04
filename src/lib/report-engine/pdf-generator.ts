@@ -26,8 +26,8 @@ import { portRisk, riskLabel, riskColor, RiskLevel } from "./nmap-parser";
 // ── Brand colours ──────────────────────────────────────────────────────────────
 const C = {
   navy: rgb(0.039, 0.055, 0.082), // #0a0e15
-  blue: rgb(0.012, 0.4, 0.843), // #0366d6
-  blueLight: rgb(0.267, 0.576, 0.973), // #4493f8
+  blue: rgb(0.012, 0.4, 0.843), // #7c3aed
+  blueLight: rgb(0.267, 0.576, 0.973), // #a78bfa
   white: rgb(1, 1, 1),
   offWhite: rgb(0.96, 0.97, 0.98),
   grey100: rgb(0.95, 0.96, 0.97),

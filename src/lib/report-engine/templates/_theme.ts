@@ -8,8 +8,8 @@ export const C = {
   navy2: "#0f1d2e",
 
   // Brand
-  blue: "#0366d6",
-  blueLight: "#4493f8",
+  blue: "#7c3aed",
+  blueLight: "#a78bfa",
   blueWash: "rgba(3,102,214,0.10)",
   blueBorder: "rgba(3,102,214,0.30)",
 
@@ -44,7 +44,7 @@ export const C = {
   chart: {
     critical: "#ef4444",
     high: "#f59e0b",
-    medium: "#0366d6",
+    medium: "#7c3aed",
     low: "#10b981",
   },
 } as const;

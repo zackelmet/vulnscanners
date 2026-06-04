@@ -7,7 +7,7 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="bg-[#0a141f] border-t border-[#0366d6]/30 text-white">
+    <footer className="bg-[#0a141f] border-t border-[#7c3aed]/30 text-white">
       <div className="max-w-7xl mx-auto px-5 pt-10 pb-12 flex flex-col gap-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="flex items-center gap-3">
@@ -29,7 +29,7 @@ export default function Footer() {
           </div>
 
           <div className="flex items-center gap-4 flex-wrap">
-            <span className="px-3 py-1 rounded-full bg-[#0366d6]/10 border border-[#0366d6]/30 text-[#0366d6] text-xs font-medium tracking-wide">
+            <span className="px-3 py-1 rounded-full bg-[#7c3aed]/10 border border-[#7c3aed]/30 text-[#7c3aed] text-xs font-medium tracking-wide">
               Powered by Open Source
             </span>
             <div className="flex items-center gap-3 text-gray-400">
@@ -37,7 +37,7 @@ export default function Footer() {
                 href="https://x.com/vuln_scanners"
                 target="_blank"
                 rel="noreferrer"
-                className="hover:text-[#0366d6] transition"
+                className="hover:text-[#7c3aed] transition"
                 aria-label="X (formerly Twitter)"
               >
                 <FontAwesomeIcon icon={faXTwitter} className="text-xl" />
@@ -46,7 +46,7 @@ export default function Footer() {
                 href="https://www.linkedin.com/company/hacker-analytics/"
                 target="_blank"
                 rel="noreferrer"
-                className="hover:text-[#0366d6] transition"
+                className="hover:text-[#7c3aed] transition"
               >
                 <FontAwesomeIcon icon={faLinkedin} className="text-xl" />
               </Link>
@@ -58,34 +58,34 @@ export default function Footer() {
           <div className="flex items-center gap-0 divide-x divide-gray-700">
             <Link
               href="/scanners"
-              className="hover:text-[#0366d6] transition px-4"
+              className="hover:text-[#7c3aed] transition px-4"
             >
               Scanners
             </Link>
-            <Link href="/blog" className="hover:text-[#0366d6] transition px-4">
+            <Link href="/blog" className="hover:text-[#7c3aed] transition px-4">
               Blog
             </Link>
             <Link
               href="/msp-pentesting"
-              className="hover:text-[#0366d6] transition px-4"
+              className="hover:text-[#7c3aed] transition px-4"
             >
               MSP Partners
             </Link>
             <Link
               href="/#pricing"
-              className="hover:text-[#0366d6] transition px-4"
+              className="hover:text-[#7c3aed] transition px-4"
             >
               Pricing
             </Link>
             <Link
               href="/help-center"
-              className="hover:text-[#0366d6] transition px-4"
+              className="hover:text-[#7c3aed] transition px-4"
             >
               Help Center
             </Link>
             <Link
               href="/support"
-              className="hover:text-[#0366d6] transition px-4"
+              className="hover:text-[#7c3aed] transition px-4"
             >
               Support
             </Link>

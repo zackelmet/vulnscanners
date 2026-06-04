@@ -116,7 +116,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 href={item.href}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                   isActive
-                    ? "bg-[#0366d6]/20 text-[#4493f8] font-semibold"
+                    ? "bg-[#7c3aed]/20 text-[#a78bfa] font-semibold"
                     : "text-[#9aa5b6] hover:bg-[#11161f] hover:text-[#e6edf5]"
                 }`}
                 onClick={() => setSidebarOpen(false)}
@@ -153,7 +153,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               onClick={() => setAccountMenuOpen(!accountMenuOpen)}
               className="w-full flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-[#11161f] transition-colors"
             >
-              <div className="w-8 h-8 rounded-full bg-[#0366d6] text-white font-bold flex items-center justify-center text-sm">
+              <div className="w-8 h-8 rounded-full bg-[#7c3aed] text-white font-bold flex items-center justify-center text-sm">
                 {getInitials(currentUser?.email)}
               </div>
               <div className="flex-1 overflow-hidden text-left">
@@ -200,7 +200,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Upgrade button */}
           <Link
             href="/app/dashboard?purchase=true"
-            className="block w-full px-4 py-3 bg-[#0366d6] text-white font-semibold rounded-lg text-center hover:bg-[#4493f8] transition-colors"
+            className="block w-full px-4 py-3 bg-[#7c3aed] text-white font-semibold rounded-lg text-center hover:bg-[#a78bfa] transition-colors"
           >
             <FontAwesomeIcon icon={faJetFighterUp} className="mr-2" />
             Buy Credits

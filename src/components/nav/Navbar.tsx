@@ -93,7 +93,7 @@ export default function Navbar() {
   }, []);
 
   return (
-    <header className="w-full border-b border-[#0366d6]/30 bg-[#0a141f] text-white relative z-40">
+    <header className="w-full border-b border-[#7c3aed]/30 bg-[#0a141f] text-white relative z-40">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-6 px-5 py-4">
         <Link
           href="/"
@@ -126,7 +126,7 @@ export default function Navbar() {
                   onClick={() => setScannersOpen((v) => !v)}
                   aria-haspopup="true"
                   aria-expanded={scannersOpen}
-                  className="flex items-center gap-1.5 text-sm font-medium text-gray-300 hover:text-[#0366d6] transition"
+                  className="flex items-center gap-1.5 text-sm font-medium text-gray-300 hover:text-[#7c3aed] transition"
                 >
                   Scanners
                   <ChevronIcon open={scannersOpen} />
@@ -169,7 +169,7 @@ export default function Navbar() {
                           <Link
                             href="/scanners"
                             onClick={() => setScannersOpen(false)}
-                            className="block px-4 py-2 text-xs font-mono uppercase tracking-[0.08em] text-[#4493f8] hover:text-[#79b6ff] transition-colors"
+                            className="block px-4 py-2 text-xs font-mono uppercase tracking-[0.08em] text-[#a78bfa] hover:text-[#79b6ff] transition-colors"
                           >
                             All scanners →
                           </Link>
@@ -191,7 +191,7 @@ export default function Navbar() {
                   onClick={() => setResourcesOpen((v) => !v)}
                   aria-haspopup="true"
                   aria-expanded={resourcesOpen}
-                  className="flex items-center gap-1.5 text-sm font-medium text-gray-300 hover:text-[#0366d6] transition"
+                  className="flex items-center gap-1.5 text-sm font-medium text-gray-300 hover:text-[#7c3aed] transition"
                 >
                   Resources
                   <ChevronIcon open={resourcesOpen} />
@@ -224,7 +224,7 @@ export default function Navbar() {
               </div>
               <Link
                 href="/#pricing"
-                className="text-sm font-medium text-gray-300 hover:text-[#0366d6] transition"
+                className="text-sm font-medium text-gray-300 hover:text-[#7c3aed] transition"
               >
                 Pricing
               </Link>
@@ -232,14 +232,14 @@ export default function Navbar() {
               {currentUser ? (
                 <Link
                   href="/app/dashboard"
-                  className="px-4 py-2 text-sm font-semibold bg-[#0366d6] hover:bg-[#034ea1] text-white rounded-lg transition"
+                  className="px-4 py-2 text-sm font-semibold bg-[#7c3aed] hover:bg-[#034ea1] text-white rounded-lg transition"
                 >
                   Console
                 </Link>
               ) : (
                 <Link
                   href="/login"
-                  className="px-4 py-2 text-sm font-semibold bg-[#0366d6] hover:bg-[#034ea1] text-white rounded-lg transition"
+                  className="px-4 py-2 text-sm font-semibold bg-[#7c3aed] hover:bg-[#034ea1] text-white rounded-lg transition"
                 >
                   Sign In
                 </Link>

@@ -28,7 +28,7 @@ export default function SettingsPage() {
         {/* Account Info */}
         <div className="bg-[#0d1117] border border-[#161b24] rounded-xl p-6 shadow-sm">
           <div className="flex items-center gap-4 mb-6">
-            <div className="p-3 rounded-xl bg-[#0366d6]/20 border border-[#0366d6]/30 text-[#4493f8]">
+            <div className="p-3 rounded-xl bg-[#7c3aed]/20 border border-[#7c3aed]/30 text-[#a78bfa]">
               <FontAwesomeIcon icon={faUser} className="text-2xl" />
             </div>
             <div>
@@ -69,7 +69,7 @@ export default function SettingsPage() {
         {/* Subscription Info */}
         <div className="bg-[#0d1117] border border-[#161b24] rounded-xl p-6 shadow-sm">
           <div className="flex items-center gap-4 mb-6">
-            <div className="p-3 rounded-xl bg-[#0366d6]/20 border border-[#0366d6]/30 text-[#4493f8]">
+            <div className="p-3 rounded-xl bg-[#7c3aed]/20 border border-[#7c3aed]/30 text-[#a78bfa]">
               <FontAwesomeIcon icon={faCreditCard} className="text-2xl" />
             </div>
             <div>
@@ -112,7 +112,7 @@ export default function SettingsPage() {
                 </div>
                 <a
                   href="/app/dashboard?purchase=true"
-                  className="px-4 py-2 bg-[#0366d6] text-white font-semibold rounded-lg hover:bg-[#4493f8] transition-colors"
+                  className="px-4 py-2 bg-[#7c3aed] text-white font-semibold rounded-lg hover:bg-[#a78bfa] transition-colors"
                 >
                   Buy More
                 </a>
@@ -124,7 +124,7 @@ export default function SettingsPage() {
         {/* Notifications */}
         <div className="bg-[#0d1117] border border-[#161b24] rounded-xl p-6 shadow-sm">
           <div className="flex items-center gap-4 mb-6">
-            <div className="p-3 rounded-xl bg-[#0366d6]/20 border border-[#0366d6]/30 text-[#4493f8]">
+            <div className="p-3 rounded-xl bg-[#7c3aed]/20 border border-[#7c3aed]/30 text-[#a78bfa]">
               <FontAwesomeIcon icon={faBell} className="text-2xl" />
             </div>
             <div>
@@ -153,7 +153,7 @@ export default function SettingsPage() {
                   className="sr-only peer"
                   defaultChecked
                 />
-                <div className="w-11 h-6 bg-[#11161f] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#0366d6] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#697080] after:border-[#161b24] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0366d6] peer-checked:after:bg-white"></div>
+                <div className="w-11 h-6 bg-[#11161f] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#7c3aed] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#697080] after:border-[#161b24] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#7c3aed] peer-checked:after:bg-white"></div>
               </label>
             </div>
 
@@ -172,7 +172,7 @@ export default function SettingsPage() {
                   className="sr-only peer"
                   defaultChecked
                 />
-                <div className="w-11 h-6 bg-[#11161f] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#0366d6] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#697080] after:border-[#161b24] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0366d6] peer-checked:after:bg-white"></div>
+                <div className="w-11 h-6 bg-[#11161f] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#7c3aed] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#697080] after:border-[#161b24] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#7c3aed] peer-checked:after:bg-white"></div>
               </label>
             </div>
           </div>

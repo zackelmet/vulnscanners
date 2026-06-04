@@ -174,7 +174,7 @@ export default function ScansPage() {
             <div className="bg-[#0d1117] border border-[#161b24] rounded-xl p-8 text-center shadow-sm">
               <FontAwesomeIcon
                 icon={faJetFighterUp}
-                className="text-5xl mb-4 text-[#4493f8]"
+                className="text-5xl mb-4 text-[#a78bfa]"
               />
               <h2 className="text-2xl font-bold text-[#e6edf5] mb-3">
                 No Scan Credits
@@ -185,7 +185,7 @@ export default function ScansPage() {
               </p>
               <a
                 href="/app/dashboard?purchase=true"
-                className="inline-block px-6 py-3 bg-[#0366d6] text-white font-semibold rounded-lg hover:bg-[#4493f8] transition-colors"
+                className="inline-block px-6 py-3 bg-[#7c3aed] text-white font-semibold rounded-lg hover:bg-[#a78bfa] transition-colors"
               >
                 <FontAwesomeIcon icon={faJetFighterUp} className="mr-2" />
                 Buy Credits
@@ -213,12 +213,12 @@ export default function ScansPage() {
                   </label>
                   <div className="space-y-3">
                     {/* Nmap Checkbox */}
-                    <label className="flex items-start gap-3 p-3 border border-[#161b24] rounded-lg hover:border-[#0366d6] cursor-pointer transition-colors bg-[#11161f]">
+                    <label className="flex items-start gap-3 p-3 border border-[#161b24] rounded-lg hover:border-[#7c3aed] cursor-pointer transition-colors bg-[#11161f]">
                       <input
                         type="checkbox"
                         checked={selectedScanners.includes("nmap")}
                         onChange={() => toggleScanner("nmap")}
-                        className="mt-1 h-4 w-4 text-[#0366d6] rounded focus:ring-[#0366d6]"
+                        className="mt-1 h-4 w-4 text-[#7c3aed] rounded focus:ring-[#7c3aed]"
                       />
                       <div className="flex-1">
                         <div className="font-semibold text-[#e6edf5]">
@@ -227,19 +227,19 @@ export default function ScansPage() {
                         <div className="text-xs text-[#9aa5b6]">
                           Port scanning and service detection
                         </div>
-                        <div className="text-xs text-[#4493f8] mt-1 font-semibold">
+                        <div className="text-xs text-[#a78bfa] mt-1 font-semibold">
                           {scannerRemaining("nmap")} credits remaining
                         </div>
                       </div>
                     </label>
 
                     {/* Nuclei Checkbox */}
-                    <label className="flex items-start gap-3 p-3 border border-[#161b24] rounded-lg hover:border-[#0366d6] cursor-pointer transition-colors bg-[#11161f]">
+                    <label className="flex items-start gap-3 p-3 border border-[#161b24] rounded-lg hover:border-[#7c3aed] cursor-pointer transition-colors bg-[#11161f]">
                       <input
                         type="checkbox"
                         checked={selectedScanners.includes("nuclei")}
                         onChange={() => toggleScanner("nuclei")}
-                        className="mt-1 h-4 w-4 text-[#0366d6] rounded focus:ring-[#0366d6]"
+                        className="mt-1 h-4 w-4 text-[#7c3aed] rounded focus:ring-[#7c3aed]"
                       />
                       <div className="flex-1">
                         <div className="font-semibold text-[#e6edf5]">
@@ -248,19 +248,19 @@ export default function ScansPage() {
                         <div className="text-xs text-[#9aa5b6]">
                           CVE detection and security analysis
                         </div>
-                        <div className="text-xs text-[#4493f8] mt-1 font-semibold">
+                        <div className="text-xs text-[#a78bfa] mt-1 font-semibold">
                           {scannerRemaining("nuclei")} credits remaining
                         </div>
                       </div>
                     </label>
 
                     {/* ZAP Checkbox */}
-                    <label className="flex items-start gap-3 p-3 border border-[#161b24] rounded-lg hover:border-[#0366d6] cursor-pointer transition-colors bg-[#11161f]">
+                    <label className="flex items-start gap-3 p-3 border border-[#161b24] rounded-lg hover:border-[#7c3aed] cursor-pointer transition-colors bg-[#11161f]">
                       <input
                         type="checkbox"
                         checked={selectedScanners.includes("zap")}
                         onChange={() => toggleScanner("zap")}
-                        className="mt-1 h-4 w-4 text-[#0366d6] rounded focus:ring-[#0366d6]"
+                        className="mt-1 h-4 w-4 text-[#7c3aed] rounded focus:ring-[#7c3aed]"
                       />
                       <div className="flex-1">
                         <div className="font-semibold text-[#e6edf5]">
@@ -269,7 +269,7 @@ export default function ScansPage() {
                         <div className="text-xs text-[#9aa5b6]">
                           Web vulnerabilities and OWASP Top 10
                         </div>
-                        <div className="text-xs text-[#4493f8] mt-1 font-semibold">
+                        <div className="text-xs text-[#a78bfa] mt-1 font-semibold">
                           {scannerRemaining("zap")} credits remaining
                         </div>
                       </div>
@@ -291,7 +291,7 @@ export default function ScansPage() {
                     placeholder="example.com, 192.168.1.1, or https://example.com"
                     value={targetInput}
                     onChange={(e) => setTargetInput(e.target.value)}
-                    className="w-full px-4 py-3 border border-[#161b24] rounded-lg bg-[#11161f] text-[#e6edf5] placeholder:text-[#5b6675] focus:ring-2 focus:ring-[#0366d6] focus:border-transparent"
+                    className="w-full px-4 py-3 border border-[#161b24] rounded-lg bg-[#11161f] text-[#e6edf5] placeholder:text-[#5b6675] focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent"
                   />
                   {savedTargets.length > 0 && (
                     <div className="flex items-center gap-2 pt-1">
@@ -299,7 +299,7 @@ export default function ScansPage() {
                         Or use a saved target:
                       </span>
                       <select
-                        className="px-2 py-1 text-xs border border-[#161b24] rounded-md bg-[#11161f] text-[#e6edf5] focus:ring-2 focus:ring-[#0366d6] focus:border-transparent"
+                        className="px-2 py-1 text-xs border border-[#161b24] rounded-md bg-[#11161f] text-[#e6edf5] focus:ring-2 focus:ring-[#7c3aed] focus:border-transparent"
                         value=""
                         onChange={(e) => {
                           const t = savedTargets.find(
@@ -317,7 +317,7 @@ export default function ScansPage() {
                       </select>
                       <a
                         href="/app/targets"
-                        className="text-xs text-[#4493f8] underline hover:text-[#0366d6] ml-auto"
+                        className="text-xs text-[#a78bfa] underline hover:text-[#7c3aed] ml-auto"
                       >
                         Manage saved targets
                       </a>
@@ -328,7 +328,7 @@ export default function ScansPage() {
                       Tip:{" "}
                       <a
                         href="/app/targets"
-                        className="text-[#4493f8] underline hover:text-[#0366d6]"
+                        className="text-[#a78bfa] underline hover:text-[#7c3aed]"
                       >
                         save targets
                       </a>{" "}
@@ -340,7 +340,7 @@ export default function ScansPage() {
                 {/* ZAP always runs a full active scan (spider + active scan);
                     no user-selectable profile. */}
                 {selectedScanners.includes("zap") && (
-                  <div className="rounded-lg border border-[#0366d6]/30 bg-[#0366d6]/10 p-4">
+                  <div className="rounded-lg border border-[#7c3aed]/30 bg-[#7c3aed]/10 p-4">
                     <p className="text-sm text-[#e6edf5]">
                       <strong>OWASP ZAP:</strong> runs a full active scan
                       (spider + active scan) for the most thorough coverage.
@@ -349,7 +349,7 @@ export default function ScansPage() {
                 )}
 
                 {/* Remaining Scans */}
-                <div className="bg-[#0366d6]/10 border border-[#0366d6]/30 rounded-lg p-4">
+                <div className="bg-[#7c3aed]/10 border border-[#7c3aed]/30 rounded-lg p-4">
                   <p className="text-sm text-[#e6edf5] mb-2">
                     <strong>Scans Remaining:</strong>
                   </p>
@@ -365,7 +365,7 @@ export default function ScansPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full px-5 py-3 bg-[#0366d6] text-white font-semibold rounded-lg hover:bg-[#4493f8] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full px-5 py-3 bg-[#7c3aed] text-white font-semibold rounded-lg hover:bg-[#a78bfa] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   <FontAwesomeIcon icon={faJetFighterUp} />
                   {submitting ? "Launching..." : "Launch Scan"}
@@ -383,7 +383,7 @@ export default function ScansPage() {
                     </div>
                     <Link
                       href="/app/history"
-                      className="text-[#4493f8] hover:text-[#0366d6] text-sm font-semibold underline"
+                      className="text-[#a78bfa] hover:text-[#7c3aed] text-sm font-semibold underline"
                     >
                       View results in Scan History →
                     </Link>

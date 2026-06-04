@@ -149,7 +149,7 @@ export default function ReportsPage() {
             <button
               onClick={generate}
               disabled={generating || emailing || selected.size === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-[#0366d6] hover:bg-[#0356b6] text-white text-sm font-semibold rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-4 py-2 bg-[#7c3aed] hover:bg-[#6d28d9] text-white text-sm font-semibold rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <FontAwesomeIcon
                 icon={generating ? faSpinner : faFileLines}
@@ -160,7 +160,7 @@ export default function ReportsPage() {
             <button
               onClick={emailReport}
               disabled={emailing || generating || selected.size === 0}
-              className="flex items-center gap-2 px-4 py-2 border border-[#21262d] hover:border-[#0366d6] text-[#e6edf5] text-sm font-semibold rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-4 py-2 border border-[#21262d] hover:border-[#7c3aed] text-[#e6edf5] text-sm font-semibold rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <FontAwesomeIcon
                 icon={emailing ? faSpinner : faEnvelope}
@@ -196,7 +196,7 @@ export default function ReportsPage() {
                 </span>
                 <button
                   onClick={selectAll}
-                  className="text-[#4493f8] hover:text-[#0366d6] text-sm font-semibold"
+                  className="text-[#a78bfa] hover:text-[#7c3aed] text-sm font-semibold"
                 >
                   {selected.size === completed.length
                     ? "Clear all"
@@ -215,7 +215,7 @@ export default function ReportsPage() {
                           type="checkbox"
                           checked={allSelected}
                           onChange={() => toggleTarget(group.scans)}
-                          className="w-4 h-4 accent-[#0366d6] cursor-pointer"
+                          className="w-4 h-4 accent-[#7c3aed] cursor-pointer"
                         />
                         <span className="text-sm font-semibold text-[#e6edf5]">
                           {group.target}
@@ -235,9 +235,9 @@ export default function ReportsPage() {
                               type="checkbox"
                               checked={selected.has(scan.scanId)}
                               onChange={() => toggle(scan.scanId)}
-                              className="w-4 h-4 accent-[#0366d6] cursor-pointer"
+                              className="w-4 h-4 accent-[#7c3aed] cursor-pointer"
                             />
-                            <span className="px-2 py-0.5 bg-[#0366d6] text-white text-xs font-semibold rounded uppercase">
+                            <span className="px-2 py-0.5 bg-[#7c3aed] text-white text-xs font-semibold rounded uppercase">
                               {scan.type}
                             </span>
                             <span className="text-sm text-[#9aa5b6] group-hover:text-[#e6edf5]">

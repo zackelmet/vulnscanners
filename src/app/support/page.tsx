@@ -84,7 +84,7 @@ export default function SupportPage() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-[#4493f8] hover:text-[#0366d6] transition-colors text-sm"
+            className="inline-flex items-center gap-2 text-[#a78bfa] hover:text-[#7c3aed] transition-colors text-sm"
           >
             <svg
               className="w-4 h-4"
@@ -106,7 +106,7 @@ export default function SupportPage() {
 
       <main className="max-w-2xl mx-auto px-6 py-16">
         <div className="mb-10">
-          <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#4493f8] mb-3">
+          <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#a78bfa] mb-3">
             Support
           </p>
           <h1 className="text-3xl lg:text-4xl font-medium tracking-tight text-[#e6edf5] mb-3">
@@ -137,7 +137,7 @@ export default function SupportPage() {
                 value={formData.name}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-[#161b24] rounded-md bg-[#11161f] text-[#e6edf5] placeholder-[#697080] focus:outline-none focus:ring-1 focus:ring-[#0366d6] focus:border-[#0366d6]"
+                className="w-full px-3 py-2 border border-[#161b24] rounded-md bg-[#11161f] text-[#e6edf5] placeholder-[#697080] focus:outline-none focus:ring-1 focus:ring-[#7c3aed] focus:border-[#7c3aed]"
               />
             </div>
 
@@ -155,7 +155,7 @@ export default function SupportPage() {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-[#161b24] rounded-md bg-[#11161f] text-[#e6edf5] placeholder-[#697080] focus:outline-none focus:ring-1 focus:ring-[#0366d6] focus:border-[#0366d6]"
+                className="w-full px-3 py-2 border border-[#161b24] rounded-md bg-[#11161f] text-[#e6edf5] placeholder-[#697080] focus:outline-none focus:ring-1 focus:ring-[#7c3aed] focus:border-[#7c3aed]"
               />
             </div>
           </div>
@@ -173,7 +173,7 @@ export default function SupportPage() {
               value={formData.category}
               onChange={handleChange}
               required
-              className="w-full px-3 py-2 border border-[#161b24] rounded-md bg-[#11161f] text-[#e6edf5] focus:outline-none focus:ring-1 focus:ring-[#0366d6] focus:border-[#0366d6]"
+              className="w-full px-3 py-2 border border-[#161b24] rounded-md bg-[#11161f] text-[#e6edf5] focus:outline-none focus:ring-1 focus:ring-[#7c3aed] focus:border-[#7c3aed]"
             >
               {categories.map((cat) => (
                 <option key={cat.value} value={cat.value}>
@@ -197,7 +197,7 @@ export default function SupportPage() {
               value={formData.subject}
               onChange={handleChange}
               required
-              className="w-full px-3 py-2 border border-[#161b24] rounded-md bg-[#11161f] text-[#e6edf5] placeholder-[#697080] focus:outline-none focus:ring-1 focus:ring-[#0366d6] focus:border-[#0366d6]"
+              className="w-full px-3 py-2 border border-[#161b24] rounded-md bg-[#11161f] text-[#e6edf5] placeholder-[#697080] focus:outline-none focus:ring-1 focus:ring-[#7c3aed] focus:border-[#7c3aed]"
             />
           </div>
 
@@ -215,14 +215,14 @@ export default function SupportPage() {
               onChange={handleChange}
               required
               rows={6}
-              className="w-full px-3 py-2 border border-[#161b24] rounded-md bg-[#11161f] text-[#e6edf5] placeholder-[#697080] focus:outline-none focus:ring-1 focus:ring-[#0366d6] focus:border-[#0366d6] resize-none"
+              className="w-full px-3 py-2 border border-[#161b24] rounded-md bg-[#11161f] text-[#e6edf5] placeholder-[#697080] focus:outline-none focus:ring-1 focus:ring-[#7c3aed] focus:border-[#7c3aed] resize-none"
             />
           </div>
 
           <button
             type="submit"
             disabled={submitting}
-            className="w-full py-2.5 bg-[#0366d6] hover:bg-[#4493f8] text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-2.5 bg-[#7c3aed] hover:bg-[#a78bfa] text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? "Sending…" : "Send message"}
           </button>
@@ -281,7 +281,7 @@ export default function SupportPage() {
                     Every scan you launch is in{" "}
                     <Link
                       href="/app/scans"
-                      className="text-[#4493f8] hover:text-[#0366d6] underline-offset-2 hover:underline"
+                      className="text-[#a78bfa] hover:text-[#7c3aed] underline-offset-2 hover:underline"
                     >
                       your dashboard
                     </Link>
@@ -306,7 +306,7 @@ export default function SupportPage() {
                     ethical-use details on our{" "}
                     <Link
                       href="/help-center"
-                      className="text-[#4493f8] hover:text-[#0366d6] underline-offset-2 hover:underline"
+                      className="text-[#a78bfa] hover:text-[#7c3aed] underline-offset-2 hover:underline"
                     >
                       Trust &amp; Safety page
                     </Link>
@@ -334,7 +334,7 @@ export default function SupportPage() {
             policy, and our compliance posture, see our{" "}
             <Link
               href="/help-center"
-              className="text-[#4493f8] hover:text-[#0366d6] underline-offset-2 hover:underline"
+              className="text-[#a78bfa] hover:text-[#7c3aed] underline-offset-2 hover:underline"
             >
               Trust &amp; Safety page
             </Link>
