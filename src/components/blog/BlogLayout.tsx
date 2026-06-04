@@ -19,7 +19,7 @@ const BlogLayout: React.FC<BlogLayoutProps> = ({ children, frontMatter }) => {
     <main className="min-h-screen bg-[#0a141f] text-[#e6edf5]">
       <div className="max-w-3xl mx-auto px-5 py-16">
         <div className="mb-8">
-          <Link href="/blog" className="text-sm text-[#a78bfa] hover:underline">
+          <Link href="/blog" className="text-sm text-[#4493f8] hover:underline">
             ← All posts
           </Link>
         </div>
@@ -59,12 +59,12 @@ const BlogLayout: React.FC<BlogLayoutProps> = ({ children, frontMatter }) => {
           </div>
         )}
 
-        <article className="prose prose-invert prose-lg max-w-none prose-headings:font-medium prose-headings:tracking-tight prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-4 prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3 prose-p:text-[#cdd5e0] prose-p:leading-relaxed prose-li:text-[#cdd5e0] prose-a:text-[#a78bfa] prose-a:no-underline hover:prose-a:underline prose-code:text-[#a5f3fc] prose-code:bg-[#11161f] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-[#0d1117] prose-pre:border prose-pre:border-[#1f2632] prose-strong:text-[#e6edf5] prose-blockquote:border-l-[#a78bfa] prose-blockquote:text-[#9aa5b6] prose-table:text-sm prose-thead:border-b prose-thead:border-[#1f2632] prose-th:text-[#e6edf5] prose-td:border-b prose-td:border-[#161b24]">
+        <article className="prose prose-invert prose-lg max-w-none prose-headings:font-medium prose-headings:tracking-tight prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-4 prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3 prose-p:text-[#cdd5e0] prose-p:leading-relaxed prose-li:text-[#cdd5e0] prose-a:text-[#4493f8] prose-a:no-underline hover:prose-a:underline prose-code:text-[#a5f3fc] prose-code:bg-[#11161f] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-[#0d1117] prose-pre:border prose-pre:border-[#1f2632] prose-strong:text-[#e6edf5] prose-blockquote:border-l-[#4493f8] prose-blockquote:text-[#9aa5b6] prose-table:text-sm prose-thead:border-b prose-thead:border-[#1f2632] prose-th:text-[#e6edf5] prose-td:border-b prose-td:border-[#161b24]">
           {children}
         </article>
 
         <aside className="mt-16 p-6 rounded-xl bg-gradient-to-br from-[#0d1117] to-[#0a141f] border border-[#1f2632]">
-          <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#a78bfa] mb-2">
+          <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#4493f8] mb-2">
             Run it hosted
           </p>
           <p className="text-[#e6edf5] mb-3">
@@ -73,7 +73,7 @@ const BlogLayout: React.FC<BlogLayoutProps> = ({ children, frontMatter }) => {
           </p>
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#7c3aed] hover:bg-[#034ea1] text-white font-medium text-sm transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0366d6] hover:bg-[#034ea1] text-white font-medium text-sm transition-colors"
           >
             Start scanning →
           </Link>

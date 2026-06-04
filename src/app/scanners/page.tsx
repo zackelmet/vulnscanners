@@ -88,7 +88,7 @@ export default function ScannersIndexPage() {
       />
       <div className="max-w-5xl mx-auto px-5 py-20 space-y-16">
         <header className="space-y-4">
-          <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#a78bfa]">
+          <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#4493f8]">
             Scanners
           </p>
           <h1 className="text-4xl lg:text-5xl font-medium tracking-tight leading-[1.1]">
@@ -102,7 +102,7 @@ export default function ScannersIndexPage() {
           <div className="flex gap-3 flex-wrap pt-2">
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[#7c3aed] hover:bg-[#034ea1] text-white font-medium transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[#0366d6] hover:bg-[#034ea1] text-white font-medium transition-colors"
             >
               Start scanning →
             </Link>
@@ -153,7 +153,7 @@ export default function ScannersIndexPage() {
                       </li>
                     ))}
                   </ul>
-                  <p className="pt-2 text-sm text-[#a78bfa] group-hover:underline">
+                  <p className="pt-2 text-sm text-[#4493f8] group-hover:underline">
                     Learn more about hosted {s.name} →
                   </p>
                 </div>
@@ -166,7 +166,7 @@ export default function ScannersIndexPage() {
           aria-labelledby="workflow"
           className="rounded-xl border border-[#1f2632] bg-gradient-to-br from-[#0d1117] to-[#0a141f] p-8 space-y-4"
         >
-          <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#a78bfa]">
+          <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#4493f8]">
             How they work together
           </p>
           <h2
@@ -195,7 +195,7 @@ export default function ScannersIndexPage() {
             More on this layering in our{" "}
             <Link
               href="/blog/nmap-vs-nuclei-vs-zap"
-              className="text-[#a78bfa] hover:underline"
+              className="text-[#4493f8] hover:underline"
             >
               Nmap vs Nuclei vs ZAP guide
             </Link>

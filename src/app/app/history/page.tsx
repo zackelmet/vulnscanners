@@ -136,14 +136,14 @@ export default function HistoryPage() {
                   {userScans.map((scan: any) => (
                     <tr
                       key={scan.scanId}
-                      className={`hover:bg-[#11161f] ${scan.batchId ? "border-l-4 border-l-[#7c3aed]" : ""}`}
+                      className={`hover:bg-[#11161f] ${scan.batchId ? "border-l-4 border-l-[#0366d6]" : ""}`}
                     >
                       <td className="px-6 py-4">
-                        <span className="px-2 py-1 bg-[#7c3aed] text-white text-xs font-semibold rounded uppercase">
+                        <span className="px-2 py-1 bg-[#0366d6] text-white text-xs font-semibold rounded uppercase">
                           {scan.type}
                         </span>
                         {scan.batchId && (
-                          <div className="text-xs text-[#a78bfa] mt-1">
+                          <div className="text-xs text-[#4493f8] mt-1">
                             batch: {scan.batchId.substring(0, 8)}
                           </div>
                         )}
@@ -172,7 +172,7 @@ export default function HistoryPage() {
                           <button
                             onClick={() => downloadRaw(scan.scanId)}
                             disabled={downloadingRaw === scan.scanId}
-                            className="flex items-center gap-1 text-[#a78bfa] hover:text-[#7c3aed] text-sm font-semibold disabled:opacity-50"
+                            className="flex items-center gap-1 text-[#4493f8] hover:text-[#0366d6] text-sm font-semibold disabled:opacity-50"
                             title="Download raw scanner output"
                           >
                             <FontAwesomeIcon
@@ -202,7 +202,7 @@ export default function HistoryPage() {
                               href={scan.gcpReportSignedUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-[#a78bfa] hover:text-[#7c3aed] text-sm font-semibold"
+                              className="text-[#4493f8] hover:text-[#0366d6] text-sm font-semibold"
                               title="Download PDF report"
                             >
                               PDF
@@ -212,7 +212,7 @@ export default function HistoryPage() {
                             <button
                               onClick={() => generateReport(scan.scanId)}
                               disabled={generatingReport === scan.scanId}
-                              className="flex items-center gap-1 text-[#a78bfa] hover:text-[#7c3aed] text-sm font-semibold disabled:opacity-50"
+                              className="flex items-center gap-1 text-[#4493f8] hover:text-[#0366d6] text-sm font-semibold disabled:opacity-50"
                               title="Generate branded PDF report"
                             >
                               <FontAwesomeIcon

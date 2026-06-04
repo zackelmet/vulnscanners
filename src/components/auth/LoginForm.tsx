@@ -333,14 +333,14 @@ export default function AuthForm() {
                 By continuing you agree to our{" "}
                 <a
                   href="/trust-safety#terms"
-                  className="underline hover:text-[#a78bfa] transition-colors"
+                  className="underline hover:text-[#60a5fa] transition-colors"
                 >
                   Terms of Service
                 </a>{" "}
                 and{" "}
                 <a
                   href="/trust-safety#privacy"
-                  className="underline hover:text-[#a78bfa] transition-colors"
+                  className="underline hover:text-[#60a5fa] transition-colors"
                 >
                   Privacy Policy
                 </a>

@@ -182,12 +182,12 @@ export default function DashboardPage() {
         {/* Top CTA */}
         <Link
           href="/app/scans"
-          className="w-full block bg-[#0d1117] border border-[#161b24] rounded-xl p-6 shadow-lg hover:border-[#7c3aed] transition-all text-center"
+          className="w-full block bg-[#0d1117] border border-[#161b24] rounded-xl p-6 shadow-lg hover:border-[#0366d6] transition-all text-center"
         >
-          <div className="p-4 rounded-full bg-[#7c3aed]/20 mb-3 inline-block">
+          <div className="p-4 rounded-full bg-[#0366d6]/20 mb-3 inline-block">
             <FontAwesomeIcon
               icon={faJetFighterUp}
-              className="text-4xl text-[#a78bfa]"
+              className="text-4xl text-[#4493f8]"
             />
           </div>
           <p className="text-[#e6edf5] font-light text-xl mb-1">
@@ -203,7 +203,7 @@ export default function DashboardPage() {
           {SCANNERS.map((s) => (
             <div
               key={s.key}
-              className="bg-[#0d1117] border border-[#161b24] rounded-xl p-6 shadow-lg hover:border-[#7c3aed]/50 transition-colors"
+              className="bg-[#0d1117] border border-[#161b24] rounded-xl p-6 shadow-lg hover:border-[#0366d6]/50 transition-colors"
             >
               <div className="flex items-start justify-between mb-5">
                 <div className="h-8 flex items-center">
@@ -217,7 +217,7 @@ export default function DashboardPage() {
                 </div>
                 <button
                   onClick={() => openModal()}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#7c3aed]/10 hover:bg-[#7c3aed]/25 border border-[#7c3aed]/40 hover:border-[#7c3aed] transition-colors text-sm font-medium text-[#a78bfa]"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0366d6]/10 hover:bg-[#0366d6]/25 border border-[#0366d6]/40 hover:border-[#0366d6] transition-colors text-sm font-medium text-[#4493f8]"
                 >
                   Buy Credits
                   <FontAwesomeIcon icon={faPlus} className="text-xs" />
@@ -240,10 +240,10 @@ export default function DashboardPage() {
         {!hasCredits && (
           <div className="bg-[#0d1117] border border-[#161b24] rounded-xl p-6">
             <div className="flex items-start gap-4">
-              <div className="p-3 rounded-lg bg-[#7c3aed]/20 border border-[#7c3aed]/40">
+              <div className="p-3 rounded-lg bg-[#0366d6]/20 border border-[#0366d6]/40">
                 <FontAwesomeIcon
                   icon={faShieldHalved}
-                  className="text-2xl text-[#a78bfa]"
+                  className="text-2xl text-[#4493f8]"
                 />
               </div>
               <div className="flex-1">
@@ -261,7 +261,7 @@ export default function DashboardPage() {
                       onClick={() => openModal(pack)}
                       className={`px-5 py-2.5 font-semibold rounded-lg transition-colors ${
                         pack.id === "pro"
-                          ? "bg-[#7c3aed] hover:bg-[#a78bfa] text-white"
+                          ? "bg-[#0366d6] hover:bg-[#4493f8] text-white"
                           : "bg-[#11161f] hover:bg-[#161b24] text-[#e6edf5] border border-[#161b24]"
                       }`}
                     >
@@ -283,7 +283,7 @@ export default function DashboardPage() {
               </h2>
               <Link
                 href="/app/history"
-                className="text-[#a78bfa] hover:text-[#7c3aed] text-sm font-semibold transition-colors"
+                className="text-[#4493f8] hover:text-[#0366d6] text-sm font-semibold transition-colors"
               >
                 View All →
               </Link>
@@ -292,11 +292,11 @@ export default function DashboardPage() {
               {recentScans.map((scan: any) => (
                 <div
                   key={scan.scanId}
-                  className="p-4 bg-[#11161f] hover:bg-[#161b24] rounded-lg border border-[#161b24] hover:border-[#7c3aed]/50 transition-all flex items-center justify-between"
+                  className="p-4 bg-[#11161f] hover:bg-[#161b24] rounded-lg border border-[#161b24] hover:border-[#0366d6]/50 transition-all flex items-center justify-between"
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-1">
-                      <span className="px-3 py-1 bg-[#7c3aed] text-white text-xs font-semibold rounded-full uppercase">
+                      <span className="px-3 py-1 bg-[#0366d6] text-white text-xs font-semibold rounded-full uppercase">
                         {scan.type}
                       </span>
                       <span className="font-semibold text-[#e6edf5]">
@@ -313,7 +313,7 @@ export default function DashboardPage() {
                   </div>
                   <Link
                     href="/app/history"
-                    className="px-4 py-2 bg-[#7c3aed]/20 hover:bg-[#7c3aed]/30 text-[#a78bfa] font-semibold rounded-lg border border-[#7c3aed]/30 transition-colors text-sm"
+                    className="px-4 py-2 bg-[#0366d6]/20 hover:bg-[#0366d6]/30 text-[#4493f8] font-semibold rounded-lg border border-[#0366d6]/30 transition-colors text-sm"
                   >
                     View
                   </Link>
@@ -342,7 +342,7 @@ export default function DashboardPage() {
               </p>
               <Link
                 href="/app/scans"
-                className="inline-block px-8 py-3 bg-[#7c3aed] hover:bg-[#a78bfa] text-white font-semibold rounded-lg transition-colors"
+                className="inline-block px-8 py-3 bg-[#0366d6] hover:bg-[#4493f8] text-white font-semibold rounded-lg transition-colors"
               >
                 Launch First Scan
               </Link>
@@ -383,7 +383,7 @@ export default function DashboardPage() {
                   onClick={() => setSelectedPack(pack)}
                   className={`w-full flex items-center justify-between p-4 rounded-lg border transition-all ${
                     selectedPack.id === pack.id
-                      ? "border-[#7c3aed] bg-[#7c3aed]/15"
+                      ? "border-[#0366d6] bg-[#0366d6]/15"
                       : "border-[#161b24] bg-[#11161f] hover:bg-[#161b24]"
                   }`}
                 >
@@ -419,7 +419,7 @@ export default function DashboardPage() {
                   "Credits never expire",
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2">
-                    <span className="text-[#a78bfa]">✓</span>
+                    <span className="text-[#4493f8]">✓</span>
                     {f}
                   </li>
                 ))}
@@ -429,7 +429,7 @@ export default function DashboardPage() {
             <button
               onClick={handleCheckout}
               disabled={loadingCheckout}
-              className="w-full py-4 bg-[#7c3aed] hover:bg-[#a78bfa] text-white font-bold rounded-lg text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              className="w-full py-4 bg-[#0366d6] hover:bg-[#4493f8] text-white font-bold rounded-lg text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
               {loadingCheckout
                 ? "Processing…"

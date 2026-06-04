@@ -58,7 +58,7 @@ const C = {
   ink: "#0d1117",
   ink2: "#3d4757",
   ink3: "#6b7686",
-  brand: "#7c3aed",
+  brand: "#0366d6",
   navy: "#0a141f",
   badgeOk: "#1f9d57",
   badgeBad: "#c0392b",

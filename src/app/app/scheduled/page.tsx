@@ -166,7 +166,7 @@ export default function ScheduledScansPage() {
     iso ? new Date(iso).toLocaleString() : "—";
 
   const inputCls =
-    "bg-[#0d1117] border border-[#21262d] rounded-lg px-3 py-2 text-sm text-[#e6edf5] focus:border-[#7c3aed] outline-none";
+    "bg-[#0d1117] border border-[#21262d] rounded-lg px-3 py-2 text-sm text-[#e6edf5] focus:border-[#0366d6] outline-none";
 
   return (
     <DashboardLayout>
@@ -184,7 +184,7 @@ export default function ScheduledScansPage() {
           </div>
           <button
             onClick={() => setShowForm((v) => !v)}
-            className="flex items-center gap-2 px-4 py-2 bg-[#7c3aed] hover:bg-[#6d28d9] text-white text-sm font-semibold rounded-lg"
+            className="flex items-center gap-2 px-4 py-2 bg-[#0366d6] hover:bg-[#0356b6] text-white text-sm font-semibold rounded-lg"
           >
             <FontAwesomeIcon icon={faPlus} />
             New schedule
@@ -326,7 +326,7 @@ export default function ScheduledScansPage() {
               <button
                 onClick={create}
                 disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 bg-[#7c3aed] hover:bg-[#6d28d9] text-white text-sm font-semibold rounded-lg disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 bg-[#0366d6] hover:bg-[#0356b6] text-white text-sm font-semibold rounded-lg disabled:opacity-50"
               >
                 <FontAwesomeIcon
                   icon={saving ? faSpinner : faClock}
@@ -391,7 +391,7 @@ export default function ScheduledScansPage() {
                   {schedules.map((s) => (
                     <tr key={s.id} className="hover:bg-[#11161f]">
                       <td className="px-6 py-4">
-                        <span className="px-2 py-1 bg-[#7c3aed] text-white text-xs font-semibold rounded uppercase">
+                        <span className="px-2 py-1 bg-[#0366d6] text-white text-xs font-semibold rounded uppercase">
                           {s.type}
                         </span>
                       </td>
@@ -431,7 +431,7 @@ export default function ScheduledScansPage() {
                           <button
                             onClick={() => toggle(s)}
                             disabled={busyId === s.id}
-                            className="text-[#a78bfa] hover:text-[#7c3aed] disabled:opacity-50"
+                            className="text-[#4493f8] hover:text-[#0366d6] disabled:opacity-50"
                             title={s.enabled ? "Pause" : "Resume"}
                           >
                             <FontAwesomeIcon

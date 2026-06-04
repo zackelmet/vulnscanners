@@ -71,7 +71,7 @@ export default async function ToolPage({
       <div className="max-w-3xl mx-auto px-5 py-16 space-y-10">
         {/* Breadcrumb */}
         <nav className="text-sm text-[#697080]">
-          <Link href="/red-team-tools" className="hover:text-[#a78bfa]">
+          <Link href="/red-team-tools" className="hover:text-[#4493f8]">
             Red Team Tools
           </Link>
           <span className="px-2">/</span>
@@ -80,7 +80,7 @@ export default async function ToolPage({
 
         {/* Header */}
         <header className="space-y-4">
-          <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#a78bfa]">
+          <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#4493f8]">
             {categoryLabel[tool.category]}
           </p>
           <h1 className="text-4xl font-medium tracking-tight">{tool.name}</h1>
@@ -127,7 +127,7 @@ export default async function ToolPage({
             href={tool.source}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-[#a78bfa] hover:text-[#79b6ff] break-all"
+            className="inline-flex items-center gap-2 text-[#4493f8] hover:text-[#79b6ff] break-all"
           >
             {tool.source} ↗
           </a>
@@ -165,7 +165,7 @@ export default async function ToolPage({
           </p>
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#7c3aed] hover:bg-[#034ea1] text-white font-medium transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#0366d6] hover:bg-[#034ea1] text-white font-medium transition-colors"
           >
             Run a scan in the browser →
           </Link>

@@ -94,7 +94,7 @@ export default function ZapScannerPage() {
       <div className="max-w-5xl mx-auto px-5 py-20 space-y-20">
         {/* Hero */}
         <header className="space-y-6">
-          <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#a78bfa]">
+          <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#4493f8]">
             Scanner · Web
           </p>
           <div className="flex items-center gap-5">
@@ -123,7 +123,7 @@ export default function ZapScannerPage() {
           <div className="flex gap-3 flex-wrap pt-2">
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[#7c3aed] hover:bg-[#034ea1] text-white font-medium transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[#0366d6] hover:bg-[#034ea1] text-white font-medium transition-colors"
             >
               Run a scan →
             </Link>
@@ -142,7 +142,7 @@ export default function ZapScannerPage() {
           className="grid md:grid-cols-[2fr_1fr] gap-8 items-start"
         >
           <div className="space-y-4">
-            <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#a78bfa]">
+            <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#4493f8]">
               About the project
             </p>
             <h2
@@ -180,7 +180,7 @@ export default function ZapScannerPage() {
                   href="https://www.zaproxy.org/"
                   rel="noopener noreferrer"
                   target="_blank"
-                  className="text-[#a78bfa] hover:underline"
+                  className="text-[#4493f8] hover:underline"
                 >
                   zaproxy.org ↗
                 </a>
@@ -192,7 +192,7 @@ export default function ZapScannerPage() {
         {/* Capabilities */}
         <section aria-labelledby="capabilities" className="space-y-8">
           <div className="space-y-3">
-            <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#a78bfa]">
+            <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#4493f8]">
               Capabilities
             </p>
             <h2
@@ -224,7 +224,7 @@ export default function ZapScannerPage() {
         {/* Hosted advantages */}
         <section aria-labelledby="hosted" className="space-y-8">
           <div className="space-y-3">
-            <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#a78bfa]">
+            <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#4493f8]">
               Why hosted
             </p>
             <h2
@@ -262,7 +262,7 @@ export default function ZapScannerPage() {
         {/* Use cases */}
         <section aria-labelledby="usecases" className="space-y-8">
           <div className="space-y-3">
-            <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#a78bfa]">
+            <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#4493f8]">
               Use cases
             </p>
             <h2
@@ -290,7 +290,7 @@ export default function ZapScannerPage() {
         {/* Related posts */}
         <section aria-labelledby="related" className="space-y-6">
           <div className="space-y-3">
-            <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#a78bfa]">
+            <p className="font-mono text-[11.5px] uppercase tracking-[0.08em] text-[#4493f8]">
               From the blog
             </p>
             <h2
@@ -370,7 +370,7 @@ export default function ZapScannerPage() {
           <div className="flex gap-3 justify-center flex-wrap pt-2">
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[#7c3aed] hover:bg-[#034ea1] text-white font-medium transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[#0366d6] hover:bg-[#034ea1] text-white font-medium transition-colors"
             >
               Start scanning →
             </Link>
