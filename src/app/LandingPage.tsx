@@ -473,6 +473,10 @@ const KEY_FEATURES = [
     title: "Intuitive Interface",
     desc: "Launch comprehensive vulnerability scans with a simple form. Select your options and receive detailed results.",
   },
+  {
+    title: "Deliverable Reports",
+    desc: "Every scan generates a branded, client-ready PDF report — share findings with clients, auditors, and stakeholders without extra work.",
+  },
 ];
 
 const PAINS = [
@@ -732,7 +736,9 @@ export default function LandingPage() {
         <div className={styles.container}>
           <div className={styles.sectionHead}>
             <p className={styles.sectionKicker}>Key features</p>
-            <h2 className={styles.sectionTitle}>Key Features</h2>
+            <h2 className={styles.sectionTitle}>
+              Everything you need to scan and report.
+            </h2>
           </div>
           <div className={styles.kfGrid}>
             <ul className={styles.kfList}>
@@ -823,6 +829,16 @@ export default function LandingPage() {
                 </button>
               </div>
             ))}
+          </div>
+
+          <div className={styles.msspNote}>
+            <p className={styles.msspNoteText}>
+              <strong>MSP or MSSP?</strong> We offer volume pricing for managed
+              providers running our hosted scanners across multiple clients.
+            </p>
+            <Link href="/mssp" className={styles.msspNoteLink}>
+              Request a meeting <ArrowIcon />
+            </Link>
           </div>
         </div>
       </section>

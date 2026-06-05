@@ -525,6 +525,41 @@
 .checkIcon { flex-shrink: 0; margin-top: 3px; color: var(--blue2); }
 .priceCta { width: 100%; justify-content: center; margin-top: auto; }
 
+/* MSP / MSSP volume-pricing note under the pricing grid */
+.msspNote {
+  margin-top: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 18px;
+  text-align: center;
+  padding: 18px 22px;
+  background: var(--blueWash);
+  border: 1px solid var(--hair2);
+  border-radius: var(--rLg);
+}
+.msspNoteText { color: var(--text2); font-size: 15px; margin: 0; }
+.msspNoteText strong { color: var(--text); font-weight: 600; }
+.msspNoteLink {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+  color: var(--blue2);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  padding: 6px 2px;
+  border-bottom: 1px solid transparent;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+.msspNoteLink:hover {
+  color: var(--text);
+  border-bottom-color: var(--hair2);
+}
+
 /* ─── FAQ ────────────────────────────────────────────────────────── */
 .faq {
   display: grid;
