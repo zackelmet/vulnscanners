@@ -131,10 +131,27 @@ export async function GET(
       );
     }
 
+    // Make the artifact render cleanly when opened in a browser:
+    //  - nmap's `-oX` embeds <?xml-stylesheet href="file:///.../nmap.xsl"?>,
+    //    which points at a local file the user doesn't have, so browsers fail
+    //    to render the downloaded XML. Strip it.
+    //  - pretty-print zap's single-object JSON for readability.
+    // (nuclei output is line-delimited JSON — leave it as-is.)
+    let viewable = raw;
+    if (ext === "xml") {
+      viewable = viewable.replace(/<\?xml-stylesheet[^?]*\?>\s*/g, "");
+    } else if (ext === "json") {
+      try {
+        viewable = JSON.stringify(JSON.parse(viewable), null, 2);
+      } catch {
+        /* not valid JSON (e.g. legacy text fallback) — serve as-is */
+      }
+    }
+
     const body = truncated
       ? `# NOTE: This is a truncated preview of the scanner output.\n` +
-        `# The full artifact was not stored for this scan.\n\n${raw}`
-      : raw;
+        `# The full artifact was not stored for this scan.\n\n${viewable}`
+      : viewable;
 
     const target: string = scan.target || scan.targetValue || "scan";
     const safeTarget = target
@@ -143,10 +160,22 @@ export async function GET(
       .slice(0, 40);
     const filename = `${scannerType}-${safeTarget}-${scanId.slice(0, 8)}.${ext}`;
 
+    // Serve a real content type (when not a plain-text preview) so the file
+    // renders natively if opened inline as well as on download.
+    const contentType = truncated
+      ? "text/plain; charset=utf-8"
+      : ext === "xml"
+        ? "application/xml; charset=utf-8"
+        : ext === "json"
+          ? "application/json; charset=utf-8"
+          : ext === "jsonl"
+            ? "application/x-ndjson; charset=utf-8"
+            : "text/plain; charset=utf-8";
+
     return new Response(body, {
       status: 200,
       headers: {
-        "Content-Type": "text/plain; charset=utf-8",
+        "Content-Type": contentType,
         "Content-Disposition": `attachment; filename="${filename}"`,
         "Cache-Control": "private, no-cache",
       },
