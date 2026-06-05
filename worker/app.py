@@ -1,6 +1,7 @@
 import json
 import os
 import queue
+import re
 import shlex
 import subprocess
 import threading
@@ -31,12 +32,53 @@ def ensure_target_url(target: str) -> str:
     return f"http://{target}"
 
 
-def summarize_output(scanner: str, output: str):
+def _zap_summary(stdout: str, json_output: str):
+    # zap-full-scan.py prints a tally line like:
+    #   FAIL-NEW: 0  FAIL-INPROG: 0  WARN-NEW: 4  WARN-INPROG: 0  INFO: 0  IGNORE: 0  PASS: 138
+    # The old code counted the word "alert" — which never appears in this
+    # output, so alertsMentioned was always 0 (every scan looked clean).
+    fails = warns = passes = 0
+    m = re.search(r"FAIL-NEW:\s*(\d+).*?WARN-NEW:\s*(\d+).*?PASS:\s*(\d+)", stdout, re.S)
+    if m:
+        fails, warns, passes = int(m.group(1)), int(m.group(2)), int(m.group(3))
+
+    # Prefer the true alert count from the structured -J JSON report.
+    json_alerts = None
+    if json_output:
+        try:
+            data = json.loads(json_output)
+            json_alerts = sum(len(site.get("alerts", [])) for site in data.get("site", []))
+        except Exception:
+            json_alerts = None
+
+    alerts = json_alerts if json_alerts is not None else (fails + warns)
+
+    # If every HTTP response ZAP saw was a 5xx (and nothing FAILed), the target
+    # was effectively down — the active scan had nothing real to test. Flag it
+    # so the app shows "target unreachable" instead of a misleading clean report.
+    statuses = re.findall(r"\((\d{3})\s", stdout)
+    unreachable = bool(statuses) and all(s[0] == "5" for s in statuses) and fails == 0
+
+    return {
+        "scanner": "zap",
+        "alertsMentioned": alerts,  # kept name for the app's summary line
+        "failNew": fails,
+        "warnNew": warns,
+        "pass": passes,
+        "targetUnreachable": unreachable,
+        "rawPreview": stdout[:4000],
+    }
+
+
+def summarize_output(scanner: str, output: str, json_output: str = ""):
     if scanner == "nmap":
+        hosts_up = output.lower().count("host is up")
         return {
             "scanner": scanner,
-            "hostsUp": output.lower().count("host is up"),
+            "hostsUp": hosts_up,
             "openPorts": output.lower().count(" open "),
+            # No host responded to the probe → target unreachable.
+            "targetUnreachable": hosts_up == 0,
             "rawPreview": output[:4000],
         }
     if scanner == "nuclei":
@@ -44,11 +86,7 @@ def summarize_output(scanner: str, output: str):
         findings = sum(1 for line in output.splitlines() if line.strip().startswith("{"))
         return {"scanner": scanner, "findings": findings, "rawPreview": output[:4000]}
     if scanner == "zap":
-        return {
-            "scanner": scanner,
-            "alertsMentioned": output.lower().count("alert"),
-            "rawPreview": output[:4000],
-        }
+        return _zap_summary(output, json_output)
     return {"scanner": scanner, "rawPreview": output[:4000]}
 
 
@@ -250,7 +288,7 @@ def worker_loop(worker_id: int):
                 "completedAt": completed_at,
                 "durationSec": duration,
                 "resultPath": out_file,
-                "resultsSummary": summarize_output(scanner, result.stdout) if ok else None,
+                "resultsSummary": summarize_output(scanner, result.stdout, json_output) if ok else None,
                 "billingUnits": 1 if ok else None,
                 "errorMessage": None if ok else (result.stderr or "scan failed")[:2000],
                 "rawStdout": result.stdout or "",

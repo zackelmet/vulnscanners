@@ -28,14 +28,30 @@ async function downloadGcs(admin: any, gsUrl: string | null): Promise<string> {
   }
 }
 
-// Resolve the best available raw output for a scan: structured artifact →
-// stdout artifact → inline preview. (All GCS URLs are null while the project
-// has no Storage bucket, so this falls back to the inline preview today.)
+// Resolve the best available raw output for a scan, in priority order:
+//   1. full structured artifact stored INLINE on the doc (the reliable source
+//      on the Spark plan — nmap→XML, zap→JSON, nuclei→JSONL on stdout),
+//   2. structured artifact downloaded from Storage (null without a bucket),
+//   3. inline stdout / truncated preview as a last resort.
+// Each parser expects its scanner's structured format; returning the wrong one
+// silently yields an empty findings list (which reads as a clean scan).
 export async function resolveRawOutput(
   admin: any,
   scan: any,
   scannerType: ScannerType,
 ): Promise<string> {
+  // 1. Inline structured output (preferred — survives the no-Storage gap).
+  const inlineStructured: string | null =
+    scannerType === "nmap"
+      ? scan.rawXml || null
+      : scannerType === "zap"
+        ? scan.rawJson || null
+        : scan.rawStdout || null; // nuclei -jsonl writes JSONL to stdout
+  if (typeof inlineStructured === "string" && inlineStructured.length > 0) {
+    return inlineStructured;
+  }
+
+  // 2. Structured artifact from Storage (no-op while there is no bucket).
   const primaryUrl: string | null =
     scannerType === "nmap"
       ? scan.gcpXmlStorageUrl || scan.gcpStorageUrl || null
@@ -47,8 +63,12 @@ export async function resolveRawOutput(
   if (!raw && primaryUrl !== scan.gcpStorageUrl) {
     raw = await downloadGcs(admin, scan.gcpStorageUrl || null);
   }
+
+  // 3. Inline stdout / truncated preview. For zap/nuclei the parsers fall back
+  // to their legacy text formats, so raw stdout still yields some findings.
   if (!raw) {
     raw =
+      scan.rawStdout ||
       scan.resultsSummary?.rawPreview ||
       scan.rawPayload?.stdout ||
       scan.rawOutput ||
@@ -140,7 +160,10 @@ export async function buildCombinedPdfForUser(
     const scannerType = (scan.scannerType ||
       scan.type ||
       "nmap") as ScannerType;
-    if (scan.status !== "completed" || !["nmap", "nuclei", "zap"].includes(scannerType)) {
+    if (
+      scan.status !== "completed" ||
+      !["nmap", "nuclei", "zap"].includes(scannerType)
+    ) {
       skipped.push(doc.id);
       continue;
     }

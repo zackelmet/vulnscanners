@@ -55,7 +55,9 @@ export async function GET(
     }
 
     const scan = scanDoc.data() as any;
-    const scannerType = (scan.scannerType || scan.type || "nmap") as ScannerType;
+    const scannerType = (scan.scannerType ||
+      scan.type ||
+      "nmap") as ScannerType;
 
     // ── Resolve raw output ────────────────────────────────────────────────
     const downloadGcs = async (gsUrl: string | null): Promise<string> => {
@@ -76,34 +78,51 @@ export async function GET(
       }
     };
 
-    // Prefer the structured artifact for this scanner, then stdout.
-    const structuredUrl: string | null =
-      scannerType === "nmap"
-        ? scan.gcpXmlStorageUrl || null
-        : scannerType === "zap"
-          ? scan.gcpJsonStorageUrl || null
-          : scan.gcpStorageUrl || null; // nuclei stdout is JSONL
-
-    let raw = await downloadGcs(structuredUrl);
     let ext = EXT[scannerType] || "txt";
-
-    if (!raw && structuredUrl !== scan.gcpStorageUrl) {
-      raw = await downloadGcs(scan.gcpStorageUrl || null);
-      if (raw) ext = scannerType === "nmap" ? "txt" : EXT[scannerType] || "txt";
-    }
-
-    // Fall back to the inline preview (truncated) for scans that predate the
-    // Storage upload path. Mark the file so the user knows it's a preview.
     let truncated = false;
-    if (!raw) {
-      raw =
-        scan.resultsSummary?.rawPreview ||
-        scan.rawPayload?.stdout ||
-        scan.rawOutput ||
-        "";
-      ext = "txt";
-      truncated = true;
+
+    // Prefer the full structured artifact stored inline on the doc — the
+    // reliable source on the Spark plan (no Storage bucket).
+    const inlineStructured: string | null =
+      scannerType === "nmap"
+        ? scan.rawXml || null
+        : scannerType === "zap"
+          ? scan.rawJson || null
+          : scan.rawStdout || null; // nuclei stdout is JSONL
+
+    let raw = "";
+    if (typeof inlineStructured === "string" && inlineStructured.length > 0) {
+      raw = inlineStructured;
+    } else {
+      // Fall back to Storage (null without a bucket), then stdout.
+      const structuredUrl: string | null =
+        scannerType === "nmap"
+          ? scan.gcpXmlStorageUrl || null
+          : scannerType === "zap"
+            ? scan.gcpJsonStorageUrl || null
+            : scan.gcpStorageUrl || null;
+
+      raw = await downloadGcs(structuredUrl);
+      if (!raw && structuredUrl !== scan.gcpStorageUrl) {
+        raw = await downloadGcs(scan.gcpStorageUrl || null);
+        if (raw)
+          ext = scannerType === "nmap" ? "txt" : EXT[scannerType] || "txt";
+      }
+
+      // Last resort: the inline (truncated) preview. Mark it for the user.
+      if (!raw) {
+        raw =
+          scan.resultsSummary?.rawPreview ||
+          scan.rawPayload?.stdout ||
+          scan.rawOutput ||
+          "";
+        ext = "txt";
+        truncated = true;
+      }
     }
+
+    // The webhook caps inline output at Firestore's doc limit; flag if it did.
+    if (scan.rawTruncated) truncated = true;
 
     if (!raw) {
       return NextResponse.json(

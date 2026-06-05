@@ -11,6 +11,8 @@ import { failScanAndRefund } from "@/lib/scans/settle";
 // Short human summary line for the scan-complete email, by scanner.
 function scanSummaryLine(rs: any): string | null {
   if (!rs || typeof rs !== "object") return null;
+  if (rs.targetUnreachable)
+    return "The target was unreachable (every request returned a server error) — no findings could be collected. Verify the host is up and re-run.";
   if (typeof rs.findings === "number")
     return `${rs.findings} finding${rs.findings === 1 ? "" : "s"} identified.`;
   if (typeof rs.alertsMentioned === "number")
@@ -327,12 +329,37 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Persist the worker's full structured output INLINE on the scan doc so
+      // the report engine can parse findings without a Storage bucket (the
+      // Spark plan has none, so every gcp*StorageUrl above is null). Each parser
+      // wants its scanner's structured format — nmap→XML, zap→JSON,
+      // nuclei→JSONL(stdout) — so we keep all three. Capped to stay under
+      // Firestore's 1MB per-document limit; rawTruncated flags an overflow.
+      const INLINE_RAW_CAP = 700_000;
+      const capRaw = (v: unknown): string | null =>
+        typeof v === "string" && v.length > 0
+          ? v.slice(0, INLINE_RAW_CAP)
+          : null;
+      const inlineStdout = capRaw(rawStdout);
+      const inlineXml = capRaw(rawXml);
+      const inlineJson = capRaw(rawJson);
+      const rawTruncatedInline =
+        (typeof rawStdout === "string" && rawStdout.length > INLINE_RAW_CAP) ||
+        (typeof rawXml === "string" && rawXml.length > INLINE_RAW_CAP) ||
+        (typeof rawJson === "string" && rawJson.length > INLINE_RAW_CAP);
+
       // Merge the update into the user's scan doc (create if missing)
       await userScanRef.set(
         {
           status: normalizedStatus,
           endTime: now,
           resultsSummary: normalizedSummary,
+          // Full structured output stored inline — the report engine + raw
+          // download read these first; Storage URLs are null on the Spark plan.
+          rawStdout: inlineStdout,
+          rawXml: inlineXml,
+          rawJson: inlineJson,
+          rawTruncated: rawTruncatedInline,
           gcpStorageUrl: normalizedGcsUrl,
           // store worker-provided signed urls and their expiry if present
           gcpSignedUrl: normalizedSignedUrl,
