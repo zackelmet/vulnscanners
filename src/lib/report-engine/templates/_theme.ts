@@ -46,6 +46,7 @@ export const C = {
     high: "#f59e0b",
     medium: "#0366d6",
     low: "#10b981",
+    info: "#9ca3af",
   },
 } as const;
 

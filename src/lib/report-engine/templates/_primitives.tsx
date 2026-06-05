@@ -382,18 +382,21 @@ export function SeverityChart({
 }: {
   counts: Record<Severity, number>;
 }) {
-  // Aikido chart shows Critical/High/Medium/Low only — info is implicit.
-  const buckets: { key: Exclude<Severity, "info">; label: string; color: string }[] = [
+  // Show every severity so info-heavy scans (e.g. nuclei, where most findings
+  // are informational detections) still populate the distribution instead of
+  // rendering four empty bars.
+  const buckets: { key: Severity; label: string; color: string }[] = [
     { key: "critical", label: "Critical", color: C.chart.critical },
     { key: "high", label: "High", color: C.chart.high },
     { key: "medium", label: "Medium", color: C.chart.medium },
     { key: "low", label: "Low", color: C.chart.low },
+    { key: "info", label: "Info", color: C.chart.info },
   ];
   const max = Math.max(1, ...buckets.map((b) => counts[b.key] ?? 0));
   // Round the Y axis to a nice ceiling (1, 3, 7, 10, ...).
   const nice = max <= 1 ? 1 : max <= 3 ? 3 : max <= 7 ? 7 : Math.ceil(max / 10) * 10;
   const chartH = 100;
-  const colW = 110;
+  const colW = 88;
   const gap = 8;
   const totalW = buckets.length * colW + (buckets.length - 1) * gap;
 

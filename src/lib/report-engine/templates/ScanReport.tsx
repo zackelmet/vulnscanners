@@ -359,11 +359,13 @@ const tableStyles = StyleSheet.create({
 // ────────────────────────────────────────────────────────────────────────────
 
 function DetailedFindings({ data }: { data: ScanReportData }) {
-  // Info-severity findings (e.g. nmap filtered-port observations) appear in
-  // the master findings table but don't get a per-finding detail page —
-  // they're observational notes, not actionable items, and a page each would
-  // bloat the report.
-  const detailed = data.findings.filter((f) => f.severity !== "info");
+  // Info-severity findings (e.g. nmap filtered-port observations) normally stay
+  // in the master findings table only — they're observational, and a detail
+  // page each would bloat the report. But when a scan produced ONLY info
+  // findings (common for nuclei, whose detections are mostly info-level), fall
+  // back to detailing them so the section isn't empty.
+  const nonInfo = data.findings.filter((f) => f.severity !== "info");
+  const detailed = nonInfo.length > 0 ? nonInfo : data.findings;
   return (
     <View>
       <Heading2>2.3 Detailed Findings</Heading2>
