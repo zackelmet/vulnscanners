@@ -73,12 +73,15 @@ def _zap_summary(stdout: str, json_output: str):
 def summarize_output(scanner: str, output: str, json_output: str = ""):
     if scanner == "nmap":
         hosts_up = output.lower().count("host is up")
+        open_ports = output.lower().count(" open ")
+        # With -Pn nmap always assumes the host is up, so "host down" no longer
+        # signals unreachability. Zero responsive ports means nothing was
+        # scannable (host filtered/blocked or genuinely has no open services).
         return {
             "scanner": scanner,
             "hostsUp": hosts_up,
-            "openPorts": output.lower().count(" open "),
-            # No host responded to the probe → target unreachable.
-            "targetUnreachable": hosts_up == 0,
+            "openPorts": open_ports,
+            "targetUnreachable": open_ports == 0,
             "rawPreview": output[:4000],
         }
     if scanner == "nuclei":
@@ -93,7 +96,10 @@ def summarize_output(scanner: str, output: str, json_output: str = ""):
 def run_nmap(target: str, options: dict):
     OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
     xml_path = OUTPUT_ROOT / f"nmap-{os.getpid()}-{int(time.time()*1000)}.xml"
-    args = ["nmap", "-sV", "-T3", "-oX", str(xml_path), target]
+    # -Pn skips ICMP host-discovery: most firewalled/CDN'd hosts drop ping, and
+    # without it nmap declares them "host down" and scans nothing. A vuln
+    # scanner is told what to scan, so always treat the target as online.
+    args = ["nmap", "-Pn", "-sV", "-T3", "-oX", str(xml_path), target]
     top_ports = options.get("topPorts") if isinstance(options, dict) else None
     if top_ports:
         args.extend(["--top-ports", str(top_ports)])

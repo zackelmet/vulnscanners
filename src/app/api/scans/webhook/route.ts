@@ -12,7 +12,7 @@ import { failScanAndRefund } from "@/lib/scans/settle";
 function scanSummaryLine(rs: any): string | null {
   if (!rs || typeof rs !== "object") return null;
   if (rs.targetUnreachable)
-    return "The target was unreachable (every request returned a server error) — no findings could be collected. Verify the host is up and re-run.";
+    return "The target appears unreachable — no responsive ports/services were found (it may be down, firewalled, or blocking the scanner). Verify the host is reachable and re-run.";
   if (typeof rs.findings === "number")
     return `${rs.findings} finding${rs.findings === 1 ? "" : "s"} identified.`;
   if (typeof rs.alertsMentioned === "number")
