@@ -32,11 +32,28 @@ This directory is **excluded from the Vercel deployment** via the repo's
 
 - **App → worker**: `POST /scan` with shared-secret header `X-Scanner-Token`,
   body `{scanId, userId, scanner, target, options}`.
-- **Worker → app**: fire-and-forget `POST` to `VERCEL_WEBHOOK_URL` with the
-  raw stdout/xml, returncode, duration, and a `resultsSummary`.
+- **Worker → app**: `POST` to `VERCEL_WEBHOOK_URL` with the raw stdout/xml,
+  returncode, duration, and a `resultsSummary`. The callback **retries** on
+  5xx / network errors (backoff `0/2/5/15/30s`) so a completed scan's result
+  isn't lost to a transient blip. Each delivery carries a unique `eventId`;
+  the receiver dedupes on it, so retries never double-count or double-email.
+  If every retry fails, the app-side stuck-scan reaper is the final backstop
+  (see below).
 - Auth is a symmetric shared secret (`GCP_WEBHOOK_SECRET` on the worker side,
   `HETZNER_WEBHOOK_SECRET` / `HETZNER_SCANNER_AUTH_TOKEN` on the Vercel side
   — same value).
+
+### Reliability backstops
+
+- A scan reserves one credit at creation. If it never reports back (worker
+  reboot drops the in-memory queue, callback exhausts its retries, etc.) the
+  app's **stuck-scan reaper** (`/api/cron/reap-stuck-scans`) marks it failed
+  and refunds the credit. The reaper runs daily on Vercel and hourly from this
+  box's crontab (see "Cron on the box"). Tunable via `SCAN_STUCK_MINUTES`
+  (app env, default 60).
+- ZAP runs in a Docker container. On a scan timeout the worker force-removes
+  the named container (`docker rm -f`) so a killed `docker run` client can't
+  leave it running and leaking CPU/RAM on the box.
 
 ## Layout on the Hetzner box
 
@@ -62,6 +79,25 @@ reinstalls deps (idempotent), restarts the systemd unit, and verifies
 `/health` is 200. No CI hook — invoke manually after merging changes.
 
 Override the host / user / key with env vars (see the head of `deploy.sh`).
+
+> Restarting the systemd unit drops the in-memory job queue. `deploy.sh`
+> doesn't check for in-flight scans — confirm `curl -s localhost:8080/health`
+> shows `queue_size: 0` before deploying, or accept that any running scans will
+> be reaped + credit-refunded by the app instead of completing.
+
+## Cron on the box
+
+Vercel Hobby only runs crons once daily, so the box's root crontab triggers the
+app's cron endpoints hourly as the primary schedule (Vercel's daily runs are a
+backup). Each entry sends `Authorization: Bearer $CRON_SECRET`:
+
+```cron
+0 * * * * curl -fsS -L -H "Authorization: Bearer $CRON_SECRET" https://vulnscanners.com/api/cron/scheduled-scans  >/dev/null 2>&1
+5 * * * * curl -fsS -L -H "Authorization: Bearer $CRON_SECRET" https://vulnscanners.com/api/cron/reap-stuck-scans >/dev/null 2>&1
+```
+
+(The literal secret lives in the crontab on the box and in Vercel's
+`CRON_SECRET` env — same value. Edit with `crontab -e` as root.)
 
 ## Reading logs
 
