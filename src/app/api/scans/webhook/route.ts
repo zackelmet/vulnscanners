@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { initializeAdmin } from "@/lib/firebase/firebaseAdmin";
 import { ScanMetadata } from "@/lib/types/user";
-import {
-  sendScanCompleteEmail,
-  sendScanFailedEmail,
-} from "@/lib/email/resend";
+import { sendScanCompleteEmail, sendScanFailedEmail } from "@/lib/email/resend";
 import {
   buildScanPdfFromDoc,
   scanPdfFilename,
 } from "@/lib/report-engine/render-from-doc";
+import { failScanAndRefund } from "@/lib/scans/settle";
 
 // Short human summary line for the scan-complete email, by scanner.
 function scanSummaryLine(rs: any): string | null {
@@ -132,6 +130,8 @@ export async function POST(request: NextRequest) {
     // Parse scan result from Cloud Function
     const result = await request.json();
     const {
+      // Unique per worker delivery; used to dedupe callback retries.
+      eventId,
       scanId,
       userId,
       status,
@@ -175,6 +175,37 @@ export async function POST(request: NextRequest) {
         ? `${gcpReportSignedUrl.slice(0, 60)}...`
         : "NOT PROVIDED",
     });
+
+    // Idempotency: the worker retries this callback on transient failures, so a
+    // single scan result can arrive more than once. Claim the eventId up front;
+    // if it's already claimed, this is a duplicate — ack and skip the
+    // non-idempotent work (emails, PDF render). Credit refund is independently
+    // guarded, but emails would otherwise re-fire. We release the claim if
+    // processing fails below so a genuine retry can re-run.
+    // (Consider a Firestore TTL policy on `expiresAt` to GC this collection.)
+    const eventRef =
+      eventId != null
+        ? firestore.collection("processedWebhookEvents").doc(String(eventId))
+        : null;
+    if (eventRef) {
+      try {
+        await eventRef.create({
+          scanId,
+          userId,
+          status: status ?? null,
+          processedAt: admin.firestore.FieldValue.serverTimestamp(),
+          expiresAt: admin.firestore.Timestamp.fromMillis(
+            Date.now() + 30 * 24 * 60 * 60 * 1000,
+          ),
+        });
+      } catch {
+        // create() throws ALREADY_EXISTS when we've already handled this event.
+        console.log(
+          `↩️ Duplicate webhook event ${eventId} for scan ${scanId} — skipping.`,
+        );
+        return NextResponse.json({ success: true, deduped: true });
+      }
+    }
 
     // Update per-user subcollection document for this scan (preferred)
     const userScanRef = firestore
@@ -330,63 +361,22 @@ export async function POST(request: NextRequest) {
       // Scans live solely under the user (users/{uid}/completedScans) — no
       // global mirror to keep in sync.
 
-      // NOTE: usage counters are incremented at scan creation time to enforce
-      // per-scanner quotas immediately. The worker webhook writes scan
-      // metadata but does not increment usage to avoid double-counting.
-
-      // Reconcile actual billing units from the worker:
-      // - If the scan completed and the worker reports `billingUnits` > 1,
-      //   increment the user's scanner counter by (billingUnits - 1).
-      // - If the scan did NOT complete (failed/cancelled), rollback the
-      //   reserved unit from scan creation by decrementing the scanner
-      //   counter by 1 (bounded to >= 0).
-      try {
-        if (scannerType) {
-          const scanner = scannerType as "nmap" | "nuclei" | "zap";
-          const units =
-            typeof billingUnits === "number" && billingUnits > 0
-              ? billingUnits
-              : 1;
-
-          const userRef = firestore.collection("users").doc(userId);
-
-          await firestore.runTransaction(async (tx) => {
-            const usrSnap = await tx.get(userRef);
-            if (!usrSnap.exists) return;
-            const usr = usrSnap.data() as any;
-            const currentUsed =
-              (usr.scannersUsedThisMonth &&
-                usr.scannersUsedThisMonth[scanner]) ||
-              0;
-
-            if (normalizedStatus === "completed") {
-              const extra = units - 1;
-              if (extra > 0) {
-                tx.update(userRef, {
-                  [`scannersUsedThisMonth.${scanner}`]:
-                    admin.firestore.FieldValue.increment(extra),
-                  scansThisMonth: admin.firestore.FieldValue.increment(extra),
-                  totalScansAllTime:
-                    admin.firestore.FieldValue.increment(extra),
-                  updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-                });
-              }
-            } else {
-              // rollback the reserved unit from creation
-              const dec = Math.min(1, currentUsed);
-              if (dec > 0) {
-                tx.update(userRef, {
-                  [`scannersUsedThisMonth.${scanner}`]:
-                    admin.firestore.FieldValue.increment(-dec),
-                  scansThisMonth: admin.firestore.FieldValue.increment(-dec),
-                  updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-                });
-              }
-            }
+      // Reconcile the reserved credit. A scan reserves one credit at creation
+      // (scanCredits -1). If it did NOT complete, return that credit exactly
+      // once. Completed scans keep the credit spent. The scan doc's status was
+      // already written above, so markFailed=false (refund only).
+      if (normalizedStatus !== "completed") {
+        try {
+          const outcome = await failScanAndRefund(admin, firestore, {
+            userId,
+            scanId,
+            reason: errorMessage || "scan failed",
+            markFailed: false,
           });
+          console.log(`💸 Credit settlement for ${scanId}: ${outcome}`);
+        } catch (err: any) {
+          console.error("Failed to settle scan credit on webhook:", err);
         }
-      } catch (err: any) {
-        console.error("Failed to reconcile billing units on webhook:", err);
       }
 
       // ── Notify the user by email (best-effort; never fails the webhook) ────
@@ -434,6 +424,16 @@ export async function POST(request: NextRequest) {
         "Failed to update per-user scan doc or global scan doc:",
         err,
       );
+      // Processing failed — release the idempotency claim so the worker's retry
+      // (which returns a 5xx-triggered re-POST) can re-run instead of being
+      // deduped into a no-op.
+      if (eventRef) {
+        await eventRef
+          .delete()
+          .catch((e: any) =>
+            console.error("Failed to release webhook event claim:", e),
+          );
+      }
       return NextResponse.json(
         { error: "Failed to update scan metadata" },
         { status: 500 },

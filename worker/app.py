@@ -92,13 +92,27 @@ def run_zap(target: str, options: dict):
     # exit (warnings) from being treated as a hard failure.
     OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
     target_url = ensure_target_url(target)
-    json_name = f"zap-{os.getpid()}-{int(time.time()*1000)}.json"
+    stamp = f"{os.getpid()}-{int(time.time()*1000)}"
+    json_name = f"zap-{stamp}.json"
     json_path = OUTPUT_ROOT / json_name
+    # Name the container so we can force-remove it if the scan times out.
+    container_name = f"zap-{stamp}"
     args = [
-        "docker", "run", "--rm", "-u", "root", "-v", f"{OUTPUT_ROOT}:/zap/wrk", "zaproxy/zap-stable",
+        "docker", "run", "--rm", "--name", container_name, "-u", "root",
+        "-v", f"{OUTPUT_ROOT}:/zap/wrk", "zaproxy/zap-stable",
         "zap-full-scan.py", "-t", target_url, "-J", json_name, "-I",
     ]
-    proc = subprocess.run(args, capture_output=True, text=True, timeout=MAX_TIMEOUT)
+    try:
+        proc = subprocess.run(args, capture_output=True, text=True, timeout=MAX_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        # subprocess.run kills the `docker run` client on timeout, but the
+        # container keeps running detached — force-remove it so it doesn't leak
+        # CPU/RAM on the box. Re-raise so worker_loop reports the scan failed.
+        subprocess.run(
+            ["docker", "rm", "-f", container_name],
+            capture_output=True, text=True, check=False,
+        )
+        raise
     try:
         proc.json_output = json_path.read_text(encoding="utf-8", errors="ignore")
     except FileNotFoundError:
@@ -134,18 +148,51 @@ def persist_output(scan_id: str, scanner: str, stdout_text: str, stderr_text: st
     return str(out_file), str(err_file), (str(xml_file) if xml_file else None)
 
 
+# Retry schedule (seconds) for the result callback. A completed scan that
+# fails to report back is a lost result + a wrongly-spent credit, so we retry
+# transient failures (5xx / network) instead of dropping them. The receiver is
+# idempotent (dedupes on eventId), so retries are safe. The stuck-scan reaper on
+# the app side is the final backstop if every attempt here fails.
+CALLBACK_RETRY_DELAYS = [0, 2, 5, 15, 30]
+
+
 def post_callback(payload: dict):
     if not WEBHOOK_URL:
         return
-    try:
-        requests.post(
-            WEBHOOK_URL,
-            headers={"Content-Type": "application/json", "x-webhook-secret": SCANNER_TOKEN},
-            data=json.dumps(payload),
-            timeout=20,
+    scan_id = payload.get("scanId", "?")
+    last_err = None
+    for attempt, delay in enumerate(CALLBACK_RETRY_DELAYS):
+        if delay:
+            time.sleep(delay)
+        try:
+            resp = requests.post(
+                WEBHOOK_URL,
+                headers={"Content-Type": "application/json", "x-webhook-secret": SCANNER_TOKEN},
+                data=json.dumps(payload),
+                timeout=20,
+            )
+            if resp.status_code < 500:
+                # 2xx success, or 4xx (won't change on retry) — stop either way.
+                if resp.status_code >= 400:
+                    print(
+                        f"[callback] non-retryable {resp.status_code} for scan={scan_id}: "
+                        f"{resp.text[:300]!r}",
+                        flush=True,
+                    )
+                return
+            last_err = f"HTTP {resp.status_code}"
+        except Exception as exc:
+            last_err = f"{type(exc).__name__}: {str(exc)[:300]}"
+        print(
+            f"[callback] attempt {attempt + 1}/{len(CALLBACK_RETRY_DELAYS)} failed for "
+            f"scan={scan_id}: {last_err}; retrying",
+            flush=True,
         )
-    except Exception:
-        pass
+    print(
+        f"[callback] GAVE UP for scan={scan_id} after {len(CALLBACK_RETRY_DELAYS)} attempts; "
+        f"last_err={last_err} — app-side reaper will reconcile",
+        flush=True,
+    )
 
 
 def worker_loop(worker_id: int):
