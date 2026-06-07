@@ -57,6 +57,7 @@ export function buildSeverityCounts(
     medium: 0,
     low: 0,
     info: 0,
+    accepted: 0,
   };
   for (const f of findings) counts[f.severity]++;
   return counts;

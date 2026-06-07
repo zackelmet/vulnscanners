@@ -237,7 +237,7 @@ export function mapNmapReport(args: {
     }
   }
   // Sort by severity desc so PT-1 lines up with the highest severity in display order.
-  const sevOrder = ["critical", "high", "medium", "low", "info"] as const;
+  const sevOrder = ["critical", "high", "medium", "low", "info", "accepted"] as const;
   findings.sort(
     (a, b) =>
       sevOrder.indexOf(a.severity) - sevOrder.indexOf(b.severity),

@@ -233,7 +233,7 @@ export function mapZapReport(args: {
   });
 
   // Sort by severity, re-number.
-  const sevOrder = ["critical", "high", "medium", "low", "info"] as const;
+  const sevOrder = ["critical", "high", "medium", "low", "info", "accepted"] as const;
   findings.sort(
     (a, b) => sevOrder.indexOf(a.severity) - sevOrder.indexOf(b.severity),
   );

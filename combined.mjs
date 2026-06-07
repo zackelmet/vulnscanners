@@ -1,0 +1,20 @@
+import { readFileSync, writeFileSync } from "node:fs";
+import admin from "firebase-admin";
+const parseEnv=(p)=>{const o={};for(const l of readFileSync(p,"utf8").split("\n")){const m=l.match(/^([A-Z0-9_]+)=(.*)$/);if(m)o[m[1]]=m[2].replace(/^["']|["']$/g,"").replace(/\\n/g,"").trim();}return o;};
+const env=parseEnv(".env.local"), venv=parseEnv("/tmp/vercel-env.txt");
+admin.initializeApp({credential:admin.credential.cert({projectId:env.FIREBASE_ADMIN_PROJECT_ID,clientEmail:env.FIREBASE_ADMIN_CLIENT_EMAIL,privateKey:readFileSync(".env.local","utf8").match(/FIREBASE_ADMIN_PRIVATE_KEY="?([^"]*)"?/)[1].replace(/\\n/g,"\n")})});
+const db=admin.firestore(), uid="efRetIVDw4UcMgwYAu75StBq6dx2";
+// pick the 16:22 juice-shop batch (nmap+nuclei+zap) — richest content
+const snap=await db.collection("users").doc(uid).collection("completedScans").get();
+const scans=snap.docs.map(d=>({id:d.id,...d.data()})).filter(s=>s.status==="completed");
+scans.sort((a,b)=>((b.createdAt?.toMillis?.()||0)-(a.createdAt?.toMillis?.()||0)));
+const ids=scans.slice(0,3).map(s=>s.id);
+console.log("combined scanIds:",ids,"| types:",scans.slice(0,3).map(s=>s.type||s.scannerType));
+const ct=await admin.auth().createCustomToken(uid);
+const r=await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${venv.NEXT_PUBLIC_FIREBASE_API_KEY}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:ct,returnSecureToken:true})});
+const j=await r.json();
+const resp=await fetch("https://vulnscanners.com/api/reports/combined",{method:"POST",headers:{Authorization:`Bearer ${j.idToken}`,"Content-Type":"application/json"},body:JSON.stringify({scanIds:ids})});
+console.log("combined report -> HTTP",resp.status,resp.headers.get("content-type"));
+const buf=Buffer.from(await resp.arrayBuffer()); writeFileSync("/tmp/combined.pdf",buf);
+console.log("saved",buf.length,"bytes"); if(resp.status!==200)console.log(buf.toString().slice(0,300));
+process.exit(0);

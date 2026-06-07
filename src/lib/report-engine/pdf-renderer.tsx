@@ -61,7 +61,7 @@ export async function renderScanReport(args: RenderArgs): Promise<Buffer> {
 
 // ── Combined multi-scan report ────────────────────────────────────────────────
 
-const SEVERITIES: Severity[] = ["critical", "high", "medium", "low", "info"];
+const SEVERITIES: Severity[] = ["critical", "high", "medium", "low", "info", "accepted"];
 
 /** One scan's inputs for a combined report (same shape as RenderArgs). */
 export type CombinedScanArgs = RenderArgs;

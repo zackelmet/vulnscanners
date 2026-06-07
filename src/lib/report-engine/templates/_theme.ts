@@ -37,16 +37,37 @@ export const C = {
     medium: { fill: "#dbeafe", border: "#93c5fd", text: "#1d4ed8" },
     low: { fill: "#d1fae5", border: "#86efac", text: "#047857" },
     info: { fill: "#f3f4f6", border: "#d1d5db", text: "#374151" },
+    accepted: { fill: "#dcfce7", border: "#86efac", text: "#15803d" },
     fixed: { fill: "#f3f4f6", border: "#d1d5db", text: "#6b7280" },
   },
 
   // Chart bar colors
   chart: {
-    critical: "#ef4444",
-    high: "#f59e0b",
-    medium: "#0366d6",
-    low: "#10b981",
+    critical: "#c026d3",
+    high: "#ef4444",
+    medium: "#f59e0b",
+    low: "#eab308",
     info: "#9ca3af",
+    accepted: "#22c55e",
+  },
+
+  // HostedScan-style severity palette — solid accent (cards, dots, % bar) and a
+  // light tint (card backgrounds). Keyed by Severity.
+  sevColor: {
+    critical: "#c026d3",
+    high: "#ef4444",
+    medium: "#f59e0b",
+    low: "#eab308",
+    info: "#9ca3af",
+    accepted: "#22c55e",
+  },
+  sevTint: {
+    critical: "#fdf4ff",
+    high: "#fef2f2",
+    medium: "#fffbeb",
+    low: "#fefce8",
+    info: "#f9fafb",
+    accepted: "#f0fdf4",
   },
 } as const;
 
@@ -73,4 +94,29 @@ export const S = {
   finding: { headingGap: 4, blockGap: 12 },
 } as const;
 
-export type Severity = "critical" | "high" | "medium" | "low" | "info";
+export type Severity =
+  | "critical"
+  | "high"
+  | "medium"
+  | "low"
+  | "info"
+  | "accepted";
+
+// Display order for severity rows/cards (most → least severe, then accepted).
+export const SEVERITY_ORDER: Severity[] = [
+  "critical",
+  "high",
+  "medium",
+  "low",
+  "info",
+  "accepted",
+];
+
+export const SEVERITY_LABEL: Record<Severity, string> = {
+  critical: "Critical",
+  high: "High",
+  medium: "Medium",
+  low: "Low",
+  info: "Info",
+  accepted: "Accepted",
+};
