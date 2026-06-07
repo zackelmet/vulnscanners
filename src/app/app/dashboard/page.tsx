@@ -6,22 +6,20 @@ import { useMemo, useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faShieldHalved,
-  faJetFighterUp,
-  faSatelliteDish,
-  faSpider,
   faPlus,
   faXmark,
+  faSpinner,
+  faCalendarCheck,
+  faArrowRight,
+  faFileLines,
 } from "@fortawesome/free-solid-svg-icons";
-import Image from "next/image";
 import Link from "next/link";
 import { useUserData } from "@/lib/hooks/useUserData";
-import { useUserScans } from "@/lib/hooks/useUserScans";
 import { useAuth } from "@/lib/context/AuthContext";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import toast from "react-hot-toast";
 
-/* ─── Credit pack definitions ────────────────────────────── */
+/* ─── Credit packs ───────────────────────────────────────── */
 
 interface CreditPack {
   id: string;
@@ -32,65 +30,115 @@ interface CreditPack {
 }
 
 const CREDIT_PACKS: CreditPack[] = [
-  {
-    id: "essential",
-    name: "Essential",
-    price: 10,
-    credits: 10,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ESSENTIAL || "",
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    price: 50,
-    credits: 100,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO || "",
-  },
-  {
-    id: "scale",
-    name: "Scale",
-    price: 200,
-    credits: 1000,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_SCALE || "",
-  },
+  { id: "essential", name: "Essential", price: 10, credits: 10, priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ESSENTIAL || "" },
+  { id: "pro", name: "Pro", price: 50, credits: 100, priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO || "" },
+  { id: "scale", name: "Scale", price: 200, credits: 1000, priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_SCALE || "" },
 ];
 
-/* ─── Per-scanner card config ────────────────────────────── */
+/* ─── Severity UI (dark theme) ───────────────────────────── */
 
-const SCANNERS = [
-  {
-    key: "nmap" as const,
-    label: "Nmap",
-    description: "Port scanning & service detection",
-    logo: "/scanners/nmap.png",
-    logoW: 80,
-    logoH: 32,
-  },
-  {
-    key: "nuclei" as const,
-    label: "Nuclei",
-    description: "CVE detection & vulnerability assessment",
-    logo: "/scanners/nuclei.png",
-    logoW: 32,
-    logoH: 32,
-  },
-  {
-    key: "zap" as const,
-    label: "OWASP ZAP",
-    description: "Web app security & OWASP Top 10",
-    logo: "/scanners/zap.png",
-    logoW: 32,
-    logoH: 32,
-  },
-];
+type Sev = "critical" | "high" | "medium" | "low" | "info" | "accepted";
+
+const SEV_UI: Record<
+  Sev | "closed",
+  { label: string; color: string; bg: string; border: string }
+> = {
+  critical: { label: "Critical", color: "#e879f9", bg: "rgba(192,38,211,0.12)", border: "rgba(192,38,211,0.35)" },
+  high: { label: "High", color: "#f87171", bg: "rgba(239,68,68,0.12)", border: "rgba(239,68,68,0.35)" },
+  medium: { label: "Medium", color: "#fbbf24", bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.30)" },
+  low: { label: "Low", color: "#eab308", bg: "rgba(234,179,8,0.10)", border: "rgba(234,179,8,0.28)" },
+  info: { label: "Info", color: "#9ca3af", bg: "rgba(156,163,175,0.10)", border: "rgba(156,163,175,0.22)" },
+  accepted: { label: "Accepted", color: "#34d399", bg: "rgba(34,197,94,0.12)", border: "rgba(34,197,94,0.30)" },
+  closed: { label: "Closed", color: "#9aa5b6", bg: "rgba(154,165,182,0.06)", border: "#161b24" },
+};
+
+interface DashboardData {
+  riskCounts: Record<Sev, number>;
+  totalRisks: number;
+  closed: number;
+  healthScore: number;
+  grade: string;
+  inProgress: number;
+  scheduled: number;
+  recentScans: {
+    scanId: string;
+    label: string;
+    target: string;
+    status: string;
+    completedAtMs: number | null;
+  }[];
+  recentRisks: { title: string; severity: Sev; scannerType: string; target: string }[];
+  targets: { target: string; total: number }[];
+  totalTargets: number;
+}
+
+function timeAgo(ms: number | null): string {
+  if (!ms) return "—";
+  const s = Math.max(1, Math.floor((Date.now() - ms) / 1000));
+  if (s < 60) return `${s}s ago`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  return `${d}d ago`;
+}
+
+/* ─── Health gauge (semicircular) ────────────────────────── */
+
+function HealthGauge({ score, grade }: { score: number; grade: string }) {
+  const cx = 110,
+    cy = 110,
+    r = 90;
+  const polar = (frac: number) => {
+    const angle = Math.PI * (1 - frac); // 0 → left (π), 1 → right (0)
+    return { x: cx + r * Math.cos(angle), y: cy - r * Math.sin(angle) };
+  };
+  const start = polar(0);
+  const end = polar(score / 100);
+  const full = polar(1);
+  const gradeColor =
+    score >= 75 ? "#34d399" : score >= 60 ? "#eab308" : score >= 40 ? "#f59e0b" : "#f87171";
+  return (
+    <svg viewBox="0 0 220 130" width="220" height="130">
+      <path
+        d={`M ${start.x} ${start.y} A ${r} ${r} 0 0 1 ${full.x} ${full.y}`}
+        fill="none"
+        stroke="#1b2230"
+        strokeWidth="14"
+        strokeLinecap="round"
+      />
+      <path
+        d={`M ${start.x} ${start.y} A ${r} ${r} 0 0 1 ${end.x} ${end.y}`}
+        fill="none"
+        stroke={gradeColor}
+        strokeWidth="14"
+        strokeLinecap="round"
+      />
+      <text x={cx} y={cy - 14} textAnchor="middle" fontSize="40" fontWeight="700" fill={gradeColor}>
+        {grade}
+      </text>
+      <text x={cx} y={cy + 6} textAnchor="middle" fontSize="11" fill="#9aa5b6">
+        Health Score
+      </text>
+      <text x={20} y={128} fontSize="9" fill="#697080">
+        0
+      </text>
+      <text x={196} y={128} fontSize="9" fill="#697080">
+        100
+      </text>
+    </svg>
+  );
+}
 
 /* ─── Page ───────────────────────────────────────────────── */
 
 export default function DashboardPage() {
-  const { userData, loading } = useUserData();
+  const { userData } = useUserData();
   const { currentUser } = useAuth();
-  const { scans: userScans = [] } = useUserScans(currentUser?.uid ?? null);
 
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loadingData, setLoadingData] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedPack, setSelectedPack] = useState<CreditPack>(CREDIT_PACKS[1]);
   const [loadingCheckout, setLoadingCheckout] = useState(false);
@@ -104,17 +152,27 @@ export default function DashboardPage() {
     [userData],
   );
 
-  const used = useMemo(
-    () => ({
-      nmap: userData?.scansUsed?.nmap ?? 0,
-      nuclei: userData?.scansUsed?.nuclei ?? 0,
-      zap: userData?.scansUsed?.zap ?? 0,
-    }),
-    [userData],
-  );
-
-  const hasCredits = credits.nmap > 0 || credits.nuclei > 0 || credits.zap > 0;
-  const recentScans = useMemo(() => userScans.slice(0, 5), [userScans]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!currentUser) return;
+      try {
+        const token = await currentUser.getIdToken();
+        const res = await fetch("/api/dashboard", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const json = await res.json();
+        if (!cancelled && res.ok) setData(json);
+      } catch {
+        /* leave data null → empty state */
+      } finally {
+        if (!cancelled) setLoadingData(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser]);
 
   const openModal = (pack: CreditPack = CREDIT_PACKS[1]) => {
     setSelectedPack(pack);
@@ -135,10 +193,7 @@ export default function DashboardPage() {
       const token = await currentUser.getIdToken();
       const res = await fetch("/api/stripe/create-checkout-session", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           priceId: selectedPack.priceId,
           email: currentUser.email,
@@ -146,9 +201,9 @@ export default function DashboardPage() {
           metadata: { tier: selectedPack.id },
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to create session");
-      if (data.url) window.location.href = data.url;
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to create session");
+      if (json.url) window.location.href = json.url;
     } catch (err: any) {
       toast.error(err.message || "Failed to start checkout");
     } finally {
@@ -156,15 +211,7 @@ export default function DashboardPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-screen bg-[#07090d]">
-          <div className="text-[#9aa5b6]">Loading...</div>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  const riskCards: Sev[] = ["critical", "high", "medium", "low", "info"];
 
   return (
     <DashboardLayout>
@@ -172,210 +219,220 @@ export default function DashboardPage() {
         <PurchaseParamHandler openModal={() => openModal()} />
       </Suspense>
 
-      <div className="p-6 lg:p-8 space-y-8 max-w-7xl mx-auto bg-[#07090d] min-h-screen">
-        {/* Page header */}
-        <div>
-          <h1 className="text-3xl font-light text-[#e6edf5] mb-1">Dashboard</h1>
-          <p className="text-[#9aa5b6]">Manage your scans and credits</p>
-        </div>
-
-        {/* Top CTA */}
-        <Link
-          href="/app/scans"
-          className="w-full block bg-[#0d1117] border border-[#161b24] rounded-xl p-6 shadow-lg hover:border-[#0366d6] transition-all text-center"
-        >
-          <div className="p-4 rounded-full bg-[#0366d6]/20 mb-3 inline-block">
-            <FontAwesomeIcon
-              icon={faJetFighterUp}
-              className="text-4xl text-[#4493f8]"
-            />
-          </div>
-          <p className="text-[#e6edf5] font-light text-xl mb-1">
-            Launch New Scan
-          </p>
-          <p className="text-[#9aa5b6] text-sm">
-            Pick a target, choose your scanner
-          </p>
-        </Link>
-
-        {/* Per-scanner credit cards */}
-        <div className="grid lg:grid-cols-3 gap-6">
-          {SCANNERS.map((s) => (
-            <div
-              key={s.key}
-              className="bg-[#0d1117] border border-[#161b24] rounded-xl p-6 shadow-lg hover:border-[#0366d6]/50 transition-colors"
+      <div className="p-6 lg:p-8 max-w-7xl mx-auto bg-[#07090d] min-h-screen">
+        {/* Header */}
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+          <h1 className="text-3xl font-light text-[#e6edf5]">Dashboard</h1>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0d1117] border border-[#161b24] text-sm text-[#9aa5b6]">
+              <FontAwesomeIcon
+                icon={faSpinner}
+                className={`text-xs ${data?.inProgress ? "text-[#4493f8] animate-spin" : "text-[#697080]"}`}
+              />
+              {data?.inProgress ?? 0} scans in progress
+            </span>
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0d1117] border border-[#161b24] text-sm text-[#9aa5b6]">
+              <FontAwesomeIcon icon={faCalendarCheck} className="text-xs text-[#697080]" />
+              {data?.scheduled ?? 0} scans scheduled
+            </span>
+            <Link
+              href="/app/scans"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-[#0366d6] hover:bg-[#4493f8] text-white text-sm font-medium transition-colors"
             >
-              <div className="flex items-start justify-between mb-5">
-                <div className="h-8 flex items-center">
-                  <Image
-                    src={s.logo}
-                    alt={s.label}
-                    width={s.logoW}
-                    height={s.logoH}
-                    className="object-contain object-left max-h-7 w-auto"
-                  />
-                </div>
-                <button
-                  onClick={() => openModal()}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0366d6]/10 hover:bg-[#0366d6]/25 border border-[#0366d6]/40 hover:border-[#0366d6] transition-colors text-sm font-medium text-[#4493f8]"
-                >
-                  Buy Credits
-                  <FontAwesomeIcon icon={faPlus} className="text-xs" />
-                </button>
-              </div>
-              <div>
-                <p className="text-[#9aa5b6] text-sm mb-1">{s.description}</p>
-                <p className="text-5xl font-bold text-[#e6edf5] mb-1">
-                  {credits[s.key]}
-                </p>
-                <p className="text-xs text-[#697080]">
-                  {used[s.key]} used · {credits[s.key]} remaining
-                </p>
-              </div>
-            </div>
-          ))}
+              <FontAwesomeIcon icon={faPlus} className="text-xs" /> New Scan
+            </Link>
+          </div>
         </div>
 
-        {/* No credits banner */}
-        {!hasCredits && (
+        {/* Credits strip */}
+        <div className="flex flex-wrap items-center gap-3 mb-8 px-4 py-3 rounded-xl bg-[#0d1117] border border-[#161b24]">
+          <span className="text-sm text-[#697080] mr-1">Scan credits</span>
+          {(["nmap", "nuclei", "zap"] as const).map((k) => (
+            <span key={k} className="text-sm text-[#e6edf5]">
+              <span className="uppercase text-[#697080] text-xs mr-1.5">{k}</span>
+              {credits[k]}
+            </span>
+          ))}
+          <button
+            onClick={() => openModal()}
+            className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0366d6]/10 hover:bg-[#0366d6]/25 border border-[#0366d6]/40 text-sm font-medium text-[#4493f8] transition-colors"
+          >
+            Buy Credits <FontAwesomeIcon icon={faPlus} className="text-xs" />
+          </button>
+        </div>
+
+        {/* Health + Risks */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-6">
+          {/* Health score */}
           <div className="bg-[#0d1117] border border-[#161b24] rounded-xl p-6">
-            <div className="flex items-start gap-4">
-              <div className="p-3 rounded-lg bg-[#0366d6]/20 border border-[#0366d6]/40">
-                <FontAwesomeIcon
-                  icon={faShieldHalved}
-                  className="text-2xl text-[#4493f8]"
-                />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-xl text-[#e6edf5] mb-2">
-                  Purchase Credits to Start Scanning
-                </h3>
-                <p className="text-[#9aa5b6] mb-4">
-                  Every credit grants one Nmap, one Nuclei, and one OWASP ZAP
-                  scan. Starting at $10 for 30 scans.
+            <h2 className="text-sm font-medium text-[#9aa5b6] mb-4">Health Score</h2>
+            <div className="flex items-center gap-6">
+              <HealthGauge score={data?.healthScore ?? 100} grade={data?.grade ?? "A"} />
+              <div className="flex-1 min-w-0">
+                <p className="text-[#e6edf5] font-medium mb-1">
+                  {(data?.healthScore ?? 100) >= 75
+                    ? "Good Health"
+                    : (data?.healthScore ?? 100) >= 60
+                      ? "Fair Health"
+                      : "Needs Attention"}
                 </p>
-                <div className="flex flex-wrap gap-3">
-                  {CREDIT_PACKS.map((pack) => (
-                    <button
-                      key={pack.id}
-                      onClick={() => openModal(pack)}
-                      className={`px-5 py-2.5 font-semibold rounded-lg transition-colors ${
-                        pack.id === "pro"
-                          ? "bg-[#0366d6] hover:bg-[#4493f8] text-white"
-                          : "bg-[#11161f] hover:bg-[#161b24] text-[#e6edf5] border border-[#161b24]"
-                      }`}
-                    >
-                      {pack.name} — {(pack.credits * 3).toLocaleString()} scans
-                    </button>
-                  ))}
-                </div>
+                <p className="text-sm text-[#697080] leading-relaxed">
+                  Score is weighted by the severity of open findings across your
+                  scanned targets. Resolve higher-severity risks first to raise
+                  it.
+                </p>
               </div>
             </div>
           </div>
-        )}
 
-        {/* Recent scans */}
-        {recentScans.length > 0 && (
-          <div className="bg-[#0d1117] border border-[#161b24] rounded-xl p-6 shadow-lg">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-[#e6edf5]">
-                Recent Scans
-              </h2>
-              <Link
-                href="/app/history"
-                className="text-[#4493f8] hover:text-[#0366d6] text-sm font-semibold transition-colors"
-              >
-                View All →
-              </Link>
+          {/* Risks detected */}
+          <div className="bg-[#0d1117] border border-[#161b24] rounded-xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-medium text-[#9aa5b6]">Risks detected</h2>
+              <span className="text-sm text-[#697080]">
+                Total: <span className="text-[#e6edf5]">{data?.totalRisks ?? 0}</span>
+              </span>
             </div>
-            <div className="space-y-3">
-              {recentScans.map((scan: any) => (
-                <div
-                  key={scan.scanId}
-                  className="p-4 bg-[#11161f] hover:bg-[#161b24] rounded-lg border border-[#161b24] hover:border-[#0366d6]/50 transition-all flex items-center justify-between"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-1">
-                      <span className="px-3 py-1 bg-[#0366d6] text-white text-xs font-semibold rounded-full uppercase">
-                        {scan.type}
-                      </span>
-                      <span className="font-semibold text-[#e6edf5]">
-                        {scan.target}
-                      </span>
-                    </div>
-                    <p className="text-sm text-[#9aa5b6]">
-                      {scan.status === "completed"
-                        ? "✓ Completed"
-                        : scan.status === "in_progress"
-                          ? "⏳ Running…"
-                          : "⏸ Queued"}
-                    </p>
-                  </div>
-                  <Link
-                    href="/app/history"
-                    className="px-4 py-2 bg-[#0366d6]/20 hover:bg-[#0366d6]/30 text-[#4493f8] font-semibold rounded-lg border border-[#0366d6]/30 transition-colors text-sm"
+            <div className="grid grid-cols-5 gap-2 mb-2.5">
+              {riskCards.map((k) => {
+                const ui = SEV_UI[k];
+                return (
+                  <div
+                    key={k}
+                    className="rounded-lg px-2 py-3 text-center border"
+                    style={{ backgroundColor: ui.bg, borderColor: ui.border }}
                   >
-                    View
-                  </Link>
-                </div>
-              ))}
+                    <div className="text-[10px] text-[#9aa5b6] mb-1">{ui.label}</div>
+                    <div className="text-2xl font-bold" style={{ color: ui.color }}>
+                      {data?.riskCounts?.[k] ?? 0}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {(["accepted", "closed"] as const).map((k) => {
+                const ui = SEV_UI[k];
+                const val = k === "closed" ? (data?.closed ?? 0) : (data?.riskCounts?.accepted ?? 0);
+                return (
+                  <div
+                    key={k}
+                    className="flex items-center justify-between rounded-lg px-3 py-2 border"
+                    style={{ backgroundColor: ui.bg, borderColor: ui.border }}
+                  >
+                    <span className="text-xs" style={{ color: ui.color }}>
+                      {ui.label}
+                    </span>
+                    <span className="text-sm font-semibold text-[#e6edf5]">{val}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Empty state */}
-        {recentScans.length === 0 && (
-          <div className="bg-[#0d1117] border border-[#161b24] rounded-xl p-12 text-center">
-            <div className="max-w-md mx-auto">
-              <div className="p-4 rounded-full bg-[#11161f] inline-flex mb-4">
-                <FontAwesomeIcon
-                  icon={faShieldHalved}
-                  className="text-5xl text-[#697080]"
-                />
-              </div>
-              <h3 className="text-xl font-bold text-[#e6edf5] mb-2">
-                No Scans Yet
-              </h3>
-              <p className="text-[#9aa5b6] mb-6">
-                Launch your first scan to start identifying vulnerabilities
-                across your infrastructure.
-              </p>
-              <Link
-                href="/app/scans"
-                className="inline-block px-8 py-3 bg-[#0366d6] hover:bg-[#4493f8] text-white font-semibold rounded-lg transition-colors"
-              >
-                Launch First Scan
-              </Link>
-            </div>
-          </div>
+        {/* Recent activity */}
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Recent scans */}
+          <Panel title="Recent Scans" href="/app/history" linkLabel="See all scans">
+            {data?.recentScans?.length ? (
+              data.recentScans.map((s) => (
+                <Link
+                  key={s.scanId}
+                  href="/app/history"
+                  className="block px-4 py-3 rounded-lg bg-[#11161f] hover:bg-[#161b24] border border-[#161b24] transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm text-[#e6edf5] truncate">{s.label}</p>
+                      <p className="text-xs text-[#9aa5b6] truncate">{s.target}</p>
+                      <p className="text-xs text-[#697080] mt-0.5">{timeAgo(s.completedAtMs)}</p>
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 text-xs text-[#4493f8] shrink-0">
+                      <FontAwesomeIcon icon={faFileLines} className="text-[10px]" /> Report
+                    </span>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <Empty>No scans yet</Empty>
+            )}
+          </Panel>
+
+          {/* Recent risks */}
+          <Panel title="Recent Risks" href="/app/history" linkLabel="See all risks">
+            {data?.recentRisks?.length ? (
+              data.recentRisks.map((r, i) => (
+                <div
+                  key={i}
+                  className="px-4 py-3 rounded-lg bg-[#11161f] border border-[#161b24]"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span
+                      className="w-2 h-2 rounded-full shrink-0"
+                      style={{ backgroundColor: SEV_UI[r.severity].color }}
+                    />
+                    <span className="text-[11px] uppercase tracking-wide text-[#697080]">
+                      {SEV_UI[r.severity].label}
+                    </span>
+                  </div>
+                  <p className="text-sm text-[#e6edf5] truncate">{r.title}</p>
+                  <p className="text-xs text-[#9aa5b6] truncate">{r.target}</p>
+                </div>
+              ))
+            ) : (
+              <Empty>No risks detected</Empty>
+            )}
+          </Panel>
+
+          {/* Discovered targets */}
+          <Panel
+            title="Discovered Targets"
+            badge={data?.totalTargets}
+            href="/app/targets"
+            linkLabel="See all targets"
+          >
+            {data?.targets?.length ? (
+              data.targets.map((t) => (
+                <div
+                  key={t.target}
+                  className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg bg-[#11161f] border border-[#161b24]"
+                >
+                  <p className="text-sm text-[#e6edf5] truncate">{t.target}</p>
+                  <span className="text-xs text-[#9aa5b6] shrink-0">
+                    {t.total} {t.total === 1 ? "risk" : "risks"}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <Empty>No targets scanned</Empty>
+            )}
+          </Panel>
+        </div>
+
+        {!loadingData && data === null && (
+          <p className="text-center text-[#697080] text-sm mt-8">
+            Couldn&apos;t load dashboard data. Try refreshing.
+          </p>
         )}
       </div>
 
-      {/* Purchase modal */}
+      {/* Buy credits modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-[#0d1117] border border-[#161b24] rounded-xl p-8 max-w-lg w-full shadow-2xl">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h2 className="text-3xl font-bold text-[#e6edf5] mb-1">
-                  Buy Credits
-                </h2>
-                <p className="text-[#9aa5b6]">
-                  Works across Nmap, Nuclei, and ZAP
-                </p>
+                <h2 className="text-3xl font-bold text-[#e6edf5] mb-1">Buy Credits</h2>
+                <p className="text-[#9aa5b6]">Works across Nmap, Nuclei, and ZAP</p>
               </div>
               <button
                 onClick={() => setShowModal(false)}
                 className="p-2 hover:bg-[#11161f] rounded-lg transition-colors"
               >
-                <FontAwesomeIcon
-                  icon={faXmark}
-                  className="text-[#9aa5b6] hover:text-[#e6edf5] text-xl"
-                />
+                <FontAwesomeIcon icon={faXmark} className="text-[#9aa5b6] hover:text-[#e6edf5] text-xl" />
               </button>
             </div>
-
-            {/* Pack selector */}
             <div className="space-y-3 mb-6">
               {CREDIT_PACKS.map((pack) => (
                 <button
@@ -390,14 +447,11 @@ export default function DashboardPage() {
                   <div className="text-left">
                     <p className="font-bold text-[#e6edf5]">{pack.name}</p>
                     <p className="text-sm text-[#9aa5b6]">
-                      {(pack.credits * 3).toLocaleString()} scans ·{" "}
-                      {pack.credits.toLocaleString()} per scanner
+                      {(pack.credits * 3).toLocaleString()} scans · {pack.credits.toLocaleString()} per scanner
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-black text-[#e6edf5]">
-                      ${pack.price}
-                    </p>
+                    <p className="text-2xl font-black text-[#e6edf5]">${pack.price}</p>
                     <p className="text-xs text-[#697080]">
                       ${(pack.price / (pack.credits * 3)).toFixed(2)}/scan
                     </p>
@@ -405,41 +459,60 @@ export default function DashboardPage() {
                 </button>
               ))}
             </div>
-
-            {/* What's included */}
-            <div className="bg-[#11161f] border border-[#161b24] rounded-lg p-5 mb-6">
-              <p className="text-xs text-[#9aa5b6] font-semibold uppercase mb-3">
-                Included with every pack:
-              </p>
-              <ul className="space-y-2 text-sm text-[#9aa5b6]">
-                {[
-                  "Hosted Nmap, Nuclei & OWASP ZAP scanning",
-                  "Mix scanner types freely",
-                  "PDF report export",
-                  "Credits never expire",
-                ].map((f) => (
-                  <li key={f} className="flex items-center gap-2">
-                    <span className="text-[#4493f8]">✓</span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
             <button
               onClick={handleCheckout}
               disabled={loadingCheckout}
               className="w-full py-4 bg-[#0366d6] hover:bg-[#4493f8] text-white font-bold rounded-lg text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
-              {loadingCheckout
-                ? "Processing…"
-                : `Proceed to Checkout — $${selectedPack.price}`}
+              {loadingCheckout ? "Processing…" : `Proceed to Checkout — $${selectedPack.price}`}
             </button>
           </div>
         </div>
       )}
     </DashboardLayout>
   );
+}
+
+/* ─── Small components ───────────────────────────────────── */
+
+function Panel({
+  title,
+  badge,
+  href,
+  linkLabel,
+  children,
+}: {
+  title: string;
+  badge?: number;
+  href: string;
+  linkLabel: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="bg-[#0d1117] border border-[#161b24] rounded-xl p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-medium text-[#e6edf5]">
+          {title}
+          {typeof badge === "number" && (
+            <span className="ml-2 px-1.5 py-0.5 rounded bg-[#0366d6]/15 text-[#4493f8] text-xs">
+              {badge}
+            </span>
+          )}
+        </h3>
+        <Link
+          href={href}
+          className="inline-flex items-center gap-1 text-xs text-[#697080] hover:text-[#4493f8] transition-colors"
+        >
+          {linkLabel} <FontAwesomeIcon icon={faArrowRight} className="text-[9px]" />
+        </Link>
+      </div>
+      <div className="space-y-2">{children}</div>
+    </div>
+  );
+}
+
+function Empty({ children }: { children: React.ReactNode }) {
+  return <p className="text-sm text-[#697080] py-6 text-center">{children}</p>;
 }
 
 /* ─── URL param handler ──────────────────────────────────── */
@@ -451,17 +524,11 @@ function PurchaseParamHandler({ openModal }: { openModal: () => void }) {
   useEffect(() => {
     const success = searchParams.get("success");
     const canceled = searchParams.get("canceled");
-
     if (success === "true") {
-      toast.success("Payment successful! Your credits will appear shortly.", {
-        duration: 6000,
-      });
+      toast.success("Payment successful! Your credits will appear shortly.", { duration: 6000 });
       router.replace("/app/dashboard", { scroll: false });
     } else if (canceled === "true") {
-      toast("Purchase canceled — no charge was made.", {
-        icon: "ℹ️",
-        duration: 5000,
-      });
+      toast("Purchase canceled — no charge was made.", { icon: "ℹ️", duration: 5000 });
       router.replace("/app/dashboard", { scroll: false });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
