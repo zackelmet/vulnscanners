@@ -46,3 +46,7 @@ gcp/scanner-vm/finish_setup.sh
 # Python
 __pycache__/
 *.pyc
+
+# local dev artifacts
+combined.mjs
+dashboard-small.webp
