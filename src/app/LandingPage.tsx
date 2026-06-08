@@ -538,7 +538,7 @@ const FEATURED_IN = [
   {
     name: "Enterprise Cybersecurity Expo",
     href: "https://www.enterprisecybersecurityexpo.com/",
-    logo: "/images/featured/enterprise-cybersecurity-expo.png",
+    logo: "/images/featured/enterprise-cybersecurity-expo.webp",
   },
 ];
 
@@ -656,37 +656,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── As featured in ──────────────────────────────────────── */}
-      <section className={styles.featured}>
-        <div className={styles.container}>
-          <p className={styles.featuredLabel}>As featured in</p>
-          <div className={styles.featuredRow}>
-            {FEATURED_IN.map((f) => (
-              <a
-                key={f.name}
-                href={f.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.featuredItem}
-                aria-label={f.name}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={f.logo}
-                  alt={f.name}
-                  className={styles.featuredLogo}
-                  onError={(e) => {
-                    (
-                      e.currentTarget.parentElement as HTMLElement
-                    ).style.display = "none";
-                  }}
-                />
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── Logo bar ────────────────────────────────────────────── */}
       <div className={styles.logobar}>
         <div className={`${styles.container} ${styles.logobarInner}`}>
@@ -786,6 +755,37 @@ export default function LandingPage() {
                 </article>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── As featured in ──────────────────────────────────────── */}
+      <section className={styles.featured}>
+        <div className={styles.container}>
+          <p className={styles.featuredLabel}>As featured in</p>
+          <div className={styles.featuredRow}>
+            {FEATURED_IN.map((f) => (
+              <a
+                key={f.name}
+                href={f.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.featuredItem}
+                aria-label={f.name}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={f.logo}
+                  alt={f.name}
+                  className={styles.featuredLogo}
+                  onError={(e) => {
+                    (
+                      e.currentTarget.parentElement as HTMLElement
+                    ).style.display = "none";
+                  }}
+                />
+              </a>
+            ))}
           </div>
         </div>
       </section>
