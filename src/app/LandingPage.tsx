@@ -500,6 +500,12 @@ const COMPLIANCE_QUOTES = [
     source: "NIST SP 800-53",
     detail: "RA-5: Vulnerability Monitoring & Scanning",
   },
+  {
+    id: "sans",
+    text: "Organizations that do not scan for vulnerabilities and address discovered flaws pro-actively face a significant likelihood of having their computer systems compromised.",
+    source: "SANS",
+    detail: "Critical Security Control 4",
+  },
 ];
 
 const PAINS = [

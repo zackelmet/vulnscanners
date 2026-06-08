@@ -39,6 +39,19 @@ const RESOURCES_ITEMS = [
   },
 ] as const;
 
+const ASSESSMENT_ITEMS = [
+  {
+    href: "/assessments/vulnerability",
+    name: "Vulnerability Assessment",
+    desc: "Find, prioritize & report your vulnerabilities",
+  },
+  {
+    href: "/assessments/attack-surface",
+    name: "Attack Surface Assessment",
+    desc: "Map everything an attacker can see",
+  },
+] as const;
+
 const SCANNER_ITEMS = [
   {
     href: "/scanners/nmap",
@@ -70,8 +83,10 @@ export default function Navbar() {
   const { currentUser, isLoadingAuth } = useAuth();
   const [scannersOpen, setScannersOpen] = useState(false);
   const [resourcesOpen, setResourcesOpen] = useState(false);
+  const [assessmentsOpen, setAssessmentsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const resourcesRef = useRef<HTMLDivElement>(null);
+  const assessmentsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -80,6 +95,12 @@ export default function Navbar() {
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setScannersOpen(false);
+      }
+      if (
+        assessmentsRef.current &&
+        !assessmentsRef.current.contains(event.target as Node)
+      ) {
+        setAssessmentsOpen(false);
       }
       if (
         resourcesRef.current &&
@@ -115,6 +136,49 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           {!isLoadingAuth && (
             <>
+              <div
+                ref={assessmentsRef}
+                className="relative"
+                onMouseEnter={() => setAssessmentsOpen(true)}
+                onMouseLeave={() => setAssessmentsOpen(false)}
+              >
+                <button
+                  type="button"
+                  onClick={() => setAssessmentsOpen((v) => !v)}
+                  aria-haspopup="true"
+                  aria-expanded={assessmentsOpen}
+                  className="flex items-center gap-1.5 text-sm font-medium text-gray-300 hover:text-[#0366d6] transition"
+                >
+                  Assessments
+                  <ChevronIcon open={assessmentsOpen} />
+                </button>
+
+                {assessmentsOpen && (
+                  <div className="absolute right-0 top-full pt-2 w-80">
+                    <div className="rounded-xl bg-[#0d1117] border border-[#1f2632] shadow-xl overflow-hidden">
+                      <ul className="py-1.5">
+                        {ASSESSMENT_ITEMS.map(({ href, name, desc }) => (
+                          <li key={href}>
+                            <Link
+                              href={href}
+                              onClick={() => setAssessmentsOpen(false)}
+                              className="block px-4 py-3 hover:bg-[#11161f] transition-colors"
+                            >
+                              <span className="block text-sm font-medium text-[#e6edf5]">
+                                {name}
+                              </span>
+                              <span className="block text-xs text-[#697080]">
+                                {desc}
+                              </span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div
                 ref={dropdownRef}
                 className="relative"
