@@ -318,6 +318,14 @@
   margin: 0;
 }
 .quoteCiteSrc { color: var(--blue2); }
+.quoteLogo {
+  height: 26px;
+  width: auto;
+  max-width: 130px;
+  object-fit: contain;
+  object-position: left center;
+  opacity: 0.9;
+}
 
 /* ─── PAIN CARDS ─────────────────────────────────────────────────── */
 .painsGrid {
