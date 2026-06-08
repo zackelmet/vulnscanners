@@ -46,7 +46,7 @@ const content: AssessmentContent = {
     },
     {
       title: "Report",
-      text: "You get an inventory of your external footprint and a prioritized list of what to close — typically within 72 hours.",
+      text: "You get an inventory of your external footprint and a prioritized list of what to close.",
     },
   ],
   faq: [
