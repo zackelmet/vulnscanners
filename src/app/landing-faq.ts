@@ -5,7 +5,7 @@ export const LANDING_FAQ = [
   },
   {
     q: "Whose targets can I scan?",
-    a: "Only assets you own or have written authorization to test. You attest to that authorization before each scan — running scans against assets you don't have permission to test violates our terms and likely your local law.",
+    a: "Only assets you own or have written authorization to test. Running scans against assets you don't have permission to test violates our terms and likely your local law.",
   },
   {
     q: "What happens to my scan data?",

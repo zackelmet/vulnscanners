@@ -790,8 +790,8 @@ export default function LandingPage() {
             <h2 className={styles.sectionTitle}>Credits, not subscriptions.</h2>
             <p className={styles.sectionSub}>
               Every credit covers one Nmap, one Nuclei, and one OWASP ZAP scan
-              against an approved target. Credits don&apos;t expire for 12
-              months. No seats, no overages.
+              against an approved target. Credits never expire. No seats, no
+              overages.
             </p>
           </div>
           <div className={styles.pricingGrid}>

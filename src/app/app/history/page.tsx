@@ -7,6 +7,7 @@ import {
   faFileAlt,
   faSpinner,
   faDownload,
+  faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { useUserScans } from "@/lib/hooks/useUserScans";
 import { useAuth } from "@/lib/context/AuthContext";
@@ -20,6 +21,36 @@ export default function HistoryPage() {
 
   const [generatingReport, setGeneratingReport] = useState<string | null>(null);
   const [downloadingRaw, setDownloadingRaw] = useState<string | null>(null);
+  const [deletingScan, setDeletingScan] = useState<string | null>(null);
+
+  // Permanently delete a scan (including its raw output). The realtime
+  // useUserScans snapshot removes the row automatically once the doc is gone.
+  const deleteScan = async (scanId: string, target: string) => {
+    if (!currentUser) return;
+    if (
+      !window.confirm(
+        `Delete the scan of "${target}"? This permanently removes the scan, its raw output, and report — this can't be undone.`,
+      )
+    ) {
+      return;
+    }
+    setDeletingScan(scanId);
+    try {
+      const token = await currentUser.getIdToken();
+      const res = await fetch(`/api/scans/${scanId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || "Delete failed");
+      }
+    } catch (err: any) {
+      alert(err?.message || "Failed to delete scan");
+    } finally {
+      setDeletingScan(null);
+    }
+  };
 
   // Fetch a protected scan artifact with the user's token, then trigger a
   // browser download from the returned blob (the API requires an auth header,
@@ -232,6 +263,33 @@ export default function HistoryPage() {
                                 : "Report"}
                             </button>
                           )}
+                          <button
+                            onClick={() =>
+                              deleteScan(
+                                scan.scanId,
+                                scan.target || scan.targetValue || "this target",
+                              )
+                            }
+                            disabled={deletingScan === scan.scanId}
+                            className="flex items-center gap-1 text-[#697080] hover:text-[#f87171] text-sm disabled:opacity-50"
+                            title="Delete this scan permanently"
+                          >
+                            <FontAwesomeIcon
+                              icon={
+                                deletingScan === scan.scanId
+                                  ? faSpinner
+                                  : faTrash
+                              }
+                              className={
+                                deletingScan === scan.scanId
+                                  ? "animate-spin"
+                                  : ""
+                              }
+                            />
+                            {deletingScan === scan.scanId
+                              ? "Deleting…"
+                              : "Delete"}
+                          </button>
                         </div>
                       </td>
                     </tr>
