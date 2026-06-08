@@ -509,59 +509,72 @@ export function BackCover() {
 
 // ── Scanner section (shared by single + combined) ────────────────────────────
 
-export const SCANNER_SECTION_TITLE: Record<string, string> = {
+export type ScannerKind = "nmap" | "nuclei" | "zap";
+
+export const SCANNER_SECTION_TITLE: Record<ScannerKind, string> = {
   zap: "Web Application Vulnerabilities",
-  nmap: "Open TCP Ports & Network",
+  nmap: "Open TCP Ports",
   nuclei: "Nuclei Vulnerabilities",
 };
 
-export const SCANNER_INTRO: Record<string, string> = {
+export const SCANNER_INTRO: Record<ScannerKind, string> = {
   zap: "The OWASP ZAP scan crawls the pages of a website or web application and inspects each request and response, checking for issues such as cross-domain misconfigurations, missing security headers, injection, and insecure cookies.",
-  nmap: "The Nmap network scan discovers open TCP ports and the services running on them, and flags exposed or insecurely configured services on the target host.",
+  nmap: "The Nmap TCP port scan discovers open ports and the services running on them, and flags exposed or insecurely configured services on the scanned hosts.",
   nuclei: "Nuclei is a fast, template-driven scanner that detects CVEs, misconfigurations, exposures, and security issues across web applications and infrastructure.",
 };
 
-export interface SectionScan {
-  scannerType: "nmap" | "nuclei" | "zap";
+// Fixed display order for the per-scanner sections (HostedScan order, minus the
+// OpenVAS-powered Network Vulnerabilities section we don't run).
+export const SCANNER_ORDER: ScannerKind[] = ["zap", "nmap", "nuclei"];
+
+export interface ScannerGroupItem {
+  finding: ReportFinding;
   target: string;
-  data: {
-    severityCounts: Record<Severity, number>;
-    findings: ReportFinding[];
-    completedAt: Date;
-  };
+  completedAt: Date;
 }
 
-/** One numbered per-scanner section: Total Vulnerabilities → Breakdown → Details. */
-export function ScannerSection({ num, scan }: { num: number; scan: SectionScan }) {
-  const { data } = scan;
+/** All scans of one scanner type, aggregated into a single section. */
+export interface ScannerGroup {
+  scannerType: ScannerKind;
+  counts: Record<Severity, number>;
+  items: ScannerGroupItem[];
+}
+
+/** One numbered per-scanner-type section: Total Vulnerabilities → Breakdown → Details. */
+export function ScannerSection({
+  num,
+  group,
+}: {
+  num: number;
+  group: ScannerGroup;
+}) {
+  const findings = group.items.map((i) => i.finding);
   return (
     <View>
-      <SectionH1 num={num}>
-        {SCANNER_SECTION_TITLE[scan.scannerType]}
-      </SectionH1>
-      <Lead>{SCANNER_INTRO[scan.scannerType]}</Lead>
+      <SectionH1 num={num}>{SCANNER_SECTION_TITLE[group.scannerType]}</SectionH1>
+      <Lead>{SCANNER_INTRO[group.scannerType]}</Lead>
 
       <SectionH2 num={`${num}.1`}>Total Vulnerabilities</SectionH2>
       <Lead>Total number of vulnerabilities found by severity.</Lead>
-      <SeverityCards counts={data.severityCounts} />
+      <SeverityCards counts={group.counts} />
 
       <SectionH2 num={`${num}.2`}>Vulnerabilities Breakdown</SectionH2>
       <Lead>Summary list of all detected vulnerabilities.</Lead>
-      <BreakdownTable findings={data.findings} />
+      <BreakdownTable findings={findings} />
 
-      {data.findings.length > 0 && (
+      {group.items.length > 0 && (
         <View>
           <SectionH2 num={`${num}.3`}>Vulnerability Details</SectionH2>
           <Lead>
             Detailed information about each potential vulnerability found by the
             scan.
           </Lead>
-          {data.findings.map((f) => (
+          {group.items.map((it, i) => (
             <FindingDetail
-              key={f.id}
-              finding={f}
-              target={scan.target}
-              completedAt={data.completedAt}
+              key={`${it.finding.id}-${i}`}
+              finding={it.finding}
+              target={it.target}
+              completedAt={it.completedAt}
             />
           ))}
         </View>

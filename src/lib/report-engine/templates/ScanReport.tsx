@@ -90,14 +90,14 @@ export function ScanReport({ data }: { data: ScanReportData }) {
       >
         <ScannerSection
           num={2}
-          scan={{
+          group={{
             scannerType: data.scannerType,
-            target: data.target,
-            data: {
-              severityCounts: data.severityCounts,
-              findings: data.findings,
+            counts: data.severityCounts,
+            items: data.findings.map((finding) => ({
+              finding,
+              target: data.target,
               completedAt: data.completedAt,
-            },
+            })),
           }}
         />
       </HostedPage>

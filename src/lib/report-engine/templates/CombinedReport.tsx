@@ -22,6 +22,8 @@ import {
   GlossaryTwoCol,
   BackCover,
   SCANNER_SECTION_TITLE,
+  SCANNER_ORDER,
+  ScannerGroup,
 } from "./_hosted";
 
 export interface CombinedReportScan {
@@ -85,16 +87,33 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
     })),
   ];
 
-  // Section numbering: 1 Exec, 2 By Target, 3..N scanners, last Glossary.
+  // Group scans by scanner TYPE (not per scan) into fixed-order sections, so
+  // e.g. three ZAP scans share one "Web Application Vulnerabilities" section.
+  const groups: ScannerGroup[] = SCANNER_ORDER.map((type) => {
+    const ofType = data.scans.filter((s) => s.scannerType === type);
+    if (ofType.length === 0) return null;
+    const counts = emptyCounts();
+    const items = ofType.flatMap((s) => {
+      for (const k of SEVERITY_ORDER) counts[k] += s.data.severityCounts[k] || 0;
+      return s.data.findings.map((finding) => ({
+        finding,
+        target: s.target,
+        completedAt: s.data.completedAt,
+      }));
+    });
+    return { scannerType: type, counts, items };
+  }).filter((g): g is ScannerGroup => g !== null);
+
+  // Section numbering: 1 Exec, 2 By Target, 3..N scanner types, last Glossary.
   const scannerStart = 3;
-  const glossaryNum = scannerStart + data.scans.length;
+  const glossaryNum = scannerStart + groups.length;
 
   const tocEntries = [
     { num: 1, title: "Executive Summary" },
     { num: 2, title: "Vulnerabilities By Target" },
-    ...data.scans.map((s, i) => ({
+    ...groups.map((g, i) => ({
       num: scannerStart + i,
-      title: SCANNER_SECTION_TITLE[s.scannerType],
+      title: SCANNER_SECTION_TITLE[g.scannerType],
     })),
     { num: glossaryNum, title: "Glossary" },
   ];
@@ -190,15 +209,14 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
         ))}
       </HostedPage>
 
-      {/* 3..N per-scanner sections */}
-      {data.scans.map((scan, i) => (
+      {/* 3..N per-scanner-type sections (all scans of a type aggregated) */}
+      {groups.map((group, i) => (
         <HostedPage
-          key={scan.scanId}
-          sectionName={SCANNER_SECTION_TITLE[scan.scannerType]}
-          breadcrumb={scan.target}
+          key={group.scannerType}
+          sectionName={SCANNER_SECTION_TITLE[group.scannerType]}
           date={data.generatedAt}
         >
-          <ScannerSection num={scannerStart + i} scan={scan} />
+          <ScannerSection num={scannerStart + i} group={group} />
         </HostedPage>
       ))}
 
