@@ -280,13 +280,13 @@ export default function SupportPage() {
                   <>
                     Every scan you launch is in{" "}
                     <Link
-                      href="/app/scans"
+                      href="/app/history"
                       className="text-[#4493f8] hover:text-[#0366d6] underline-offset-2 hover:underline"
                     >
-                      your dashboard
+                      Scan History
                     </Link>
-                    . Completed scans include the raw output and a downloadable
-                    PDF report.
+                    . Completed scans include the raw output, a downloadable PDF
+                    report, and a Delete action.
                   </>
                 ),
               },
@@ -303,12 +303,59 @@ export default function SupportPage() {
                 a: (
                   <>
                     No. VulnScanners is for authorized testing only. See the
-                    ethical-use details on our{" "}
+                    ethical-use details in our{" "}
                     <Link
-                      href="/help-center"
+                      href="/help-center#trust"
                       className="text-[#4493f8] hover:text-[#0366d6] underline-offset-2 hover:underline"
                     >
-                      Trust &amp; Safety page
+                      Help Center
+                    </Link>
+                    .
+                  </>
+                ),
+              },
+              {
+                q: "How long does a scan take?",
+                a: "Nmap usually finishes in 1–10 minutes and Nuclei in 5–15. A full OWASP ZAP active scan is the slowest — minutes to a couple of hours on a large app. Scans run in the background, so you can close the console.",
+              },
+              {
+                q: "My scan shows no findings or “target unreachable.”",
+                a: (
+                  <>
+                    Usually the target was down, firewalled, or blocking the
+                    scanner — or it&apos;s genuinely clean for that engine.
+                    Download
+                    the raw output to see what the tool observed. Failed scans
+                    refund the credit automatically. More in the{" "}
+                    <Link
+                      href="/help-center#troubleshooting"
+                      className="text-[#4493f8] hover:text-[#0366d6] underline-offset-2 hover:underline"
+                    >
+                      troubleshooting guide
+                    </Link>
+                    .
+                  </>
+                ),
+              },
+              {
+                q: "How do I delete a scan?",
+                a: "Open Scan History and click Delete on any scan to permanently remove it, including its raw output. Deletion can't be undone.",
+              },
+              {
+                q: "Can I get a refund?",
+                a: "Your first purchase is covered by a 7-day, no-questions-asked refund. After that we handle issues case by case — and any scan that fails refunds its credit automatically.",
+              },
+              {
+                q: "Do you offer pricing for MSPs / MSSPs?",
+                a: (
+                  <>
+                    Yes — we offer volume pricing for managed providers running
+                    our hosted scanners across multiple clients.{" "}
+                    <Link
+                      href="/mssp"
+                      className="text-[#4493f8] hover:text-[#0366d6] underline-offset-2 hover:underline"
+                    >
+                      Request a meeting
                     </Link>
                     .
                   </>
@@ -327,18 +374,18 @@ export default function SupportPage() {
 
         <section className="mt-10 border-t border-[#161b24] pt-8">
           <h2 className="text-base font-medium text-[#e6edf5] mb-2">
-            Trust &amp; Safety
+            Looking for how-tos?
           </h2>
           <p className="text-sm text-[#9aa5b6] leading-relaxed">
-            For the full picture on how we handle scan data, our ethical-use
-            policy, and our compliance posture, see our{" "}
+            Our{" "}
             <Link
               href="/help-center"
               className="text-[#4493f8] hover:text-[#0366d6] underline-offset-2 hover:underline"
             >
-              Trust &amp; Safety page
-            </Link>
-            .
+              Help Center
+            </Link>{" "}
+            covers getting started, the scanners, reading reports, credits,
+            scheduling, troubleshooting, and our trust &amp; safety practices.
           </p>
         </section>
       </main>
