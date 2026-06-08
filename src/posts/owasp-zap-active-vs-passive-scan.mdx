@@ -101,7 +101,7 @@ Here's the workflow that works:
 
 **Phase 3: Active scan, scoped.** Don't active-scan the whole site at once. Pick high-risk endpoints (anything that takes user input, anything in `/admin`, anything that mutates state) and active-scan those specifically. Watch the application logs and stop if the scan is creating garbage data.
 
-**Phase 4: Manual follow-up.** Active scan finds candidates, not confirmed exploits. Verify each finding by hand before reporting.
+**Phase 4: Manual follow-up.** Active scan finds candidates, not confirmed exploits. Verify each finding by hand before reporting. When a client needs that manual depth but you don't want to staff it, [white-label penetration testing](/msp-pentesting) picks up where automated scans stop.
 
 ## Spider vs AJAX spider
 
