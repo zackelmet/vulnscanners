@@ -512,6 +512,36 @@ const COMPLIANCE_QUOTES = [
   },
 ];
 
+// "As featured in" press/credibility logos (ported from the prior site). Each
+// logo gracefully hides if its file is missing.
+const FEATURED_IN = [
+  {
+    name: "Hacker News",
+    href: "https://news.ycombinator.com/item?id=46836846",
+    logo: "/images/featured/hacker-news.png",
+  },
+  {
+    name: "Product Hunt",
+    href: "https://www.producthunt.com",
+    logo: "/images/featured/product-hunt.png",
+  },
+  {
+    name: "X",
+    href: "https://x.com/vuln_scanners",
+    logo: "/images/featured/x.png",
+  },
+  {
+    name: "G2",
+    href: "https://www.g2.com/products/hosted-security-scanners/reviews",
+    logo: "/images/featured/g2.png",
+  },
+  {
+    name: "Enterprise Cybersecurity Expo",
+    href: "https://www.enterprisecybersecurityexpo.com/",
+    logo: "/images/featured/enterprise-cybersecurity-expo.png",
+  },
+];
+
 const PAINS = [
   {
     icon: CoinsIcon,
@@ -622,6 +652,37 @@ export default function LandingPage() {
               tickerClassName={styles.globeTicker}
               dotClassName={styles.globeTickerDot}
             />
+          </div>
+        </div>
+      </section>
+
+      {/* ── As featured in ──────────────────────────────────────── */}
+      <section className={styles.featured}>
+        <div className={styles.container}>
+          <p className={styles.featuredLabel}>As featured in</p>
+          <div className={styles.featuredRow}>
+            {FEATURED_IN.map((f) => (
+              <a
+                key={f.name}
+                href={f.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.featuredItem}
+                aria-label={f.name}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={f.logo}
+                  alt={f.name}
+                  className={styles.featuredLogo}
+                  onError={(e) => {
+                    (
+                      e.currentTarget.parentElement as HTMLElement
+                    ).style.display = "none";
+                  }}
+                />
+              </a>
+            ))}
           </div>
         </div>
       </section>
