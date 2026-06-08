@@ -479,6 +479,29 @@ const KEY_FEATURES = [
   },
 ];
 
+// Direct quotes from the compliance frameworks that mandate continuous
+// vulnerability scanning — the thing VulnScanners automates.
+const COMPLIANCE_QUOTES = [
+  {
+    id: "cis",
+    text: "Continuously acquire, assess, and take action on new information in order to identify vulnerabilities, remediate, and minimize the window of opportunity for attackers.",
+    source: "Center for Internet Security",
+    detail: "Control 4: Continuous Vulnerability Assessment & Remediation",
+  },
+  {
+    id: "pci",
+    text: "Run internal and external network vulnerability scans at least quarterly and after any significant change in the network.",
+    source: "PCI DSS",
+    detail: "Requirement 11.2",
+  },
+  {
+    id: "nist",
+    text: "Monitor and scan for vulnerabilities in the system and hosted applications, and when new vulnerabilities potentially affecting the system are identified and reported.",
+    source: "NIST SP 800-53",
+    detail: "RA-5: Vulnerability Monitoring & Scanning",
+  },
+];
+
 const PAINS = [
   {
     icon: CoinsIcon,
@@ -778,6 +801,35 @@ export default function LandingPage() {
                 />
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Compliance mandate (framework quotes) ───────────────── */}
+      <section className={styles.block}>
+        <div className={styles.container}>
+          <div className={styles.sectionHead}>
+            <p className={styles.sectionKicker}>Compliance</p>
+            <h2 className={styles.sectionTitle}>
+              Continuous scanning isn&apos;t optional.
+            </h2>
+            <p className={styles.sectionSub}>
+              The frameworks your customers and auditors hold you to already
+              require exactly what VulnScanners automates.
+            </p>
+          </div>
+          <div className={styles.quoteGrid}>
+            {COMPLIANCE_QUOTES.map((q) => (
+              <figure key={q.id} className={styles.quoteCard}>
+                <blockquote className={styles.quoteText}>
+                  &ldquo;{q.text}&rdquo;
+                </blockquote>
+                <figcaption className={styles.quoteCite}>
+                  <span className={styles.quoteCiteSrc}>{q.source}</span>
+                  {` — ${q.detail}`}
+                </figcaption>
+              </figure>
+            ))}
           </div>
         </div>
       </section>
