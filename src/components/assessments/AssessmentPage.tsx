@@ -39,7 +39,7 @@ export default function AssessmentPage({ c }: { c: AssessmentContent }) {
         </div>
         <a
           href="#request"
-          className="inline-block px-5 py-2.5 bg-[#0366d6] hover:bg-[#4493f8] text-white text-sm font-medium rounded-md transition-colors"
+          className="inline-block px-5 py-2.5 bg-[#0a2540] hover:bg-[#123a63] text-white text-sm font-medium rounded-md transition-colors"
         >
           Request assessment
         </a>

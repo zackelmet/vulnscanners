@@ -9,7 +9,7 @@ export const metadata = {
 };
 
 const content: AssessmentContent = {
-  kicker: "Assessments",
+  kicker: "Attack Surface",
   title: "See everything an attacker can.",
   subtitle:
     "We map your full external attack surface — domains, subdomains, exposed services, and open ports — so you know exactly what you're defending and where to start.",
