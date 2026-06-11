@@ -332,17 +332,20 @@
   .quoteGrid { grid-template-columns: 1fr; }
 }
 .quoteCard {
-  background: var(--panel);
-  border: 1px solid var(--hair2);
-  border-left: 2px solid var(--blue2);
+  /* Light card so the dark/colored compliance logos are legible (the rest of
+     the landing page is a dark theme). Text on this card is dark-on-light. */
+  background: #ffffff;
+  border: 1px solid #e3e8ef;
+  border-left: 2px solid var(--blue);
   border-radius: var(--rLg);
   padding: 30px 28px;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  box-shadow: 0 1px 2px rgba(7, 9, 13, 0.4);
 }
 .quoteText {
-  color: var(--text);
+  color: #1f2632;
   font-size: 17.5px;
   line-height: 1.6;
   font-style: italic;
@@ -353,17 +356,17 @@
   font-family: var(--mono);
   font-size: 12.5px;
   line-height: 1.5;
-  color: var(--text3);
+  color: #5b6470;
   margin: 0;
 }
-.quoteCiteSrc { color: var(--blue2); }
+.quoteCiteSrc { color: var(--blue); }
 .quoteLogo {
   height: 26px;
   width: auto;
   max-width: 130px;
   object-fit: contain;
   object-position: left center;
-  opacity: 0.9;
+  opacity: 1;
 }
 
 /* ─── PAIN CARDS ─────────────────────────────────────────────────── */
