@@ -17,7 +17,7 @@
     "indexnow": "node ./scripts/indexnow-submit.mjs",
     "start": "next start",
     "lint": "next lint",
-    "pre-commit": "lint-staged && npm run build && npm test",
+    "pre-commit": "lint-staged && DISABLE_BUILD_TRACE=1 npm run build && npm test",
     "prepare": "husky",
     "update-from-upstream": "node update-from-upstream.js"
   },
