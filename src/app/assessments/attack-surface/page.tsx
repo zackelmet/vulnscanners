@@ -67,10 +67,6 @@ const content: AssessmentContent = {
       a: "A branded report with your external asset inventory, every open service mapped, and a prioritized list of exposures with guidance on what to do about each.",
     },
     {
-      q: "Do I need to prove authorization?",
-      a: "Yes. We only assess assets you own or are explicitly authorized to test, confirmed in writing before any scanning begins.",
-    },
-    {
       q: "Can I run this myself?",
       a: "Yes — VulnScanners is self-serve. Buy scan credits and run Nmap on your own schedule. The assessment is for when you want the discovery, analyst review, and a finished report done for you.",
     },
