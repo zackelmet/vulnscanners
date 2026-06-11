@@ -487,28 +487,28 @@ const COMPLIANCE_QUOTES = [
     text: "Continuously acquire, assess, and take action on new information in order to identify vulnerabilities, remediate, and minimize the window of opportunity for attackers.",
     source: "Center for Internet Security",
     detail: "Control 4: Continuous Vulnerability Assessment & Remediation",
-    logo: "/images/compliance/cis.png",
+    logo: "/images/compliance/cis.svg",
   },
   {
     id: "pci",
     text: "Run internal and external network vulnerability scans at least quarterly and after any significant change in the network.",
     source: "PCI DSS",
     detail: "Requirement 11.2",
-    logo: "/images/compliance/pci.png",
+    logo: "/images/compliance/pci.svg",
   },
   {
     id: "nist",
     text: "Monitor and scan for vulnerabilities in the system and hosted applications, and when new vulnerabilities potentially affecting the system are identified and reported.",
     source: "NIST SP 800-53",
     detail: "RA-5: Vulnerability Monitoring & Scanning",
-    logo: "/images/compliance/nist.png",
+    logo: "/images/compliance/nist.svg",
   },
   {
     id: "sans",
     text: "Organizations that do not scan for vulnerabilities and address discovered flaws pro-actively face a significant likelihood of having their computer systems compromised.",
     source: "SANS",
     detail: "Critical Security Control 4",
-    logo: "/images/compliance/sans.png",
+    logo: "/images/compliance/sans.svg",
   },
 ];
 
