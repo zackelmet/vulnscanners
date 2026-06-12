@@ -1,11 +1,7 @@
 // Nmap parser output → ScanReportData.
 // Each open port on each host becomes a finding. Severity from portRisk().
 
-import {
-  ParsedNmapReport,
-  ParsedHost,
-  ParsedPort,
-} from "../types";
+import { ParsedNmapReport, ParsedHost, ParsedPort } from "../types";
 import { portRisk, RiskLevel } from "../nmap-parser";
 import {
   ReportFinding,
@@ -143,9 +139,7 @@ function findingForOpenPort(
   const risk = portRisk(port);
   const severity = RISK_TO_SEV[risk];
   const svc = port.service.toLowerCase();
-  const hostLabel = host.hostname
-    ? `${host.hostname} (${host.ip})`
-    : host.ip;
+  const hostLabel = host.hostname ? `${host.hostname} (${host.ip})` : host.ip;
   const guide = SERVICE_GUIDE[svc] ?? GENERIC;
 
   const title = `Exposed ${port.service || "unknown"} service on ${port.protocol.toUpperCase()}/${port.port}`;
@@ -153,7 +147,7 @@ function findingForOpenPort(
   const description =
     `Port ${port.port}/${port.protocol} on ${hostLabel} is open and serving "${port.service || "unknown"}"` +
     (port.version ? ` (${port.version}).` : ".") +
-    " The service is reachable from our scanner host, indicating it is exposed to general internet traffic.";
+    " The service is reachable over the public internet, indicating it is exposed to general internet traffic.";
 
   const verifySteps: VerifyStep[] = [
     {
@@ -183,16 +177,13 @@ function findingForFilteredPort(
   port: ParsedPort,
   index: number,
 ): ReportFinding {
-  const hostLabel = host.hostname
-    ? `${host.hostname} (${host.ip})`
-    : host.ip;
+  const hostLabel = host.hostname ? `${host.hostname} (${host.ip})` : host.ip;
   return {
     id: `NM-${index}`,
     title: `Filtered ${port.service || "unknown"} on ${port.protocol.toUpperCase()}/${port.port}`,
     severity: "info",
     state: "Unresolved",
-    description:
-      `Port ${port.port}/${port.protocol} on ${hostLabel} is filtered. A network device (firewall, security group, or NAT) is dropping inbound connection attempts to this port, so we cannot determine whether a service is listening behind it.`,
+    description: `Port ${port.port}/${port.protocol} on ${hostLabel} is filtered. A network device (firewall, security group, or NAT) is dropping inbound connection attempts to this port, so we cannot determine whether a service is listening behind it.`,
     businessImpact:
       "Filtered ports are not exposed services and do not represent a vulnerability on their own. They are listed here for completeness — they indicate that a firewall layer is present and active in front of this host.",
     howToVerify: [
@@ -237,10 +228,16 @@ export function mapNmapReport(args: {
     }
   }
   // Sort by severity desc so PT-1 lines up with the highest severity in display order.
-  const sevOrder = ["critical", "high", "medium", "low", "info", "accepted"] as const;
+  const sevOrder = [
+    "critical",
+    "high",
+    "medium",
+    "low",
+    "info",
+    "accepted",
+  ] as const;
   findings.sort(
-    (a, b) =>
-      sevOrder.indexOf(a.severity) - sevOrder.indexOf(b.severity),
+    (a, b) => sevOrder.indexOf(a.severity) - sevOrder.indexOf(b.severity),
   );
   // Re-number after the sort.
   findings.forEach((f, i) => {
@@ -278,14 +275,13 @@ export function mapNmapReport(args: {
       buildFindingsOverview(counts, "exposed service"),
     methodology: {
       description:
-        "VulnScanners performs network reconnaissance using Nmap from our hosted scanner host. The scan enumerates listening TCP services, identifies the software and version behind each port, and classifies risk based on service class.",
+        "VulnScanners performs network reconnaissance using Nmap against your target over the public internet. The scan enumerates listening TCP services, identifies the software and version behind each port, and classifies risk based on service class.",
       tools: [
         `Nmap ${args.parsed.meta.rawVersion ?? ""} with service-version detection (-sV)`,
         "Service classification — HIGH_RISK_SERVICES, MEDIUM_RISK_SERVICES (VulnScanners)",
         "OWASP Testing Guide v4.2 — Information Gathering chapter",
       ],
-      scope:
-        `External TCP scan of ${args.target}. Results reflect the network vantage of our hosted scanner host at the time of the scan.`,
+      scope: `External TCP scan of ${args.target} over the public internet, reflecting what is reachable from the open internet at the time of the scan.`,
     },
     coverage: [
       {

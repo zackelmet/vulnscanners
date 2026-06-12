@@ -6,6 +6,7 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import { useAuth } from "@/lib/context/AuthContext";
 import GlobeCanvas from "@/components/landing/GlobeCanvas";
+import SampleReportForm from "@/components/landing/SampleReportForm";
 import styles from "./landing.module.css";
 import { LANDING_FAQ as FAQ } from "./landing-faq";
 
@@ -656,6 +657,37 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── As featured in ──────────────────────────────────────── */}
+      <section className={styles.featured}>
+        <div className={styles.container}>
+          <p className={styles.featuredLabel}>As featured in</p>
+          <div className={styles.featuredRow}>
+            {FEATURED_IN.map((f) => (
+              <a
+                key={f.name}
+                href={f.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.featuredItem}
+                aria-label={f.name}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={f.logo}
+                  alt={f.name}
+                  className={styles.featuredLogo}
+                  onError={(e) => {
+                    (
+                      e.currentTarget.parentElement as HTMLElement
+                    ).style.display = "none";
+                  }}
+                />
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── Logo bar ────────────────────────────────────────────── */}
       <div className={styles.logobar}>
         <div className={`${styles.container} ${styles.logobarInner}`}>
@@ -755,37 +787,6 @@ export default function LandingPage() {
                 </article>
               );
             })}
-          </div>
-        </div>
-      </section>
-
-      {/* ── As featured in ──────────────────────────────────────── */}
-      <section className={styles.featured}>
-        <div className={styles.container}>
-          <p className={styles.featuredLabel}>As featured in</p>
-          <div className={styles.featuredRow}>
-            {FEATURED_IN.map((f) => (
-              <a
-                key={f.name}
-                href={f.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.featuredItem}
-                aria-label={f.name}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={f.logo}
-                  alt={f.name}
-                  className={styles.featuredLogo}
-                  onError={(e) => {
-                    (
-                      e.currentTarget.parentElement as HTMLElement
-                    ).style.display = "none";
-                  }}
-                />
-              </a>
-            ))}
           </div>
         </div>
       </section>
@@ -1000,6 +1001,59 @@ export default function LandingPage() {
                 <p className={styles.faqA}>{item.a}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Sample report lead magnet ───────────────────────────── */}
+      <section className={styles.block} id="sample-report">
+        <div className={styles.container}>
+          <div className={styles.sectionHead}>
+            <p className={styles.sectionKicker}>See the deliverable</p>
+            <h2 className={styles.sectionTitle}>
+              See a real report before you sign up.
+            </h2>
+            <p className={styles.sectionSub}>
+              A combined Nmap + Nuclei assessment — executive summary, severity
+              breakdown, and detailed findings with business impact,
+              remediation, and copy-paste verification steps. Enter your work
+              email and we&apos;ll send the full PDF to your inbox.
+            </p>
+          </div>
+
+          <div className={styles.sampleShowcase}>
+            <div className={styles.samplePreview} aria-hidden="true">
+              {[
+                {
+                  src: "/images/sample-report/page-1.webp",
+                  alt: "Sample report cover",
+                },
+                {
+                  src: "/images/sample-report/page-2.webp",
+                  alt: "Sample report executive summary",
+                },
+                {
+                  src: "/images/sample-report/page-3.webp",
+                  alt: "Sample report findings by target",
+                },
+                {
+                  src: "/images/sample-report/page-4.webp",
+                  alt: "Sample report finding detail",
+                },
+              ].map((p) => (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  key={p.src}
+                  src={p.src}
+                  alt={p.alt}
+                  className={styles.samplePage}
+                  loading="lazy"
+                />
+              ))}
+            </div>
+            <div className={styles.sampleGate}>
+              <SampleReportForm />
+            </div>
           </div>
         </div>
       </section>

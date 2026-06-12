@@ -21,6 +21,7 @@ const ibmPlexSans = IBM_Plex_Sans({
 // diagnostics; restore them now.
 import ClientProviders from "@/lib/context/ClientProviders";
 import ConditionalNav from "@/components/nav/ConditionalNav";
+import CookieConsent from "@/components/CookieConsent";
 import { config } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
 config.autoAddCss = false;
@@ -88,6 +89,7 @@ export default function RootLayout({
         <ClientProviders>
           <ConditionalNav>{children}</ConditionalNav>
         </ClientProviders>
+        <CookieConsent />
         <Script id="apollo-tracker" strategy="afterInteractive">
           {`function initApollo(){var n=Math.random().toString(36).substring(7),o=document.createElement("script");o.src="https://assets.apollo.io/micro/website-tracker/tracker.iife.js?nocache="+n,o.async=!0,o.defer=!0,o.onload=function(){window.trackingFunctions.onLoad({appId:"6a0b4046e86a4e0010a1ab14"})},document.head.appendChild(o)}initApollo();`}
         </Script>

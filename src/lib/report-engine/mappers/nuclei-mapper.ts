@@ -179,7 +179,14 @@ export function mapNucleiReport(args: {
   });
 
   // Sort by severity, re-number.
-  const sevOrder = ["critical", "high", "medium", "low", "info", "accepted"] as const;
+  const sevOrder = [
+    "critical",
+    "high",
+    "medium",
+    "low",
+    "info",
+    "accepted",
+  ] as const;
   reportFindings.sort(
     (a, b) => sevOrder.indexOf(a.severity) - sevOrder.indexOf(b.severity),
   );
@@ -208,7 +215,7 @@ export function mapNucleiReport(args: {
         "VulnScanners runs the open-source Nuclei engine with the community template set against your target. Nuclei matches a curated catalogue of known-vulnerability fingerprints, CVE indicators, exposed admin panels, and misconfiguration patterns.",
       tools: [
         "Nuclei (ProjectDiscovery) — template-based vulnerability scanner",
-        "Community templates — refreshed daily on our scanner host",
+        "Community templates — refreshed daily",
         "Optional severity filter via the scan launch options",
       ],
       scope: `HTTP/HTTPS endpoints reachable on ${args.target}, plus protocol-level checks for any exposed SSH, FTP, SMTP, DNS, and SNMP services discovered along the way.`,

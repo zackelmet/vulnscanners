@@ -7,7 +7,8 @@
 
 import { Resend } from "resend";
 
-const FROM = process.env.EMAIL_FROM || "VulnScanners <noreply@vulnscanners.com>";
+const FROM =
+  process.env.EMAIL_FROM || "VulnScanners <noreply@vulnscanners.com>";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://vulnscanners.com";
 const LOGO = `${APP_URL}/vulnscanners-logo.png`;
 
@@ -123,7 +124,16 @@ function renderEmail(opts: {
   extraHtml?: string;
   ctaHref: string;
   ctaLabel: string;
+  // Override the default "you ran a scan" footer (e.g. for marketing emails
+  // sent to people who haven't created an account).
+  footerHtml?: string;
 }): string {
+  const footer =
+    opts.footerHtml ??
+    `You received this because you ran a scan on VulnScanners.<br>
+        <a href="${APP_URL}/app/dashboard" style="color:${C.brand};text-decoration:none;">Open your dashboard</a>
+        &nbsp;·&nbsp;
+        <a href="${APP_URL}" style="color:${C.brand};text-decoration:none;">vulnscanners.com</a>`;
   return `<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -165,10 +175,7 @@ ${preheader(opts.preheaderText)}
 
       <!-- Footer -->
       <tr><td style="padding:22px 8px 4px;font-family:${FONT};font-size:12px;line-height:1.6;color:${C.ink3};">
-        You received this because you ran a scan on VulnScanners.<br>
-        <a href="${APP_URL}/app/dashboard" style="color:${C.brand};text-decoration:none;">Open your dashboard</a>
-        &nbsp;·&nbsp;
-        <a href="${APP_URL}" style="color:${C.brand};text-decoration:none;">vulnscanners.com</a>
+        ${footer}
       </td></tr>
 
     </table>
@@ -284,6 +291,40 @@ export function sendCombinedReportEmail(args: {
   return send({
     to: args.to,
     subject: `Your VulnScanners combined report (${args.scanCount} ${noun})`,
+    html,
+    attachments: [{ filename: args.filename, content: args.pdf }],
+  });
+}
+
+// Lead-magnet: deliver the gated sample report PDF to a work-email lead.
+export function sendSampleReportEmail(args: {
+  to: string;
+  pdf: Buffer;
+  filename: string;
+}): Promise<SendResult> {
+  const extraHtml = `<p style="margin:0 0 18px;font-family:${FONT};font-size:14px;line-height:1.6;color:${C.ink2};">
+      Attached is a sample VulnScanners report — a real combined scan showing the
+      executive summary, severity breakdown, and the detailed findings with
+      remediation and copy-paste verification steps you'd get for your own assets.
+    </p>
+    <p style="margin:0 0 20px;font-family:${FONT};font-size:14px;line-height:1.6;color:${C.ink2};">
+      When you're ready, run the same scans against your own targets — no install,
+      no infrastructure, credits never expire.
+    </p>`;
+  const html = renderEmail({
+    preheaderText: "Your sample VulnScanners report is attached.",
+    heading: "Here's your sample report",
+    intro:
+      "Thanks for your interest in VulnScanners. Your sample security report is attached as a PDF.",
+    extraHtml,
+    ctaHref: `${APP_URL}/#pricing`,
+    ctaLabel: "Scan your own assets",
+    footerHtml: `You received this because you requested a sample report at vulnscanners.com.<br>
+        <a href="${APP_URL}" style="color:${C.brand};text-decoration:none;">vulnscanners.com</a>`,
+  });
+  return send({
+    to: args.to,
+    subject: "Your sample VulnScanners report",
     html,
     attachments: [{ filename: args.filename, content: args.pdf }],
   });
