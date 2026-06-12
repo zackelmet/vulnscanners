@@ -77,6 +77,11 @@ export async function POST(req: NextRequest) {
         { status: 503 },
       );
     }
+    // Log the Resend message id so a submission can be traced to its row in the
+    // Resend dashboard (delivered / bounced / spam) when delivery is questioned.
+    console.log(
+      `[sample-report] sent to ${result.email} — resend id: ${sent.id ?? "unknown"}`,
+    );
   } catch (err) {
     console.error("Failed to send sample report email:", err);
     return NextResponse.json(
