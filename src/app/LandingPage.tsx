@@ -657,6 +657,31 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Logo bar ────────────────────────────────────────────── */}
+      <div className={styles.logobar}>
+        <div className={`${styles.container} ${styles.logobarInner}`}>
+          <span className={styles.logobarLabel}>
+            Runs the scanners you already trust
+          </span>
+          <div className={styles.logobarItems}>
+            {(
+              [
+                "Nmap",
+                "Nuclei",
+                "OWASP ZAP",
+                "SBOM checks",
+                "CVE feeds",
+              ] as const
+            ).map((name) => (
+              <span key={name} className={styles.logobarItem}>
+                <span className={styles.logobarDot} />
+                {name}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* ── As featured in ──────────────────────────────────────── */}
       <section className={styles.featured}>
         <div className={styles.container}>
@@ -687,31 +712,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
-      {/* ── Logo bar ────────────────────────────────────────────── */}
-      <div className={styles.logobar}>
-        <div className={`${styles.container} ${styles.logobarInner}`}>
-          <span className={styles.logobarLabel}>
-            Runs the scanners you already trust
-          </span>
-          <div className={styles.logobarItems}>
-            {(
-              [
-                "Nmap",
-                "Nuclei",
-                "OWASP ZAP",
-                "SBOM checks",
-                "CVE feeds",
-              ] as const
-            ).map((name) => (
-              <span key={name} className={styles.logobarItem}>
-                <span className={styles.logobarDot} />
-                {name}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
 
       {/* ── Scanner cards ───────────────────────────────────────── */}
       <section className={styles.block} id="scanners">
