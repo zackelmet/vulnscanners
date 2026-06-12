@@ -6,6 +6,9 @@ import "./globals.css";
 // via env. The gtag snippet is rendered in <body> below, skipped only in local
 // dev so it doesn't pollute the property.
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID || "G-7107KHBD8G";
+// RB2B visitor de-anonymization key (per-account). Defaults to the live key;
+// override via env to rotate without a code change.
+const RB2B_KEY = process.env.NEXT_PUBLIC_RB2B_KEY || "DNXY8HDWQMO0";
 import { IBM_Plex_Sans } from "next/font/google";
 import { websiteJsonLd, jsonLdString } from "@/lib/seo/jsonld";
 
@@ -88,6 +91,13 @@ export default function RootLayout({
         <Script id="apollo-tracker" strategy="afterInteractive">
           {`function initApollo(){var n=Math.random().toString(36).substring(7),o=document.createElement("script");o.src="https://assets.apollo.io/micro/website-tracker/tracker.iife.js?nocache="+n,o.async=!0,o.defer=!0,o.onload=function(){window.trackingFunctions.onLoad({appId:"6a0b4046e86a4e0010a1ab14"})},document.head.appendChild(o)}initApollo();`}
         </Script>
+        {/* RB2B — person-level visitor de-anonymization (B2B lead capture).
+            Loads only in production and only when the account key is set. */}
+        {process.env.NODE_ENV === "production" && RB2B_KEY && (
+          <Script id="reb2b-tracker" strategy="afterInteractive">
+            {`!function(key) {if (window.reb2b) return;window.reb2b = {loaded: true};var s = document.createElement("script");s.async = true;s.src = "https://ddwl4m2hdecbv.cloudfront.net/b/" + key + "/" + key + ".js.gz";document.getElementsByTagName("script")[0].parentNode.insertBefore(s, document.getElementsByTagName("script")[0]);}("${RB2B_KEY}");`}
+          </Script>
+        )}
         {/* Google tag (gtag.js) — skipped only in local dev. */}
         {process.env.NODE_ENV === "production" && (
           <>
