@@ -1,5 +1,6 @@
 // VulnScanners report theme — colors, type scale, spacing.
-// Mirrors the Aikido pentest layout but swaps the accent to our brand blue.
+// Brand-distinct: deeper severity ramp (Info tied to brand blue), tag-based
+// severity markers, accent-rail finding cards, brand-chip section numbers.
 
 export const C = {
   // Cover / dark surfaces
@@ -30,43 +31,45 @@ export const C = {
   panelBorder: "#e5e7eb",
   divider: "#e5e7eb",
 
-  // Severity (filled cell + pill text + pill border)
+  // Severity (filled tag bg + tag text + tag border). Deeper, more serious than
+  // the HostedScan ramp; Info pulled toward the brand blue.
   sev: {
-    critical: { fill: "#fde2e2", border: "#f3b4b4", text: "#b91c1c" },
-    high: { fill: "#feefdf", border: "#fbcc88", text: "#b45309" },
-    medium: { fill: "#dbeafe", border: "#93c5fd", text: "#1d4ed8" },
-    low: { fill: "#d1fae5", border: "#86efac", text: "#047857" },
-    info: { fill: "#f3f4f6", border: "#d1d5db", text: "#374151" },
+    critical: { fill: "#fee2e2", border: "#fca5a5", text: "#b91c1c" },
+    high: { fill: "#ffedd5", border: "#fdba74", text: "#c2410c" },
+    medium: { fill: "#fef3c7", border: "#fcd34d", text: "#b45309" },
+    low: { fill: "#fef9c3", border: "#fde047", text: "#a16207" },
+    info: { fill: "#dbeafe", border: "#93c5fd", text: "#1d4ed8" },
     accepted: { fill: "#dcfce7", border: "#86efac", text: "#15803d" },
     fixed: { fill: "#f3f4f6", border: "#d1d5db", text: "#6b7280" },
   },
 
-  // Chart bar colors
+  // Chart bar colors — match the solid severity ramp below.
   chart: {
-    critical: "#c026d3",
-    high: "#ef4444",
-    medium: "#f59e0b",
-    low: "#eab308",
-    info: "#9ca3af",
-    accepted: "#22c55e",
+    critical: "#dc2626",
+    high: "#ea580c",
+    medium: "#d97706",
+    low: "#ca8a04",
+    info: "#2563eb",
+    accepted: "#16a34a",
   },
 
-  // HostedScan-style severity palette — solid accent (cards, dots, % bar) and a
-  // light tint (card backgrounds). Keyed by Severity.
+  // Solid severity accent (cards, tags, rails, % bar) and a light tint (card
+  // backgrounds). A deeper `-600` ramp with Info tied to the brand blue — our
+  // own ramp, not the HostedScan magenta/red set. Keyed by Severity.
   sevColor: {
-    critical: "#c026d3",
-    high: "#ef4444",
-    medium: "#f59e0b",
-    low: "#eab308",
-    info: "#9ca3af",
-    accepted: "#22c55e",
+    critical: "#dc2626",
+    high: "#ea580c",
+    medium: "#d97706",
+    low: "#ca8a04",
+    info: "#2563eb",
+    accepted: "#16a34a",
   },
   sevTint: {
-    critical: "#fdf4ff",
-    high: "#fef2f2",
+    critical: "#fef2f2",
+    high: "#fff7ed",
     medium: "#fffbeb",
     low: "#fefce8",
-    info: "#f9fafb",
+    info: "#eff6ff",
     accepted: "#f0fdf4",
   },
 } as const;

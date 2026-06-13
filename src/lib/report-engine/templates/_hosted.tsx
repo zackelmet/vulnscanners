@@ -6,13 +6,7 @@
 import React from "react";
 import { Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import path from "node:path";
-import {
-  C,
-  T,
-  Severity,
-  SEVERITY_ORDER,
-  SEVERITY_LABEL,
-} from "./_theme";
+import { C, T, Severity, SEVERITY_ORDER, SEVERITY_LABEL } from "./_theme";
 import { ReportFinding } from "../report-data";
 
 const LOGO_PATH = path.join(process.cwd(), "public", "vulnscanners-logo.png");
@@ -47,7 +41,10 @@ export function HostedPage({
 
       <View style={st.footer} fixed>
         <Text style={st.footerLink}>vulnscanners.com</Text>
-        <Text style={st.footerNum} render={({ pageNumber }) => `${pageNumber}`} />
+        <Text
+          style={st.footerNum}
+          render={({ pageNumber }) => `${pageNumber}`}
+        />
       </View>
     </Page>
   );
@@ -64,7 +61,9 @@ export function SectionH1({
 }) {
   return (
     <View style={st.h1Row}>
-      <Text style={st.h1Num}>{num}</Text>
+      <View style={st.h1Chip}>
+        <Text style={st.h1ChipText}>{num}</Text>
+      </View>
       <Text style={st.h1}>{children}</Text>
     </View>
   );
@@ -79,7 +78,7 @@ export function SectionH2({
 }) {
   return (
     <Text style={st.h2}>
-      <Text style={st.h2Num}>{num}  </Text>
+      <Text style={st.h2Num}>{num} </Text>
       {children}
     </Text>
   );
@@ -106,7 +105,11 @@ export function Note({
 
 // ── Severity cards + distribution bar ────────────────────────────────────────
 
-export function SeverityCards({ counts }: { counts: Record<Severity, number> }) {
+export function SeverityCards({
+  counts,
+}: {
+  counts: Record<Severity, number>;
+}) {
   const total = SEVERITY_ORDER.reduce((s, k) => s + (counts[k] || 0), 0);
   // The % bar shows only severities with findings (excludes accepted, which is
   // a triage state, not a risk level).
@@ -127,7 +130,11 @@ export function SeverityCards({ counts }: { counts: Record<Severity, number> }) 
               style={[
                 st.sevCard,
                 active
-                  ? { borderColor: C.sevColor[k], backgroundColor: C.sevTint[k] }
+                  ? {
+                      borderColor: C.sevColor[k],
+                      borderTopColor: C.sevColor[k],
+                      backgroundColor: C.sevTint[k],
+                    }
                   : {},
               ]}
             >
@@ -204,6 +211,22 @@ export function SevDot({ severity }: { severity: Severity }) {
   );
 }
 
+// ── Severity tag (filled pill) ───────────────────────────────────────────────
+// Our brand marker — replaces the HostedScan dot+label in tables.
+
+export function SevTag({ severity }: { severity: Severity }) {
+  const p = C.sev[severity];
+  return (
+    <View
+      style={[st.sevTag, { backgroundColor: p.fill, borderColor: p.border }]}
+    >
+      <Text style={[st.sevTagText, { color: p.text }]}>
+        {SEVERITY_LABEL[severity]}
+      </Text>
+    </View>
+  );
+}
+
 // ── Vulnerabilities breakdown table ──────────────────────────────────────────
 
 export function BreakdownTable({ findings }: { findings: ReportFinding[] }) {
@@ -236,7 +259,7 @@ export function BreakdownTable({ findings }: { findings: ReportFinding[] }) {
         >
           <Text style={[st.tCell, st.colTitle, st.link]}>{f.title}</Text>
           <View style={[st.tCell, st.colSev]}>
-            <SevDot severity={f.severity} />
+            <SevTag severity={f.severity} />
           </View>
           <Text style={[st.tCell, st.colNum]}>1</Text>
           <Text style={[st.tCell, st.colNum]}>0</Text>
@@ -294,20 +317,7 @@ export function TargetsSummaryTable({
   );
 }
 
-// ── Finding detail (HostedScan style) ────────────────────────────────────────
-
-function SeverityBars({ severity }: { severity: Severity }) {
-  return (
-    <View style={st.sevBars}>
-      {[0, 1, 2].map((i) => (
-        <View
-          key={i}
-          style={[st.sevBar, { backgroundColor: C.sevColor[severity] }]}
-        />
-      ))}
-    </View>
-  );
-}
+// ── Finding detail ───────────────────────────────────────────────────────────
 
 function DetailBlock({
   title,
@@ -352,11 +362,13 @@ export function FindingDetail({
     day: "2-digit",
   });
   return (
-    <View style={st.detail}>
-      {/* Title + severity bars */}
+    <View
+      style={[st.detail, { borderLeftColor: C.sevColor[finding.severity] }]}
+    >
+      {/* Title + severity tag */}
       <View style={st.detailTitleRow} wrap={false}>
-        <SeverityBars severity={finding.severity} />
         <Text style={st.detailTitle}>{finding.title}</Text>
+        <SevTag severity={finding.severity} />
       </View>
 
       {/* Meta row */}
@@ -426,8 +438,12 @@ export function FindingDetail({
           <Text style={[st.tCell, st.colTarget, st.tHeadText]}>
             Vulnerable Target
           </Text>
-          <Text style={[st.tCell, st.colDate, st.tHeadText]}>First Detected</Text>
-          <Text style={[st.tCell, st.colDate, st.tHeadText]}>Last Detected</Text>
+          <Text style={[st.tCell, st.colDate, st.tHeadText]}>
+            First Detected
+          </Text>
+          <Text style={[st.tCell, st.colDate, st.tHeadText]}>
+            Last Detected
+          </Text>
         </View>
         <View style={st.tRow}>
           <Text style={[st.tCell, st.colTarget, st.link]}>{target}</Text>
@@ -496,7 +512,9 @@ export function BackCover() {
           <Image src={LOGO_PATH} style={st.backLogo} />
           <Text style={st.backBrand}>VulnScanners</Text>
         </View>
-        <Text style={st.backLink}>For more information, visit vulnscanners.com</Text>
+        <Text style={st.backLink}>
+          For more information, visit vulnscanners.com
+        </Text>
         <Text style={st.backBlurb}>
           VulnScanners runs Nmap, Nuclei, and OWASP ZAP as a fully hosted
           service — launch scans, manage vulnerabilities, and deliver
@@ -520,7 +538,8 @@ export const SCANNER_SECTION_TITLE: Record<ScannerKind, string> = {
 export const SCANNER_INTRO: Record<ScannerKind, string> = {
   zap: "The OWASP ZAP scan crawls the pages of a website or web application and inspects each request and response, checking for issues such as cross-domain misconfigurations, missing security headers, injection, and insecure cookies.",
   nmap: "The Nmap TCP port scan discovers open ports and the services running on them, and flags exposed or insecurely configured services on the scanned hosts.",
-  nuclei: "Nuclei is a fast, template-driven scanner that detects CVEs, misconfigurations, exposures, and security issues across web applications and infrastructure.",
+  nuclei:
+    "Nuclei is a fast, template-driven scanner that detects CVEs, misconfigurations, exposures, and security issues across web applications and infrastructure.",
 };
 
 // Fixed display order for the per-scanner sections (HostedScan order, minus the
@@ -551,7 +570,9 @@ export function ScannerSection({
   const findings = group.items.map((i) => i.finding);
   return (
     <View>
-      <SectionH1 num={num}>{SCANNER_SECTION_TITLE[group.scannerType]}</SectionH1>
+      <SectionH1 num={num}>
+        {SCANNER_SECTION_TITLE[group.scannerType]}
+      </SectionH1>
       <Lead>{SCANNER_INTRO[group.scannerType]}</Lead>
 
       <SectionH2 num={`${num}.1`}>Total Vulnerabilities</SectionH2>
@@ -624,10 +645,29 @@ const st = StyleSheet.create({
   footerNum: { fontSize: T.footer, color: C.ink3 },
 
   // headings
-  h1Row: { flexDirection: "row", alignItems: "flex-end", gap: 12, marginBottom: 10 },
-  h1Num: { fontSize: 22, color: C.ink4, fontWeight: 400 },
+  h1Row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 10,
+  },
+  h1Chip: {
+    width: 30,
+    height: 30,
+    borderRadius: 7,
+    backgroundColor: C.blue,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  h1ChipText: { fontSize: 15, color: C.white, fontWeight: 700 },
   h1: { fontSize: 22, color: C.ink, fontWeight: 700 },
-  h2: { fontSize: T.h2, color: C.ink, fontWeight: 700, marginTop: 18, marginBottom: 6 },
+  h2: {
+    fontSize: T.h2,
+    color: C.ink,
+    fontWeight: 700,
+    marginTop: 18,
+    marginBottom: 6,
+  },
   h2Num: { color: C.ink4, fontWeight: 400 },
   lead: { fontSize: T.body, color: C.ink2, lineHeight: 1.5, marginBottom: 6 },
 
@@ -639,18 +679,26 @@ const st = StyleSheet.create({
     padding: 14,
     marginTop: 8,
   },
-  noteTitle: { fontSize: T.body, fontWeight: 700, color: C.ink, marginBottom: 3 },
+  noteTitle: {
+    fontSize: T.body,
+    fontWeight: 700,
+    color: C.ink,
+    marginBottom: 3,
+  },
   noteBody: { fontSize: T.body, color: C.ink2, lineHeight: 1.5 },
 
   // severity cards
   cardRow: { flexDirection: "row", gap: 7, marginTop: 8 },
   sevCard: {
     flex: 1,
-    borderWidth: 1,
+    borderWidth: 0.75,
     borderColor: C.panelBorder,
-    borderRadius: 8,
+    borderTopWidth: 3,
+    borderTopColor: C.ink4,
+    borderRadius: 5,
     backgroundColor: C.page,
-    paddingVertical: 14,
+    paddingTop: 12,
+    paddingBottom: 14,
     paddingHorizontal: 6,
     alignItems: "center",
   },
@@ -687,6 +735,16 @@ const st = StyleSheet.create({
   dot: { width: 8, height: 8, borderRadius: 4 },
   sevDotText: { fontSize: T.body, color: C.ink2 },
 
+  // severity tag (filled pill)
+  sevTag: {
+    alignSelf: "flex-start",
+    borderWidth: 0.75,
+    borderRadius: 4,
+    paddingVertical: 2,
+    paddingHorizontal: 7,
+  },
+  sevTagText: { fontSize: 8.5, fontWeight: 700, letterSpacing: 0.2 },
+
   // tables
   table: {
     borderWidth: 0.5,
@@ -698,7 +756,12 @@ const st = StyleSheet.create({
   tRow: { flexDirection: "row", alignItems: "center" },
   tHead: { backgroundColor: C.panel },
   tHeadText: { color: C.ink, fontWeight: 700, fontSize: 9 },
-  tCell: { paddingVertical: 8, paddingHorizontal: 10, fontSize: T.body, color: C.ink2 },
+  tCell: {
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    fontSize: T.body,
+    color: C.ink2,
+  },
   colTitle: { flex: 1 },
   colTarget: { flex: 1 },
   colSev: { width: 90 },
@@ -709,25 +772,49 @@ const st = StyleSheet.create({
     justifyContent: "center",
     gap: 4,
   },
-  colNum: { width: 60, textAlign: "right" },
+  colNum: { width: 74, textAlign: "right" },
   colDate: { width: 100 },
   link: { color: C.blueLight },
   emptyRow: { padding: 12, fontSize: T.body, color: C.ink3 },
 
   // finding detail
-  detail: { marginTop: 16 },
-  detailTitleRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 },
-  sevBars: { flexDirection: "row", gap: 2 },
-  sevBar: { width: 4, height: 20, borderRadius: 1 },
-  detailTitle: { fontSize: 17, fontWeight: 700, color: C.ink },
+  detail: {
+    marginTop: 16,
+    borderLeftWidth: 3,
+    borderLeftColor: C.ink4, // overridden per-severity inline
+    paddingLeft: 14,
+  },
+  detailTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    marginBottom: 10,
+  },
+  detailTitle: { flex: 1, fontSize: 17, fontWeight: 700, color: C.ink },
   metaRow: { flexDirection: "row", gap: 24 },
   metaCol: {},
-  metaLabel: { fontSize: 7.5, color: C.ink4, letterSpacing: 0.4, marginBottom: 2 },
+  metaLabel: {
+    fontSize: 7.5,
+    color: C.ink4,
+    letterSpacing: 0.4,
+    marginBottom: 2,
+  },
   metaValue: { fontSize: T.body, color: C.ink },
-  metaRule: { borderBottomWidth: 0.5, borderBottomColor: C.divider, marginTop: 12, marginBottom: 8 },
+  metaRule: {
+    borderBottomWidth: 0.5,
+    borderBottomColor: C.divider,
+    marginTop: 12,
+    marginBottom: 8,
+  },
   detailBlock: { marginTop: 10 },
   detailH: { fontSize: 11, fontWeight: 700, color: C.ink, marginBottom: 4 },
-  detailBody: { fontSize: T.body, color: C.ink2, lineHeight: 1.5, marginBottom: 3 },
+  detailBody: {
+    fontSize: T.body,
+    color: C.ink2,
+    lineHeight: 1.5,
+    marginBottom: 3,
+  },
   stepLabel: { fontWeight: 700, color: C.ink },
   bulletRow: { flexDirection: "row", gap: 6, marginBottom: 2 },
   bulletDot: { fontSize: T.body, color: C.ink3 },
@@ -745,8 +832,17 @@ const st = StyleSheet.create({
 
   // toc
   tocTitle: { fontSize: 28, color: C.ink3, fontWeight: 400, marginBottom: 12 },
-  tocRule: { borderBottomWidth: 0.5, borderBottomColor: C.divider, marginBottom: 8 },
-  tocRow: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 11 },
+  tocRule: {
+    borderBottomWidth: 0.5,
+    borderBottomColor: C.divider,
+    marginBottom: 8,
+  },
+  tocRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingVertical: 11,
+  },
   tocNum: { fontSize: 13, color: C.blueLight, width: 16 },
   tocText: { fontSize: 13, color: C.ink, fontWeight: 500 },
 
@@ -754,7 +850,12 @@ const st = StyleSheet.create({
   glossaryRow: { flexDirection: "row", gap: 28, marginTop: 8 },
   glossaryCol: { flex: 1 },
   glossaryItem: { marginBottom: 12 },
-  glossaryTerm: { fontSize: 10, fontWeight: 700, color: C.ink, marginBottom: 2 },
+  glossaryTerm: {
+    fontSize: 10,
+    fontWeight: 700,
+    color: C.ink,
+    marginBottom: 2,
+  },
   glossaryDef: { fontSize: 9, color: C.ink2, lineHeight: 1.45 },
 
   // back cover
@@ -766,9 +867,19 @@ const st = StyleSheet.create({
   },
   backCenter: { alignItems: "center", paddingHorizontal: 80 },
   backSmall: { fontSize: T.body, color: C.ink3, marginBottom: 10 },
-  backLogoRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 },
+  backLogoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 14,
+  },
   backLogo: { width: 26, height: 26 },
   backBrand: { fontSize: 22, fontWeight: 700, color: C.ink },
   backLink: { fontSize: T.body, color: C.blueLight, marginBottom: 18 },
-  backBlurb: { fontSize: 9.5, color: C.ink3, lineHeight: 1.6, textAlign: "center" },
+  backBlurb: {
+    fontSize: 9.5,
+    color: C.ink3,
+    lineHeight: 1.6,
+    textAlign: "center",
+  },
 });

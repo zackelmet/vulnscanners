@@ -159,7 +159,14 @@
   margin: 0 0 28px;
   line-height: 1.5;
 }
-.heroCtas { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.heroCtas { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.heroCtaSub {
+  font-size: 13.5px;
+  color: var(--text3);
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+.heroCtaSub:hover { color: var(--text2); text-decoration: underline; }
 
 /* ─── GLOBE ──────────────────────────────────────────────────────── */
 .globeStage {
@@ -873,3 +880,304 @@
 @media (max-width: 460px) {
   .samplePreview { grid-template-columns: 1fr 1fr; gap: 10px; }
 }
+
+/* ─── HERO REPORT VIEWER (replaces globe) ────────────────────────── */
+.reportViewer {
+  position: relative;
+  width: 100%;
+  max-width: 470px;
+  margin-left: auto;
+  border: 1px solid var(--hair2);
+  border-radius: var(--rLg);
+  background: var(--panel);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+@media (max-width: 960px) {
+  .reportViewer { margin: 0 auto; }
+}
+.rvBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  background: var(--panel2);
+  border-bottom: 1px solid var(--hair);
+}
+.rvDots { display: inline-flex; gap: 6px; flex-shrink: 0; }
+.rvDots i {
+  display: block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--hair2);
+}
+.rvTitle {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rvPages {
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--blue2);
+  letter-spacing: 0.02em;
+}
+.rvScroll {
+  height: 468px;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--bg2);
+  scrollbar-width: thin;
+  scrollbar-color: var(--hair2) transparent;
+}
+.rvScroll::-webkit-scrollbar { width: 8px; }
+.rvScroll::-webkit-scrollbar-thumb {
+  background: var(--hair2);
+  border-radius: 4px;
+}
+.rvPage {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 5px;
+  border: 1px solid var(--hair);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+.rvFade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 52px;
+  background: linear-gradient(to top, var(--panel), transparent);
+  pointer-events: none;
+}
+
+/* ─── COMPARISON TABLE ───────────────────────────────────────────── */
+.cmpWrap {
+  overflow-x: auto;
+  border: 1px solid var(--hair);
+  border-radius: var(--rLg);
+  background: var(--panel);
+}
+.cmpTable {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;
+}
+.cmpColHead {
+  padding: 16px 18px;
+  text-align: center;
+  font-family: var(--sans);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text2);
+  border-bottom: 1px solid var(--hair);
+  white-space: nowrap;
+}
+.cmpRowHead {
+  padding: 14px 18px;
+  text-align: left;
+  font-size: 13.5px;
+  font-weight: 400;
+  color: var(--text);
+  border-bottom: 1px solid var(--hair);
+  vertical-align: middle;
+  min-width: 230px;
+}
+.cmpCell {
+  padding: 14px 18px;
+  text-align: center;
+  border-bottom: 1px solid var(--hair);
+  vertical-align: middle;
+}
+.cmpTable tbody tr:last-child .cmpCell,
+.cmpTable tbody tr:last-child .cmpRowHead { border-bottom: none; }
+/* Highlighted "us" column */
+.cmpColUs {
+  background: var(--blueWash);
+  color: var(--text);
+}
+.cmpColHead.cmpColUs {
+  color: var(--blue2);
+  border-top: 2px solid var(--blue);
+  border-radius: 10px 10px 0 0;
+}
+.cmpYes { color: var(--blue2); display: inline-flex; }
+.cmpNo { color: var(--text3); opacity: 0.55; display: inline-flex; }
+.cmpText { font-size: 12.5px; color: var(--text3); font-family: var(--mono); }
+.cmpTextUs {
+  font-size: 12.5px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-weight: 500;
+}
+
+/* ─── ROI CALCULATOR ─────────────────────────────────────────────── */
+.roiPanel {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 0;
+  border: 1px solid var(--hair);
+  border-radius: var(--rLg);
+  overflow: hidden;
+  background: var(--panel);
+  margin-bottom: 28px;
+}
+@media (max-width: 760px) {
+  .roiPanel { grid-template-columns: 1fr; }
+}
+.roiControls { padding: 28px; }
+.roiKicker {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--blue2);
+  margin: 0 0 8px;
+}
+.roiTitle {
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin: 0 0 22px;
+}
+.roiField { display: block; margin-bottom: 20px; }
+.roiLabelRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.roiLabel { font-size: 13.5px; color: var(--text2); }
+.roiValueTag {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.roiRange {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--hair2);
+  outline: none;
+  cursor: pointer;
+}
+.roiRange::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--blue);
+  border: 2px solid #0b0e14;
+  box-shadow: 0 0 0 1px var(--blue);
+  cursor: pointer;
+}
+.roiRange::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--blue);
+  border: 2px solid #0b0e14;
+  cursor: pointer;
+}
+.roiResult {
+  padding: 28px;
+  background: linear-gradient(160deg, var(--blueWash), transparent);
+  border-left: 1px solid var(--hair);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+@media (max-width: 760px) {
+  .roiResult { border-left: none; border-top: 1px solid var(--hair); }
+}
+.roiBigLabel {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin: 0 0 6px;
+}
+.roiBig {
+  font-size: 44px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin: 0 0 16px;
+  line-height: 1;
+}
+.roiBreak { list-style: none; margin: 0 0 14px; padding: 0; }
+.roiBreak li {
+  font-size: 13px;
+  color: var(--text2);
+  padding: 4px 0;
+}
+.roiBreak strong { color: var(--text); font-weight: 600; }
+.roiFine { font-size: 11.5px; color: var(--text3); margin: 0; }
+
+/* ─── MSP VALUE CARDS ────────────────────────────────────────────── */
+.msvGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+@media (max-width: 760px) {
+  .msvGrid { grid-template-columns: 1fr; }
+}
+.msvCard {
+  border: 1px solid var(--hair);
+  border-radius: var(--rLg);
+  background: var(--panel);
+  padding: 24px;
+  transition: border-color 140ms ease, transform 140ms ease;
+}
+.msvCard:hover { border-color: var(--hair2); transform: translateY(-2px); }
+.msvIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--blueWash);
+  color: var(--blue2);
+  margin-bottom: 16px;
+}
+.msvTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+.msvDesc {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text2);
+  margin: 0 0 16px;
+}
+.msvLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--blue2);
+  text-decoration: none;
+}
+.msvLink:hover { color: var(--text); }

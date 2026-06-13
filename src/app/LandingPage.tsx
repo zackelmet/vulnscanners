@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useAuth } from "@/lib/context/AuthContext";
-import GlobeCanvas from "@/components/landing/GlobeCanvas";
 import SampleReportForm from "@/components/landing/SampleReportForm";
 import styles from "./landing.module.css";
 import { LANDING_FAQ as FAQ } from "./landing-faq";
@@ -174,6 +173,94 @@ function CheckIcon() {
         d="M3 7.5L6 10l5-5.5"
         stroke="currentColor"
         strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 14 14"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M3.5 3.5l7 7M10.5 3.5l-7 7"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function TagIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M4 4h7l9 9-7 7-9-9V4Z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <circle cx="8" cy="8" r="1.4" fill="currentColor" />
+    </svg>
+  );
+}
+
+function ShareIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle cx="6" cy="12" r="2.4" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="18" cy="6" r="2.4" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="18" cy="18" r="2.4" stroke="currentColor" strokeWidth="1.4" />
+      <path
+        d="M8.1 10.9l7.8-3.8M8.1 13.1l7.8 3.8"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function GrowthIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M4 19h16M5 16l4-5 3.5 3L19 7"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M15 7h4v4"
+        stroke="currentColor"
+        strokeWidth="1.4"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -561,6 +648,76 @@ const PAINS = [
   },
 ];
 
+/* ── Comparison table ────────────────────────────────────────────── */
+// Cell values: true = ✓, false = ✗, string = literal text (shown muted unless
+// it's our column). Competitor rows describe their model, not exact pricing, to
+// stay accurate as their plans change.
+type Cell = boolean | string;
+const COMPARE_COLS = ["VulnScanners", "Nessus", "Qualys", "Intruder"] as const;
+const COMPARE_ROWS: { label: string; cells: Cell[] }[] = [
+  {
+    label: "Fully hosted — nothing to install",
+    cells: [true, false, "Agent / appliance", true],
+  },
+  {
+    label: "Nmap + Nuclei + OWASP ZAP in one console",
+    cells: [true, false, false, false],
+  },
+  {
+    label: "Client-ready, branded PDF reports",
+    cells: [true, "Raw export", "Raw export", true],
+  },
+  {
+    label: "Pay per scan — no annual contract",
+    cells: [true, false, false, false],
+  },
+  {
+    label: "Billing model",
+    cells: [
+      "Credits from $10",
+      "Annual license",
+      "Enterprise quote",
+      "Monthly subscription",
+    ],
+  },
+  {
+    label: "Time to first report",
+    cells: ["~4 minutes", "Hours", "Days", "~Minutes"],
+  },
+  {
+    label: "Built for MSP multi-client work",
+    cells: [true, "Limited", "Limited", "Limited"],
+  },
+];
+
+/* ── MSP value props (under pricing) ─────────────────────────────── */
+const MSP_VALUE = [
+  {
+    icon: TagIcon,
+    title: "White-label every report",
+    desc: "Put your own logo on the PDF. Your client sees your brand — a quiet “Powered by VulnScanners” is the only thing that points back to us.",
+    cta: { label: "Ask about white-label", href: "/mssp" },
+  },
+  {
+    icon: ShareIcon,
+    title: "Partner & referral program",
+    desc: "Refer another provider and earn scan credits or reseller margin. Your network becomes a channel.",
+    cta: { label: "Join the partner program", href: "/mssp" },
+  },
+  {
+    icon: ShieldIcon,
+    title: "Pass the audits you already face",
+    desc: "Cyber-insurance, CMMC, SOC 2 and vendor questionnaires all expect continuous scanning. Hand auditors the evidence in one file.",
+    cta: { label: "See compliance coverage", href: "#compliance" },
+  },
+  {
+    icon: GrowthIcon,
+    title: "Start with one client, scale to your book",
+    desc: "Begin on a $10 pack for a single client, then roll the same console across every account you manage.",
+    cta: { label: "See pricing", href: "#pricing" },
+  },
+];
+
 /* ── Page ─────────────────────────────────────────────────────────── */
 /*
  * Navbar / Footer / logo are rendered by layout.tsx via ConditionalNav
@@ -569,6 +726,17 @@ const PAINS = [
 export default function LandingPage() {
   const { currentUser } = useAuth();
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
+
+  // ROI calculator — hours/dollars saved vs. running and formatting scans by hand.
+  const [roiReports, setRoiReports] = useState(20); // client reports / month
+  const [roiRate, setRoiRate] = useState(150); // your billable rate ($/hr)
+  const HOURS_SAVED_PER_REPORT = 3; // manual scan + cleanup + formatting
+  const COST_PER_REPORT = 0.51; // ~3 scans (nmap+nuclei+zap) at Pro pricing
+  const roiHours = roiReports * HOURS_SAVED_PER_REPORT;
+  const roiValue = roiHours * roiRate;
+  const roiCost = Math.round(roiReports * COST_PER_REPORT);
+  const roiNet = Math.max(0, roiValue - roiCost);
+  const fmt = (n: number) => n.toLocaleString("en-US");
 
   const handleCheckout = async (tier: PricingTier) => {
     if (!currentUser) {
@@ -620,12 +788,12 @@ export default function LandingPage() {
           <div>
             <span className={styles.eyebrow}>
               <span className={styles.eyebrowPulse} />
-              Login in and start scanning.
+              Log in and start scanning.
             </span>
             <h1 className={styles.heroH1}>
-              Hosted scans.
+              Hand your client a security report.
               <br />
-              Deliverable reports.
+              Built in 4 minutes.
             </h1>
             <p className={styles.lede}>
               Nmap · Nuclei · OWASP ZAP — one console, zero install.
@@ -637,22 +805,37 @@ export default function LandingPage() {
               >
                 Start scanning <ArrowIcon />
               </Link>
-              <Link
-                href="#scanners"
-                className={`${styles.btn} ${styles.btnGhost} ${styles.btnLg}`}
-              >
-                See scanners
+              <Link href="#scanners" className={styles.heroCtaSub}>
+                or see the scanners
               </Link>
             </div>
           </div>
 
-          <div className={styles.globeStage}>
-            <GlobeCanvas
-              wrapClassName={styles.globeWrap}
-              canvasClassName={styles.globeCanvas}
-              tickerClassName={styles.globeTicker}
-              dotClassName={styles.globeTickerDot}
-            />
+          <div className={styles.reportViewer}>
+            <div className={styles.rvBar}>
+              <span className={styles.rvDots} aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
+              <span className={styles.rvTitle}>
+                acme-corp.com — Vulnerability Report.pdf
+              </span>
+              <span className={styles.rvPages}>scroll ↓</span>
+            </div>
+            <div className={styles.rvScroll}>
+              {[1, 2, 3, 4, 5, 6].map((n) => (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  key={n}
+                  className={styles.rvPage}
+                  src={`/sample-report/pg-0${n}.png`}
+                  alt={`Sample VulnScanners report — page ${n}`}
+                  loading={n <= 2 ? "eager" : "lazy"}
+                />
+              ))}
+            </div>
+            <div className={styles.rvFade} aria-hidden="true" />
           </div>
         </div>
       </section>
@@ -878,7 +1061,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Compliance mandate (framework quotes) ───────────────── */}
-      <section className={styles.block}>
+      <section className={styles.block} id="compliance">
         <div className={styles.container}>
           <div className={styles.sectionHead}>
             <p className={styles.sectionKicker}>Compliance</p>
@@ -914,6 +1097,74 @@ export default function LandingPage() {
                 </figcaption>
               </figure>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Comparison table ────────────────────────────────────── */}
+      <section className={styles.block} id="compare">
+        <div className={styles.container}>
+          <div className={styles.sectionHead}>
+            <p className={styles.sectionKicker}>How we compare</p>
+            <h2 className={styles.sectionTitle}>
+              Why teams switch to VulnScanners.
+            </h2>
+            <p className={styles.sectionSub}>
+              The legacy scanners were built for enterprise security teams with
+              servers to spare — not for delivering a clean report to a client
+              today.
+            </p>
+          </div>
+
+          <div className={styles.cmpWrap}>
+            <table className={styles.cmpTable}>
+              <thead>
+                <tr>
+                  <th className={styles.cmpRowHead} aria-hidden="true" />
+                  {COMPARE_COLS.map((col, i) => (
+                    <th
+                      key={col}
+                      className={`${styles.cmpColHead}${i === 0 ? ` ${styles.cmpColUs}` : ""}`}
+                    >
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {COMPARE_ROWS.map((row) => (
+                  <tr key={row.label}>
+                    <th scope="row" className={styles.cmpRowHead}>
+                      {row.label}
+                    </th>
+                    {row.cells.map((cell, i) => (
+                      <td
+                        key={i}
+                        className={`${styles.cmpCell}${i === 0 ? ` ${styles.cmpColUs}` : ""}`}
+                      >
+                        {cell === true ? (
+                          <span className={styles.cmpYes}>
+                            <CheckIcon />
+                          </span>
+                        ) : cell === false ? (
+                          <span className={styles.cmpNo}>
+                            <XIcon />
+                          </span>
+                        ) : (
+                          <span
+                            className={
+                              i === 0 ? styles.cmpTextUs : styles.cmpText
+                            }
+                          >
+                            {cell}
+                          </span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
@@ -975,6 +1226,102 @@ export default function LandingPage() {
             <Link href="/mssp" className={styles.msspNoteLink}>
               Request a meeting <ArrowIcon />
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── For MSPs (white-label, referral, compliance, ROI, expand) ── */}
+      <section className={styles.block} id="for-msps">
+        <div className={styles.container}>
+          <div className={styles.sectionHead}>
+            <p className={styles.sectionKicker}>For managed providers</p>
+            <h2 className={styles.sectionTitle}>
+              Built to grow with your client book.
+            </h2>
+            <p className={styles.sectionSub}>
+              Every report you ship is branded as yours, every audit gets its
+              evidence, and every client you add costs you minutes — not another
+              server to babysit.
+            </p>
+          </div>
+
+          {/* ROI calculator */}
+          <div className={styles.roiPanel}>
+            <div className={styles.roiControls}>
+              <p className={styles.roiKicker}>ROI calculator</p>
+              <h3 className={styles.roiTitle}>
+                Do the math on your own client load.
+              </h3>
+              <label className={styles.roiField}>
+                <span className={styles.roiLabelRow}>
+                  <span className={styles.roiLabel}>
+                    Client reports / month
+                  </span>
+                  <span className={styles.roiValueTag}>{roiReports}</span>
+                </span>
+                <input
+                  type="range"
+                  min={1}
+                  max={200}
+                  value={roiReports}
+                  onChange={(e) => setRoiReports(Number(e.target.value))}
+                  className={styles.roiRange}
+                  aria-label="Client reports per month"
+                />
+              </label>
+              <label className={styles.roiField}>
+                <span className={styles.roiLabelRow}>
+                  <span className={styles.roiLabel}>Your billable rate</span>
+                  <span className={styles.roiValueTag}>${roiRate}/hr</span>
+                </span>
+                <input
+                  type="range"
+                  min={50}
+                  max={400}
+                  step={10}
+                  value={roiRate}
+                  onChange={(e) => setRoiRate(Number(e.target.value))}
+                  className={styles.roiRange}
+                  aria-label="Your billable hourly rate"
+                />
+              </label>
+            </div>
+            <div className={styles.roiResult}>
+              <p className={styles.roiBigLabel}>Value recovered every month</p>
+              <p className={styles.roiBig}>${fmt(roiNet)}</p>
+              <ul className={styles.roiBreak}>
+                <li>
+                  <strong>{fmt(roiHours)} hrs</strong> of manual scanning &amp;
+                  formatting saved
+                </li>
+                <li>
+                  <strong>${fmt(roiCost)}</strong> in scan credits to deliver
+                  them
+                </li>
+              </ul>
+              <p className={styles.roiFine}>
+                Assumes ~3 hours saved per report. Slide to your real numbers.
+              </p>
+            </div>
+          </div>
+
+          {/* Value cards */}
+          <div className={styles.msvGrid}>
+            {MSP_VALUE.map((v) => {
+              const Icon = v.icon;
+              return (
+                <article key={v.title} className={styles.msvCard}>
+                  <div className={styles.msvIcon} aria-hidden="true">
+                    <Icon />
+                  </div>
+                  <h3 className={styles.msvTitle}>{v.title}</h3>
+                  <p className={styles.msvDesc}>{v.desc}</p>
+                  <Link href={v.cta.href} className={styles.msvLink}>
+                    {v.cta.label} <ArrowIcon />
+                  </Link>
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -1073,13 +1420,7 @@ export default function LandingPage() {
               href="/login"
               className={`${styles.btn} ${styles.btnPrimary} ${styles.btnLg}`}
             >
-              Create account
-            </Link>
-            <Link
-              href="/app/scans"
-              className={`${styles.btn} ${styles.btnGhost}   ${styles.btnLg}`}
-            >
-              Open the console
+              Start scanning <ArrowIcon />
             </Link>
           </div>
         </div>
