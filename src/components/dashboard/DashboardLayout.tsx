@@ -33,10 +33,36 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { currentUser } = useAuth();
   const accountMenuRef = useRef<HTMLDivElement>(null);
+
+  // Surface the Admin link only for admins. Mirrors the /admin gate: the server
+  // checks the admin custom claim or the Firestore users/{uid}.isAdmin flag.
+  useEffect(() => {
+    if (!currentUser) {
+      setIsAdmin(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await currentUser.getIdToken();
+        const res = await fetch("/api/auth/isAdmin", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json().catch(() => ({ isAdmin: false }));
+        if (!cancelled) setIsAdmin(res.ok && data.isAdmin === true);
+      } catch {
+        if (!cancelled) setIsAdmin(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser]);
 
   const getInitials = (email: string | null | undefined) => {
     if (!email) return "U";
@@ -155,6 +181,22 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </Link>
             );
           })}
+
+          {isAdmin && (
+            <Link
+              href="/admin"
+              data-tour="admin"
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                pathname === "/admin"
+                  ? "bg-[#0366d6]/20 text-[#4493f8] font-semibold"
+                  : "text-[#9aa5b6] hover:bg-[#11161f] hover:text-[#e6edf5]"
+              }`}
+              onClick={() => setSidebarOpen(false)}
+            >
+              <FontAwesomeIcon icon={faShieldHalved} className="w-5 h-5" />
+              Admin
+            </Link>
+          )}
         </nav>
 
         {/* Bottom section */}
