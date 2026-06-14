@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminDashboard from "@/components/admin/AdminDashboard";
-import Page from "@/components/shared/Page";
+import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/lib/context/AuthContext";
 
 export default function AdminDashboardPage() {
@@ -46,17 +46,15 @@ export default function AdminDashboardPage() {
     };
   }, [currentUser, isLoadingAuth, router]);
 
-  if (verifyState !== "admin") {
-    return (
-      <Page>
-        <div className="p-8">Verifying access…</div>
-      </Page>
-    );
-  }
-
   return (
-    <Page>
-      <AdminDashboard />
-    </Page>
+    <DashboardLayout>
+      {verifyState === "admin" ? (
+        <AdminDashboard />
+      ) : (
+        <div className="p-8 text-[#9aa5b6] bg-[#07090d] min-h-screen">
+          Verifying access…
+        </div>
+      )}
+    </DashboardLayout>
   );
 }
