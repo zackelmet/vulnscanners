@@ -26,6 +26,62 @@ function ChevronIcon({ open }: { open: boolean }) {
   );
 }
 
+function MenuIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      {open ? (
+        <path
+          d="M6 6l12 12M18 6L6 18"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
+      ) : (
+        <path
+          d="M4 7h16M4 12h16M4 17h16"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
+      )}
+    </svg>
+  );
+}
+
+// One collapsible section in the mobile menu.
+function MobileSection({
+  label,
+  open,
+  onToggle,
+  children,
+}: {
+  label: string;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="border-b border-[#161b24]">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between py-3 text-left text-[15px] font-medium text-[#e6edf5]"
+      >
+        {label}
+        <ChevronIcon open={open} />
+      </button>
+      {open && <div className="pb-2">{children}</div>}
+    </div>
+  );
+}
+
 const RESOURCES_ITEMS = [
   {
     href: "/blog",
@@ -84,9 +140,29 @@ export default function Navbar() {
   const [scannersOpen, setScannersOpen] = useState(false);
   const [resourcesOpen, setResourcesOpen] = useState(false);
   const [assessmentsOpen, setAssessmentsOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const resourcesRef = useRef<HTMLDivElement>(null);
   const assessmentsRef = useRef<HTMLDivElement>(null);
+
+  // Close the mobile menu when the viewport grows to the desktop layout.
+  useEffect(() => {
+    function handleResize() {
+      if (window.innerWidth >= 1024) setMobileOpen(false);
+    }
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const closeMobile = () => {
+    setMobileOpen(false);
+    setScannersOpen(false);
+    setResourcesOpen(false);
+    setAssessmentsOpen(false);
+  };
+
+  const accountHref = currentUser ? "/app/dashboard" : "/login";
+  const accountLabel = currentUser ? "Console" : "Sign In";
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -133,7 +209,7 @@ export default function Navbar() {
           </span>
         </Link>
 
-        <div className="flex items-center gap-3">
+        <div className="hidden lg:flex items-center gap-3">
           {!isLoadingAuth && (
             <>
               <div
@@ -311,7 +387,119 @@ export default function Navbar() {
             </>
           )}
         </div>
+
+        {/* Mobile hamburger */}
+        <button
+          type="button"
+          onClick={() => setMobileOpen((v) => !v)}
+          aria-label="Toggle menu"
+          aria-expanded={mobileOpen}
+          className="lg:hidden -mr-2 p-2 text-gray-200 hover:text-white transition"
+        >
+          <MenuIcon open={mobileOpen} />
+        </button>
       </div>
+
+      {/* Mobile menu */}
+      {mobileOpen && !isLoadingAuth && (
+        <div className="lg:hidden border-t border-[#0366d6]/20 bg-[#0a141f]">
+          <nav className="max-w-7xl mx-auto px-5 py-2">
+            <MobileSection
+              label="Assessments"
+              open={assessmentsOpen}
+              onToggle={() => setAssessmentsOpen((v) => !v)}
+            >
+              {ASSESSMENT_ITEMS.map(({ href, name, desc }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={closeMobile}
+                  className="block rounded-lg px-3 py-2.5 hover:bg-[#11161f] transition-colors"
+                >
+                  <span className="block text-sm font-medium text-[#e6edf5]">
+                    {name}
+                  </span>
+                  <span className="block text-xs text-[#697080]">{desc}</span>
+                </Link>
+              ))}
+            </MobileSection>
+
+            <MobileSection
+              label="Scanners"
+              open={scannersOpen}
+              onToggle={() => setScannersOpen((v) => !v)}
+            >
+              {SCANNER_ITEMS.map(({ href, name, desc, logo, logoW, logoH }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={closeMobile}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-[#11161f] transition-colors"
+                >
+                  <span className="w-8 h-7 flex items-center justify-center shrink-0">
+                    <Image
+                      src={logo}
+                      alt={`${name} logo`}
+                      width={logoW}
+                      height={logoH}
+                      className="max-h-7 w-auto object-contain grayscale brightness-150 opacity-80"
+                    />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-[#e6edf5]">
+                      {name}
+                    </span>
+                    <span className="block text-xs text-[#697080]">{desc}</span>
+                  </span>
+                </Link>
+              ))}
+              <Link
+                href="/scanners"
+                onClick={closeMobile}
+                className="block px-3 py-2 text-xs font-mono uppercase tracking-[0.08em] text-[#4493f8] hover:text-[#79b6ff] transition-colors"
+              >
+                All scanners →
+              </Link>
+            </MobileSection>
+
+            <MobileSection
+              label="Resources"
+              open={resourcesOpen}
+              onToggle={() => setResourcesOpen((v) => !v)}
+            >
+              {RESOURCES_ITEMS.map(({ href, name, desc }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={closeMobile}
+                  className="block rounded-lg px-3 py-2.5 hover:bg-[#11161f] transition-colors"
+                >
+                  <span className="block text-sm font-medium text-[#e6edf5]">
+                    {name}
+                  </span>
+                  <span className="block text-xs text-[#697080]">{desc}</span>
+                </Link>
+              ))}
+            </MobileSection>
+
+            <Link
+              href="/#pricing"
+              onClick={closeMobile}
+              className="block border-b border-[#161b24] py-3 text-[15px] font-medium text-[#e6edf5]"
+            >
+              Pricing
+            </Link>
+
+            <Link
+              href={accountHref}
+              onClick={closeMobile}
+              className="mb-3 mt-4 block rounded-lg bg-[#0a2540] px-4 py-3 text-center text-sm font-semibold text-white hover:bg-[#123a63] transition"
+            >
+              {accountLabel}
+            </Link>
+          </nav>
+        </div>
+      )}
     </header>
   );
 }

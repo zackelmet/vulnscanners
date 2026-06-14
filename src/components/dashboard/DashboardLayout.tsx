@@ -24,6 +24,7 @@ import {
 import { useAuth } from "@/lib/context/AuthContext";
 import signout from "@/lib/firebase/signout";
 import Image from "next/image";
+import ProductTour from "@/components/onboarding/ProductTour";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -63,12 +64,37 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }, []);
 
   const navItems = [
-    { href: "/app/dashboard", label: "Dashboard", icon: faHome },
-    { href: "/app/targets", label: "Targets", icon: faBullseye },
-    { href: "/app/scans", label: "Launch Scan", icon: faJetFighterUp },
+    {
+      href: "/app/dashboard",
+      label: "Dashboard",
+      icon: faHome,
+      tour: "dashboard",
+    },
+    {
+      href: "/app/targets",
+      label: "Targets",
+      icon: faBullseye,
+      tour: "targets",
+    },
+    {
+      href: "/app/scans",
+      label: "Launch Scan",
+      icon: faJetFighterUp,
+      tour: "launch",
+    },
     { href: "/app/scheduled", label: "Scheduled Scans", icon: faClock },
-    { href: "/app/history", label: "Scan History", icon: faHistory },
-    { href: "/app/reports", label: "Reports", icon: faFileLines },
+    {
+      href: "/app/history",
+      label: "Scan History",
+      icon: faHistory,
+      tour: "history",
+    },
+    {
+      href: "/app/reports",
+      label: "Reports",
+      icon: faFileLines,
+      tour: "reports",
+    },
   ];
 
   const bottomItems = [
@@ -78,6 +104,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="h-screen bg-[#07090d] flex overflow-hidden">
+      <ProductTour />
+
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -114,6 +142,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <Link
                 key={item.href}
                 href={item.href}
+                data-tour={item.tour}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                   isActive
                     ? "bg-[#0366d6]/20 text-[#4493f8] font-semibold"
@@ -200,6 +229,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Upgrade button */}
           <Link
             href="/app/dashboard?purchase=true"
+            data-tour="credits"
             className="block w-full px-4 py-3 bg-[#0a2540] text-white font-semibold rounded-lg text-center hover:bg-[#123a63] transition-colors"
           >
             <FontAwesomeIcon icon={faJetFighterUp} className="mr-2" />
