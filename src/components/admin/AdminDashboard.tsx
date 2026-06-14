@@ -5,7 +5,7 @@ import {
   faUserPlus,
   faArrowTrendUp,
   faBolt,
-  faUserSecret,
+  faTerminal,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useAuth } from "@/lib/context/AuthContext";
@@ -78,7 +78,7 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <span className="w-10 h-10 rounded-lg bg-[#0366d6]/10 text-[#4493f8] grid place-items-center">
-          <FontAwesomeIcon icon={faUserSecret} className="text-lg" />
+          <FontAwesomeIcon icon={faTerminal} className="text-lg" />
         </span>
         <div>
           <h1 className="text-3xl font-light text-[#e6edf5] leading-tight">

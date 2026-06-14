@@ -17,7 +17,7 @@ import {
   faCog,
   faChevronUp,
   faHistory,
-  faUserSecret,
+  faTerminal,
   faFileLines,
   faClock,
 } from "@fortawesome/free-solid-svg-icons";
@@ -193,7 +193,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               }`}
               onClick={() => setSidebarOpen(false)}
             >
-              <FontAwesomeIcon icon={faUserSecret} className="w-5 h-5" />
+              <FontAwesomeIcon icon={faTerminal} className="w-5 h-5" />
               Admin
             </Link>
           )}
