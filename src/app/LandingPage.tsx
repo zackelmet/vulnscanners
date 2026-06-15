@@ -702,8 +702,9 @@ export default function LandingPage() {
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
 
   // ROI calculator — hours/dollars saved vs. running and formatting scans by hand.
-  const [roiReports, setRoiReports] = useState(20); // client reports / month
-  const [roiRate, setRoiRate] = useState(150); // your billable rate ($/hr)
+  // Conservative defaults so the headline number is believable, not aspirational.
+  const [roiReports, setRoiReports] = useState(3); // client reports / month
+  const [roiRate, setRoiRate] = useState(100); // your billable rate ($/hr)
   const HOURS_SAVED_PER_REPORT = 3; // manual scan + cleanup + formatting
   const COST_PER_REPORT = 0.51; // ~3 scans (nmap+nuclei+zap) at Pro pricing
   const roiHours = roiReports * HOURS_SAVED_PER_REPORT;
