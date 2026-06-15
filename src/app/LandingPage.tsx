@@ -767,7 +767,7 @@ export default function LandingPage() {
             <h1 className={styles.heroH1}>
               Hand your client a security report.
               <br />
-              Built in 4 minutes.
+              <span className={styles.heroH1Accent}>Built in 4 minutes.</span>
             </h1>
             <p className={styles.lede}>
               Nmap · Nuclei · OWASP ZAP — one console, zero install.
