@@ -345,66 +345,6 @@ function BoltIcon() {
     </svg>
   );
 }
-function RefreshIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M5.5 9a7 7 0 0 1 11.4-2.7L19 8"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M19 4.5V8.2h-3.7"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M18.5 15a7 7 0 0 1-11.4 2.7L5 16"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M5 19.5V15.8h3.7"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-function ClockIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.4" />
-      <path
-        d="M12 7.5V12l3 1.8"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 function CoinsIcon() {
   return (
     <svg
@@ -498,48 +438,82 @@ function HourglassIcon() {
 
 /* ── Ported section data (copy from the prior landing) ───────────── */
 
+function DocIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M6 3h7l5 5v13H6V3Z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M13 3v5h5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9 13h6M9 16.5h6"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+// Platform value cards — framed for the MSP/MSSP ICP (resell scans + reports to
+// SMB clients). Operational angle (what you get day to day); the growth/branding
+// angle lives in the "For managed providers" section, compliance in its own.
 const CAPABILITIES = [
   {
-    icon: ShieldIcon,
-    badge: "Network security perspective",
-    title: "Internet Facing Vulnerability Scanners",
-    sub: "Attacker's Perspective Testing",
-    desc: "Proactively hunt for security weaknesses by simulating real-world security events and assessing vulnerabilities from the attacker's viewpoint.",
+    icon: DocIcon,
+    badge: "Deliverables",
+    title: "Client-ready reports, not raw output",
+    sub: "Branded, severity-ranked PDFs",
+    desc: "Every scan becomes a report your client can actually read — findings ranked by severity with plain-English remediation. White-label it and forward it.",
+  },
+  {
+    icon: CoinsIcon,
+    badge: "Per-scan pricing",
+    title: "A fraction of enterprise tooling",
+    sub: "Pay per scan, no annual contract",
+    desc: "Cover every client target for cents a scan — no $4k/yr Nessus seat or Qualys contract to spread across your book.",
   },
   {
     icon: ServerIcon,
-    badge: "Trusted security tools",
-    title: "Security Professional Standard",
-    sub: "Trusted Industry Tools",
-    desc: "Find security holes using trusted open-source tools—the same powerful scanners utilized by penetration testers and security professionals around the world.",
+    badge: "Fully hosted",
+    title: "Nothing to install or maintain",
+    sub: "We run the scanners, you pick targets",
+    desc: "Hosted on tuned, continuously-updated servers. No appliances, no patching, no VM to babysit between engagements.",
   },
   {
     icon: NetworkIcon,
-    badge: "Network discovery",
-    title: "Full Network Visibility",
-    sub: "Complete Attack Surface Discovery",
-    desc: "Discover and map your entire attack surface using a combination of scanning tools and open-source intelligence to gain improved visibility into your network footprint.",
+    badge: "Built for your book",
+    title: "Run it across every client",
+    sub: "One console, many targets",
+    desc: "Scan and report for all your clients from one place. Onboard a new account in minutes instead of provisioning another tool.",
+  },
+  {
+    icon: BugIcon,
+    badge: "Full coverage",
+    title: "Web, network, and CVE in one",
+    sub: "Nmap + Nuclei + OWASP ZAP",
+    desc: "Three battle-tested engines security pros trust — open ports and services, template-based CVE detection, and web-app DAST — across one workflow.",
   },
   {
     icon: BoltIcon,
-    badge: "High performance servers",
-    title: "Fast & Hassle-Free",
-    sub: "Zero Maintenance & Optimized Performance",
-    desc: "Leverage fast servers optimized for vulnerability scanning across the Internet, requiring zero software installation, setup, or maintenance on your end.",
-  },
-  {
-    icon: RefreshIcon,
-    badge: "Security workflow cycle",
-    title: "Continuous Security Improvement",
-    sub: "Identify, Remediate, Re-Test Cycle",
-    desc: "Fixing security issues is a process: quickly identify the issue, remediate the risk using actionable data, and test again to be completely sure.",
-  },
-  {
-    icon: ClockIcon,
-    badge: "Proven technology",
-    title: "Since 1997",
-    sub: "Proven Technology & Deep Experience",
-    desc: "Your security relies on decades of refinement. The underlying open-source technology, such as Nmap, has been actively developed and trusted by the security community since the late 1990s.",
+    badge: "Fast turnaround",
+    title: "Scan to report in minutes",
+    sub: "Not a day in a console",
+    desc: "Kick off a scan and get a finished, deliverable report back in minutes — fast enough to run during the client call.",
   },
 ];
 
@@ -896,6 +870,40 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Capabilities (internet-facing scanners) ─────────────── */}
+      <section className={styles.block} id="capabilities">
+        <div className={styles.container}>
+          <div className={styles.sectionHead}>
+            <p className={styles.sectionKicker}>Platform</p>
+            <h2 className={styles.sectionTitle}>
+              One platform to scan every client — and ship the report.
+            </h2>
+            <p className={styles.sectionSub}>
+              Hosted Nmap, Nuclei, and OWASP ZAP. Pick a client target and hand
+              them a branded, deliverable report in minutes.
+            </p>
+          </div>
+          <div className={styles.painsGrid}>
+            {CAPABILITIES.map((c) => {
+              const Icon = c.icon;
+              return (
+                <article key={c.title} className={styles.painCard}>
+                  <div className={styles.painIcon} aria-hidden="true">
+                    <Icon />
+                  </div>
+                  <div className={styles.featBody}>
+                    <span className={styles.featBadge}>{c.badge}</span>
+                    <h3 className={styles.painH3}>{c.title}</h3>
+                    <p className={styles.featSub}>{c.sub}</p>
+                    <p className={styles.painP}>{c.desc}</p>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* ── Scanner cards ───────────────────────────────────────── */}
       <section className={styles.block} id="scanners">
         <div className={styles.container}>
@@ -937,39 +945,6 @@ export default function LandingPage() {
                 </div>
               </article>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Capabilities (internet-facing scanners) ─────────────── */}
-      <section className={styles.block} id="capabilities">
-        <div className={styles.container}>
-          <div className={styles.sectionHead}>
-            <p className={styles.sectionKicker}>Platform</p>
-            <h2 className={styles.sectionTitle}>
-              Complete Security Assessment Platform
-            </h2>
-            <p className={styles.sectionSub}>
-              Proactive vulnerability detection with industry-leading tools.
-            </p>
-          </div>
-          <div className={styles.painsGrid}>
-            {CAPABILITIES.map((c) => {
-              const Icon = c.icon;
-              return (
-                <article key={c.title} className={styles.painCard}>
-                  <div className={styles.painIcon} aria-hidden="true">
-                    <Icon />
-                  </div>
-                  <div className={styles.featBody}>
-                    <span className={styles.featBadge}>{c.badge}</span>
-                    <h3 className={styles.painH3}>{c.title}</h3>
-                    <p className={styles.featSub}>{c.sub}</p>
-                    <p className={styles.painP}>{c.desc}</p>
-                  </div>
-                </article>
-              );
-            })}
           </div>
         </div>
       </section>
