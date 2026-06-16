@@ -121,7 +121,7 @@ export function SeverityCards({
   return (
     <View>
       <View style={st.cardRow}>
-        {SEVERITY_ORDER.map((k) => {
+        {SEVERITY_ORDER.filter((k) => k !== "accepted").map((k) => {
           const v = counts[k] || 0;
           const active = v > 0;
           return (
@@ -242,8 +242,6 @@ export function BreakdownTable({ findings }: { findings: ReportFinding[] }) {
       <View style={[st.tRow, st.tHead]}>
         <Text style={[st.tCell, st.colTitle, st.tHeadText]}>Title</Text>
         <Text style={[st.tCell, st.colSev, st.tHeadText]}>Severity</Text>
-        <Text style={[st.tCell, st.colNum, st.tHeadText]}>Open</Text>
-        <Text style={[st.tCell, st.colNum, st.tHeadText]}>Accepted</Text>
       </View>
       {findings.map((f, i) => (
         <View
@@ -261,8 +259,6 @@ export function BreakdownTable({ findings }: { findings: ReportFinding[] }) {
           <View style={[st.tCell, st.colSev]}>
             <SevTag severity={f.severity} />
           </View>
-          <Text style={[st.tCell, st.colNum]}>1</Text>
-          <Text style={[st.tCell, st.colNum]}>0</Text>
         </View>
       ))}
     </View>
@@ -280,7 +276,7 @@ export function TargetsSummaryTable({
     <View style={st.table}>
       <View style={[st.tRow, st.tHead]}>
         <Text style={[st.tCell, st.colTarget, st.tHeadText]}>Target</Text>
-        {SEVERITY_ORDER.map((k) => (
+        {SEVERITY_ORDER.filter((k) => k !== "accepted").map((k) => (
           <View key={k} style={[st.tCell, st.colSevNum, st.colSevHead]}>
             <View style={[st.dot, { backgroundColor: C.sevColor[k] }]} />
             <Text style={st.tHeadText}>{SEVERITY_LABEL[k]}</Text>
@@ -299,7 +295,7 @@ export function TargetsSummaryTable({
           wrap={false}
         >
           <Text style={[st.tCell, st.colTarget, st.link]}>{r.target}</Text>
-          {SEVERITY_ORDER.map((k) => (
+          {SEVERITY_ORDER.filter((k) => k !== "accepted").map((k) => (
             <Text
               key={k}
               style={[
