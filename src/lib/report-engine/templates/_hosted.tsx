@@ -281,7 +281,7 @@ export function TargetsSummaryTable({
       <View style={[st.tRow, st.tHead]}>
         <Text style={[st.tCell, st.colTarget, st.tHeadText]}>Target</Text>
         {SEVERITY_ORDER.map((k) => (
-          <View key={k} style={[st.tCell, st.colSevNum]}>
+          <View key={k} style={[st.tCell, st.colSevNum, st.colSevHead]}>
             <View style={[st.dot, { backgroundColor: C.sevColor[k] }]} />
             <Text style={st.tHeadText}>{SEVERITY_LABEL[k]}</Text>
           </View>
@@ -772,6 +772,9 @@ const st = StyleSheet.create({
     justifyContent: "center",
     gap: 4,
   },
+  // Header variant: stack the dot above the label with tighter padding so the
+  // longest label ("Accepted") fits on one line in the narrow column.
+  colSevHead: { flexDirection: "column", gap: 3, paddingHorizontal: 3 },
   colNum: { width: 74, textAlign: "right" },
   colDate: { width: 100 },
   link: { color: C.blueLight },

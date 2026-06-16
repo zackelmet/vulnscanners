@@ -1,0 +1,232 @@
+{
+  "@version": "2.15.0",
+  "@generated": "Mon, 16 Jun 2026 09:18:02",
+  "site": [
+    {
+      "@name": "https://acme-corp.com",
+      "@host": "acme-corp.com",
+      "@port": "443",
+      "@ssl": "true",
+      "alerts": [
+        {
+          "pluginid": "40018",
+          "alertRef": "40018",
+          "alert": "SQL Injection",
+          "name": "SQL Injection",
+          "riskcode": "3",
+          "confidence": "2",
+          "riskdesc": "High (Medium)",
+          "count": "2",
+          "desc": "<p>SQL injection may be possible. The application appears to build SQL statements using untrusted input that is not correctly neutralised, allowing an attacker to alter the intended query.</p>",
+          "solution": "<p>Use parameterised queries (prepared statements) for all database access.</p><p>Validate and canonicalise input on the server side; apply least-privilege to the database account.</p><p>Do not concatenate user input into SQL strings.</p>",
+          "reference": "<p>https://owasp.org/www-community/attacks/SQL_Injection</p><p>https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html</p>",
+          "cweid": "89",
+          "wascid": "19",
+          "instances": [
+            {
+              "uri": "https://acme-corp.com/products?id=1",
+              "method": "GET",
+              "param": "id",
+              "evidence": "id=1 AND 1=1 -- "
+            },
+            {
+              "uri": "https://acme-corp.com/search",
+              "method": "POST",
+              "param": "q",
+              "evidence": "q=' OR '1'='1"
+            }
+          ]
+        },
+        {
+          "pluginid": "40012",
+          "alertRef": "40012",
+          "alert": "Cross Site Scripting (Reflected)",
+          "name": "Cross Site Scripting (Reflected)",
+          "riskcode": "3",
+          "confidence": "2",
+          "riskdesc": "High (Medium)",
+          "count": "1",
+          "desc": "<p>A reflected cross-site scripting (XSS) condition was identified. User-supplied input is returned in the response without adequate output encoding, allowing script to execute in the victim's browser.</p>",
+          "solution": "<p>Contextually output-encode all user input reflected into responses (HTML, attribute, JavaScript, URL contexts).</p><p>Adopt a strict Content-Security-Policy as defence in depth.</p><p>Validate input against an allowlist where feasible.</p>",
+          "reference": "<p>https://owasp.org/www-community/attacks/xss/</p><p>https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html</p>",
+          "cweid": "79",
+          "wascid": "8",
+          "instances": [
+            {
+              "uri": "https://acme-corp.com/search?q=test",
+              "method": "GET",
+              "param": "q",
+              "evidence": "<script>alert(1)</script>"
+            }
+          ]
+        },
+        {
+          "pluginid": "10202",
+          "alertRef": "10202",
+          "alert": "Absence of Anti-CSRF Tokens",
+          "name": "Absence of Anti-CSRF Tokens",
+          "riskcode": "2",
+          "confidence": "2",
+          "riskdesc": "Medium (Medium)",
+          "count": "3",
+          "desc": "<p>No Anti-CSRF tokens were found in HTML form submissions. An attacker can trick an authenticated user into submitting a forged request to perform a state-changing action.</p>",
+          "solution": "<p>Use a synchroniser-token or double-submit-cookie pattern for all state-changing requests.</p><p>Set SameSite=Lax or Strict on session cookies as defence in depth.</p>",
+          "reference": "<p>https://owasp.org/www-community/attacks/csrf</p><p>https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html</p>",
+          "cweid": "352",
+          "wascid": "9",
+          "instances": [
+            { "uri": "https://acme-corp.com/login", "method": "GET" },
+            { "uri": "https://acme-corp.com/account/profile", "method": "GET" },
+            { "uri": "https://acme-corp.com/newsletter", "method": "GET" }
+          ]
+        },
+        {
+          "pluginid": "10038",
+          "alertRef": "10038-1",
+          "alert": "Content Security Policy (CSP) Header Not Set",
+          "name": "Content Security Policy (CSP) Header Not Set",
+          "riskcode": "2",
+          "confidence": "3",
+          "riskdesc": "Medium (High)",
+          "count": "5",
+          "desc": "<p>No Content-Security-Policy header is set on responses.</p>",
+          "solution": "<p>Define and deploy a Content-Security-Policy header.</p>",
+          "reference": "<p>https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy</p>",
+          "cweid": "693",
+          "wascid": "15",
+          "instances": [
+            { "uri": "https://acme-corp.com/", "method": "GET" },
+            { "uri": "https://acme-corp.com/products", "method": "GET" },
+            { "uri": "https://acme-corp.com/about", "method": "GET" },
+            { "uri": "https://acme-corp.com/contact", "method": "GET" },
+            { "uri": "https://acme-corp.com/login", "method": "GET" }
+          ]
+        },
+        {
+          "pluginid": "10020",
+          "alertRef": "10020-1",
+          "alert": "Missing Anti-clickjacking Header",
+          "name": "Missing Anti-clickjacking Header",
+          "riskcode": "2",
+          "confidence": "2",
+          "riskdesc": "Medium (Medium)",
+          "count": "4",
+          "desc": "<p>The response does not protect against clickjacking via X-Frame-Options or CSP frame-ancestors.</p>",
+          "solution": "<p>Set Content-Security-Policy frame-ancestors, or X-Frame-Options.</p>",
+          "reference": "<p>https://owasp.org/www-community/attacks/Clickjacking</p>",
+          "cweid": "1021",
+          "wascid": "15",
+          "instances": [
+            { "uri": "https://acme-corp.com/", "method": "GET" },
+            { "uri": "https://acme-corp.com/login", "method": "GET" },
+            { "uri": "https://acme-corp.com/products", "method": "GET" },
+            { "uri": "https://acme-corp.com/about", "method": "GET" }
+          ]
+        },
+        {
+          "pluginid": "10010",
+          "alertRef": "10010",
+          "alert": "Cookie No HttpOnly Flag",
+          "name": "Cookie No HttpOnly Flag",
+          "riskcode": "1",
+          "confidence": "2",
+          "riskdesc": "Low (Medium)",
+          "count": "1",
+          "desc": "<p>A cookie was set without the HttpOnly flag, so it is accessible to client-side JavaScript and can be stolen via XSS.</p>",
+          "solution": "<p>Set the HttpOnly attribute on all session and authentication cookies.</p>",
+          "reference": "<p>https://owasp.org/www-community/HttpOnly</p>",
+          "cweid": "1004",
+          "wascid": "13",
+          "instances": [
+            {
+              "uri": "https://acme-corp.com/login",
+              "method": "POST",
+              "evidence": "Set-Cookie: session"
+            }
+          ]
+        },
+        {
+          "pluginid": "10021",
+          "alertRef": "10021",
+          "alert": "X-Content-Type-Options Header Missing",
+          "name": "X-Content-Type-Options Header Missing",
+          "riskcode": "1",
+          "confidence": "2",
+          "riskdesc": "Low (Medium)",
+          "count": "6",
+          "desc": "<p>The X-Content-Type-Options header was not set to 'nosniff'.</p>",
+          "solution": "<p>Set X-Content-Type-Options: nosniff on all responses.</p>",
+          "reference": "<p>https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options</p>",
+          "cweid": "693",
+          "wascid": "15",
+          "instances": [
+            { "uri": "https://acme-corp.com/", "method": "GET" },
+            { "uri": "https://acme-corp.com/style.css", "method": "GET" }
+          ]
+        },
+        {
+          "pluginid": "10036",
+          "alertRef": "10036",
+          "alert": "Server Leaks Version Information via Server HTTP Response Header",
+          "name": "Server Leaks Version Information via Server HTTP Response Header",
+          "riskcode": "1",
+          "confidence": "3",
+          "riskdesc": "Low (High)",
+          "count": "8",
+          "desc": "<p>The web/application server is leaking version information via the Server HTTP response header.</p>",
+          "solution": "<p>Suppress or generalise the Server header.</p>",
+          "reference": "<p>https://owasp.org/www-project-secure-headers/</p>",
+          "cweid": "200",
+          "wascid": "13",
+          "instances": [
+            {
+              "uri": "https://acme-corp.com/",
+              "method": "GET",
+              "evidence": "Apache/2.4.29 (Ubuntu)"
+            }
+          ]
+        },
+        {
+          "pluginid": "10027",
+          "alertRef": "10027",
+          "alert": "Information Disclosure - Suspicious Comments",
+          "name": "Information Disclosure - Suspicious Comments",
+          "riskcode": "0",
+          "confidence": "1",
+          "riskdesc": "Informational (Low)",
+          "count": "2",
+          "desc": "<p>The response contains comments that may leak implementation details (e.g. TODO, FIXME, internal hostnames).</p>",
+          "solution": "<p>Strip developer comments from production responses during the build step.</p>",
+          "reference": "",
+          "cweid": "200",
+          "wascid": "13",
+          "instances": [
+            {
+              "uri": "https://acme-corp.com/app.js",
+              "method": "GET",
+              "evidence": "// TODO: remove debug endpoint before launch"
+            }
+          ]
+        },
+        {
+          "pluginid": "10109",
+          "alertRef": "10109",
+          "alert": "Modern Web Application",
+          "name": "Modern Web Application",
+          "riskcode": "0",
+          "confidence": "2",
+          "riskdesc": "Informational (Medium)",
+          "count": "1",
+          "desc": "<p>The application appears to be a modern single-page web application.</p>",
+          "solution": "",
+          "reference": "",
+          "cweid": "-1",
+          "wascid": "-1",
+          "instances": [
+            { "uri": "https://acme-corp.com/", "method": "GET" }
+          ]
+        }
+      ]
+    }
+  ]
+}
