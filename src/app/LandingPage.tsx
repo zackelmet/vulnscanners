@@ -1302,32 +1302,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── FAQ ─────────────────────────────────────────────────── */}
-      <section className={`${styles.block} ${styles.blockNoPb}`} id="faq">
-        <div className={styles.container}>
-          <div className={styles.sectionHead}>
-            <p className={styles.sectionKicker}>FAQ</p>
-            <h2 className={styles.sectionTitle}>Common questions</h2>
-          </div>
-          <div className={styles.faq}>
-            {FAQ.map((item, i) => (
-              <div
-                key={i}
-                className={`${styles.faqItem}${i === FAQ.length - 1 ? ` ${styles.faqItemLast}` : ""}`}
-              >
-                <h3 className={styles.faqQ}>
-                  <span className={styles.faqNum}>
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  {item.q}
-                </h3>
-                <p className={styles.faqA}>{item.a}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── Sample report lead magnet ───────────────────────────── */}
       <section className={styles.block} id="sample-report">
         <div className={styles.container}>
@@ -1337,10 +1311,10 @@ export default function LandingPage() {
               See a real report before you sign up.
             </h2>
             <p className={styles.sectionSub}>
-              A combined Nmap + Nuclei assessment — executive summary, severity
-              breakdown, and detailed findings with business impact,
-              remediation, and copy-paste verification steps. Enter your work
-              email and we&apos;ll send the full PDF to your inbox.
+              A combined Nmap, Nuclei &amp; OWASP ZAP assessment — executive
+              summary, severity breakdown, and detailed findings with business
+              impact, remediation, and copy-paste verification steps. Enter your
+              work email and we&apos;ll send the full PDF to your inbox.
             </p>
           </div>
 
@@ -1377,6 +1351,32 @@ export default function LandingPage() {
             <div className={styles.sampleGate}>
               <SampleReportForm />
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ─────────────────────────────────────────────────── */}
+      <section className={`${styles.block} ${styles.blockNoPb}`} id="faq">
+        <div className={styles.container}>
+          <div className={styles.sectionHead}>
+            <p className={styles.sectionKicker}>FAQ</p>
+            <h2 className={styles.sectionTitle}>Common questions</h2>
+          </div>
+          <div className={styles.faq}>
+            {FAQ.map((item, i) => (
+              <div
+                key={i}
+                className={`${styles.faqItem}${i === FAQ.length - 1 ? ` ${styles.faqItemLast}` : ""}`}
+              >
+                <h3 className={styles.faqQ}>
+                  <span className={styles.faqNum}>
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  {item.q}
+                </h3>
+                <p className={styles.faqA}>{item.a}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
