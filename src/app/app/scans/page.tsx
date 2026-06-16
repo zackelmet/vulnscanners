@@ -1,8 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faJetFighterUp } from "@fortawesome/free-solid-svg-icons";
+import {
+  faJetFighterUp,
+  faServer,
+  faBug,
+  faGlobe,
+  faBolt,
+  faClock,
+  faCheck,
+  faBullseye,
+} from "@fortawesome/free-solid-svg-icons";
 import { useUserData } from "@/lib/hooks/useUserData";
 import { useAuth } from "@/lib/context/AuthContext";
 import { auth } from "@/lib/firebase/firebaseClient";
@@ -10,19 +19,61 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Target } from "@/lib/types/target";
 import Link from "next/link";
 
+type ScannerId = "nmap" | "nuclei" | "zap";
+
+const SCANNERS: {
+  id: ScannerId;
+  name: string;
+  tag: string;
+  icon: typeof faServer;
+  blurb: string;
+}[] = [
+  {
+    id: "nmap",
+    name: "Nmap",
+    tag: "Network",
+    icon: faServer,
+    blurb: "Open ports and running services across the host.",
+  },
+  {
+    id: "nuclei",
+    name: "Nuclei",
+    tag: "CVE",
+    icon: faBug,
+    blurb: "Template-based CVE, misconfiguration & exposure detection.",
+  },
+  {
+    id: "zap",
+    name: "OWASP ZAP",
+    tag: "Web",
+    icon: faGlobe,
+    blurb: "Full active scan — OWASP Top 10, headers, and injection.",
+  },
+];
+
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+type Frequency = "daily" | "weekly" | "monthly";
+
 export default function ScansPage() {
-  const [selectedScanners, setSelectedScanners] = useState<
-    ("nmap" | "nuclei" | "zap")[]
-  >(["nmap"]);
+  const [selectedScanners, setSelectedScanners] = useState<ScannerId[]>([
+    "nmap",
+  ]);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
 
-  const { userData, loading } = useUserData();
+  const { userData } = useUserData();
   const { currentUser } = useAuth();
 
   const [savedTargets, setSavedTargets] = useState<Target[]>([]);
   const [targetInput, setTargetInput] = useState<string>("");
+
+  // Scheduling
+  const [runMode, setRunMode] = useState<"now" | "schedule">("now");
+  const [frequency, setFrequency] = useState<Frequency>("weekly");
+  const [hourUTC, setHourUTC] = useState(9);
+  const [dayOfWeek, setDayOfWeek] = useState(1); // Mon
+  const [dayOfMonth, setDayOfMonth] = useState(1);
 
   useEffect(() => {
     const loadTargets = async () => {
@@ -33,9 +84,7 @@ export default function ScansPage() {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
-        if (data.success && data.targets) {
-          setSavedTargets(data.targets);
-        }
+        if (data.success && data.targets) setSavedTargets(data.targets);
       } catch (err) {
         console.error("Failed to load targets", err);
       }
@@ -43,62 +92,100 @@ export default function ScansPage() {
     loadTargets();
   }, [currentUser]);
 
-  const toggleScanner = (scanner: "nmap" | "nuclei" | "zap") => {
-    setSelectedScanners((prev) => {
-      if (prev.includes(scanner)) {
-        // Don't allow deselecting if it's the only one
-        if (prev.length === 1) return prev;
-        return prev.filter((s) => s !== scanner);
-      } else {
-        return [...prev, scanner];
-      }
-    });
+  const toggleScanner = (scanner: ScannerId) => {
+    setSelectedScanners((prev) =>
+      prev.includes(scanner)
+        ? prev.length === 1
+          ? prev
+          : prev.filter((s) => s !== scanner)
+        : [...prev, scanner],
+    );
   };
 
-  const hasCredits = userData
-    ? (userData.scanCredits?.nmap ?? 0) > 0 ||
-      (userData.scanCredits?.nuclei ?? 0) > 0 ||
-      (userData.scanCredits?.zap ?? 0) > 0
-    : false;
+  const scannerRemaining = (scanner: ScannerId) =>
+    userData?.scanCredits?.[scanner] ?? 0;
 
-  const scannerRemaining = (scanner: "nmap" | "nuclei" | "zap") => {
-    if (!userData) return 0;
-    return userData.scanCredits?.[scanner] ?? 0;
+  const target = targetInput.trim();
+  const selectedHaveCredits = selectedScanners.some(
+    (s) => scannerRemaining(s) > 0,
+  );
+
+  const scheduleLabel = () => {
+    const hh = String(hourUTC).padStart(2, "0");
+    if (frequency === "daily") return `Daily at ${hh}:00 UTC`;
+    if (frequency === "weekly")
+      return `Weekly on ${WEEKDAYS[dayOfWeek]} at ${hh}:00 UTC`;
+    return `Monthly on day ${dayOfMonth} at ${hh}:00 UTC`;
   };
+
+  const launchDisabled =
+    submitting ||
+    !target ||
+    selectedScanners.length === 0 ||
+    (runMode === "now" && !selectedHaveCredits);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
     setSubmitSuccess(null);
+
+    if (!target) {
+      setSubmitError(
+        "Enter a target (domain, IP, or URL) — or pick a saved target.",
+      );
+      return;
+    }
+    if (selectedScanners.length === 0) {
+      setSubmitError("Select at least one scanner.");
+      return;
+    }
     setSubmitting(true);
 
-    const trimmedTarget = targetInput.trim();
-    if (!trimmedTarget) {
-      setSubmitError(
-        "Enter a target (domain, IP, or URL) — or pick one from your saved targets.",
-      );
-      setSubmitting(false);
-      return;
-    }
-
-    if (selectedScanners.length === 0) {
-      setSubmitError("Please select at least one scanner type.");
-      setSubmitting(false);
-      return;
-    }
-
     try {
+      if (runMode === "schedule") {
+        const token = await currentUser!.getIdToken();
+        const errors: string[] = [];
+        let created = 0;
+        for (const type of selectedScanners) {
+          const body: Record<string, unknown> = {
+            name: `${type.toUpperCase()} — ${target}`,
+            type,
+            target,
+            frequency,
+            hourUTC,
+            minuteUTC: 0,
+          };
+          if (frequency === "weekly") body.dayOfWeek = dayOfWeek;
+          if (frequency === "monthly") body.dayOfMonth = dayOfMonth;
+          const res = await fetch("/api/scheduled-scans", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(body),
+          });
+          const data = await res.json();
+          if (!res.ok) errors.push(`${type}: ${data?.error || "Failed"}`);
+          else created++;
+        }
+        if (created === 0) setSubmitError(errors.join("; "));
+        else
+          setSubmitSuccess(
+            `Scheduled ${created} recurring scan${created > 1 ? "s" : ""} — ${scheduleLabel()}.${
+              errors.length ? ` (${errors.join("; ")})` : ""
+            }`,
+          );
+        return;
+      }
+
+      // Run now
       const user = auth.currentUser;
       if (!user) throw new Error("Not authenticated");
-
       const token = await user.getIdToken(true);
-      // Match nmap's default coverage so reports include the well-known
-      // service ports (53, 443, 5060, 8080, 9929, etc.) — top-100 was missing
-      // most of the interesting surface area.
       const nmapOptions = { topPorts: 1000 };
-
-      const results = [];
-      const errors = [];
+      const results: { scanner: string; scansCreated: number }[] = [];
+      const errors: string[] = [];
 
       for (const scannerType of selectedScanners) {
         try {
@@ -110,44 +197,33 @@ export default function ScansPage() {
             },
             body: JSON.stringify({
               type: scannerType,
-              target: trimmedTarget,
+              target,
               options: scannerType === "nmap" ? nmapOptions : {},
             }),
           });
-
           const data = await res.json();
-          if (!res.ok) {
+          if (!res.ok)
             errors.push(`${scannerType}: ${data?.error || "Failed"}`);
-          } else {
+          else
             results.push({
               scanner: scannerType,
               scansCreated: data.scansCreated || 1,
-              batchId: data.batchId,
             });
-          }
         } catch (err: any) {
           errors.push(`${scannerType}: ${err.message}`);
         }
       }
 
-      if (errors.length > 0 && results.length === 0) {
+      const totalCreated = results.reduce((s, r) => s + r.scansCreated, 0);
+      if (results.length === 0) {
         setSubmitError(errors.join("; "));
-      } else if (errors.length > 0) {
-        setSubmitError(`Some scans failed: ${errors.join("; ")}`);
-        const totalCreated = results.reduce(
-          (sum, r) => sum + r.scansCreated,
-          0,
-        );
-        setSubmitSuccess(
-          `${totalCreated} scan${totalCreated > 1 ? "s" : ""} created successfully for ${results.map((r) => r.scanner.toUpperCase()).join(", ")}`,
-        );
       } else {
-        const totalCreated = results.reduce(
-          (sum, r) => sum + r.scansCreated,
-          0,
-        );
         setSubmitSuccess(
-          `${totalCreated} scan${totalCreated > 1 ? "s" : ""} queued across ${results.length} scanner type${results.length > 1 ? "s" : ""} (${results.map((r) => r.scanner.toUpperCase()).join(", ")})`,
+          `${totalCreated} scan${totalCreated > 1 ? "s" : ""} queued (${results
+            .map((r) => r.scanner.toUpperCase())
+            .join(
+              ", ",
+            )})${errors.length ? ` — some failed: ${errors.join("; ")}` : ""}`,
         );
       }
     } catch (err: any) {
@@ -157,242 +233,321 @@ export default function ScansPage() {
     }
   };
 
+  const fieldCls =
+    "w-full px-3 py-2 border border-[#161b24] rounded-lg bg-[#11161f] text-[#e6edf5] focus:outline-none focus:ring-2 focus:ring-[#0366d6]";
+
   return (
     <DashboardLayout>
-      <div className="p-6 lg:p-8 space-y-6 max-w-full bg-[#07090d] min-h-screen">
+      <div className="p-6 lg:p-8 max-w-6xl mx-auto bg-[#07090d] min-h-screen">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-light text-[#e6edf5]">Launch Scan</h1>
+        <div className="mb-8">
+          <h1 className="text-3xl font-light text-[#e6edf5]">Launch a scan</h1>
           <p className="text-[#9aa5b6] mt-1">
-            Select scanners and target to begin vulnerability assessment
+            Pick your scanners and target, then run now or schedule it.
           </p>
         </div>
 
-        {/* Launch Form */}
-        <div className="max-w-3xl mx-auto">
-          {!hasCredits ? (
-            <div className="bg-[#0d1117] border border-[#161b24] rounded-xl p-8 text-center shadow-sm">
-              <FontAwesomeIcon
-                icon={faJetFighterUp}
-                className="text-5xl mb-4 text-[#4493f8]"
-              />
-              <h2 className="text-2xl font-bold text-[#e6edf5] mb-3">
-                No Scan Credits
-              </h2>
-              <p className="text-[#9aa5b6] max-w-xl mx-auto mb-6">
-                Purchase scan credits to start running Nmap, Nuclei, and OWASP
-                ZAP scans. Credits are shared across all scanner types.
-              </p>
-              <a
-                href="/app/dashboard?purchase=true"
-                className="inline-block px-6 py-3 bg-[#0366d6] text-white font-semibold rounded-lg hover:bg-[#4493f8] transition-colors"
-              >
-                <FontAwesomeIcon icon={faJetFighterUp} className="mr-2" />
-                Buy Credits
-              </a>
-            </div>
-          ) : (
-            <div className="bg-[#0d1117] border border-[#161b24] rounded-xl p-6 shadow-sm">
-              <div className="flex items-start justify-between mb-6">
-                <h2 className="text-xl font-bold text-[#e6edf5]">
-                  Create New Scan
-                </h2>
-                <span className="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-semibold rounded-full border border-green-500/30">
-                  Authenticated
+        <form
+          onSubmit={handleSubmit}
+          className="grid lg:grid-cols-3 gap-6 items-start"
+        >
+          {/* ── Config column ─────────────────────────────── */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* 1. Scanners */}
+            <section className="bg-[#0d1117] border border-[#161b24] rounded-xl p-6">
+              <h2 className="text-sm font-semibold text-[#9aa5b6] mb-4">
+                1 · Scanners
+                <span className="font-normal text-[#697080] ml-2">
+                  select one or more
                 </span>
+              </h2>
+              <div className="grid sm:grid-cols-3 gap-3">
+                {SCANNERS.map((s) => {
+                  const active = selectedScanners.includes(s.id);
+                  const credits = scannerRemaining(s.id);
+                  return (
+                    <button
+                      type="button"
+                      key={s.id}
+                      onClick={() => toggleScanner(s.id)}
+                      className={`relative text-left rounded-xl border p-4 transition-colors ${
+                        active
+                          ? "border-[#0366d6] bg-[#0366d6]/10"
+                          : "border-[#161b24] bg-[#11161f] hover:border-[#2a3242]"
+                      }`}
+                    >
+                      {active && (
+                        <span className="absolute top-3 right-3 w-5 h-5 rounded-full bg-[#0366d6] text-white grid place-items-center text-[10px]">
+                          <FontAwesomeIcon icon={faCheck} />
+                        </span>
+                      )}
+                      <span
+                        className={`w-9 h-9 rounded-lg grid place-items-center mb-3 ${
+                          active
+                            ? "bg-[#0366d6]/20 text-[#4493f8]"
+                            : "bg-[#0d1117] text-[#9aa5b6]"
+                        }`}
+                      >
+                        <FontAwesomeIcon icon={s.icon} />
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-[#e6edf5]">
+                          {s.name}
+                        </span>
+                        <span className="text-[10px] uppercase tracking-wide text-[#697080] border border-[#161b24] rounded px-1.5 py-0.5">
+                          {s.tag}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#9aa5b6] mt-1.5 leading-relaxed">
+                        {s.blurb}
+                      </p>
+                      <p className="text-xs text-[#4493f8] mt-2 font-medium">
+                        {credits} credit{credits === 1 ? "" : "s"} left
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* 2. Target */}
+            <section className="bg-[#0d1117] border border-[#161b24] rounded-xl p-6">
+              <h2 className="text-sm font-semibold text-[#9aa5b6] mb-4">
+                2 · Target
+              </h2>
+              <div className="relative">
+                <FontAwesomeIcon
+                  icon={faBullseye}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#697080] text-sm"
+                />
+                <input
+                  type="text"
+                  placeholder="example.com, 192.168.1.1, or https://example.com"
+                  value={targetInput}
+                  onChange={(e) => setTargetInput(e.target.value)}
+                  className={`${fieldCls} pl-9 font-mono text-sm`}
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-2 pt-3">
+                {savedTargets.length > 0 ? (
+                  <>
+                    <span className="text-xs text-[#697080]">Saved:</span>
+                    {savedTargets.slice(0, 6).map((t) => (
+                      <button
+                        type="button"
+                        key={t.id}
+                        onClick={() => setTargetInput(t.value)}
+                        className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                          targetInput === t.value
+                            ? "border-[#0366d6] bg-[#0366d6]/10 text-[#4493f8]"
+                            : "border-[#161b24] bg-[#11161f] text-[#9aa5b6] hover:border-[#2a3242]"
+                        }`}
+                        title={t.value}
+                      >
+                        {t.name}
+                      </button>
+                    ))}
+                    <Link
+                      href="/app/targets"
+                      className="text-xs text-[#4493f8] hover:underline ml-auto"
+                    >
+                      Manage targets
+                    </Link>
+                  </>
+                ) : (
+                  <p className="text-xs text-[#5b6675]">
+                    Tip:{" "}
+                    <Link
+                      href="/app/targets"
+                      className="text-[#4493f8] hover:underline"
+                    >
+                      save targets
+                    </Link>{" "}
+                    to reuse them across scans.
+                  </p>
+                )}
+              </div>
+            </section>
+
+            {/* 3. When */}
+            <section className="bg-[#0d1117] border border-[#161b24] rounded-xl p-6">
+              <h2 className="text-sm font-semibold text-[#9aa5b6] mb-4">
+                3 · When
+              </h2>
+              <div className="grid grid-cols-2 gap-3">
+                {(
+                  [
+                    { id: "now", label: "Run now", icon: faBolt },
+                    { id: "schedule", label: "Schedule", icon: faClock },
+                  ] as const
+                ).map((m) => (
+                  <button
+                    type="button"
+                    key={m.id}
+                    onClick={() => setRunMode(m.id)}
+                    className={`flex items-center gap-2 justify-center rounded-lg border py-2.5 text-sm font-medium transition-colors ${
+                      runMode === m.id
+                        ? "border-[#0366d6] bg-[#0366d6]/10 text-[#4493f8]"
+                        : "border-[#161b24] bg-[#11161f] text-[#9aa5b6] hover:border-[#2a3242]"
+                    }`}
+                  >
+                    <FontAwesomeIcon icon={m.icon} /> {m.label}
+                  </button>
+                ))}
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Scanner Types - Multi-select */}
-                <div>
-                  <label className="block text-sm font-semibold text-[#e6edf5] mb-3">
-                    Scanner Types
-                    <span className="text-xs text-[#9aa5b6] font-normal ml-2">
-                      (select one or more)
-                    </span>
+              {runMode === "schedule" && (
+                <div className="grid sm:grid-cols-3 gap-3 mt-4">
+                  <label className="flex flex-col gap-1">
+                    <span className="text-xs text-[#697080]">Frequency</span>
+                    <select
+                      value={frequency}
+                      onChange={(e) =>
+                        setFrequency(e.target.value as Frequency)
+                      }
+                      className={fieldCls}
+                    >
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                    </select>
                   </label>
-                  <div className="space-y-3">
-                    {/* Nmap Checkbox */}
-                    <label className="flex items-start gap-3 p-3 border border-[#161b24] rounded-lg hover:border-[#0366d6] cursor-pointer transition-colors bg-[#11161f]">
-                      <input
-                        type="checkbox"
-                        checked={selectedScanners.includes("nmap")}
-                        onChange={() => toggleScanner("nmap")}
-                        className="mt-1 h-4 w-4 text-[#0366d6] rounded focus:ring-[#0366d6]"
-                      />
-                      <div className="flex-1">
-                        <div className="font-semibold text-[#e6edf5]">
-                          Nmap - Network Scanner
-                        </div>
-                        <div className="text-xs text-[#9aa5b6]">
-                          Port scanning and service detection
-                        </div>
-                        <div className="text-xs text-[#4493f8] mt-1 font-semibold">
-                          {scannerRemaining("nmap")} credits remaining
-                        </div>
-                      </div>
-                    </label>
 
-                    {/* Nuclei Checkbox */}
-                    <label className="flex items-start gap-3 p-3 border border-[#161b24] rounded-lg hover:border-[#0366d6] cursor-pointer transition-colors bg-[#11161f]">
-                      <input
-                        type="checkbox"
-                        checked={selectedScanners.includes("nuclei")}
-                        onChange={() => toggleScanner("nuclei")}
-                        className="mt-1 h-4 w-4 text-[#0366d6] rounded focus:ring-[#0366d6]"
-                      />
-                      <div className="flex-1">
-                        <div className="font-semibold text-[#e6edf5]">
-                          Nuclei - Vulnerability Assessment
-                        </div>
-                        <div className="text-xs text-[#9aa5b6]">
-                          CVE detection and security analysis
-                        </div>
-                        <div className="text-xs text-[#4493f8] mt-1 font-semibold">
-                          {scannerRemaining("nuclei")} credits remaining
-                        </div>
-                      </div>
-                    </label>
-
-                    {/* ZAP Checkbox */}
-                    <label className="flex items-start gap-3 p-3 border border-[#161b24] rounded-lg hover:border-[#0366d6] cursor-pointer transition-colors bg-[#11161f]">
-                      <input
-                        type="checkbox"
-                        checked={selectedScanners.includes("zap")}
-                        onChange={() => toggleScanner("zap")}
-                        className="mt-1 h-4 w-4 text-[#0366d6] rounded focus:ring-[#0366d6]"
-                      />
-                      <div className="flex-1">
-                        <div className="font-semibold text-[#e6edf5]">
-                          OWASP ZAP - Web Application Scanner
-                        </div>
-                        <div className="text-xs text-[#9aa5b6]">
-                          Web vulnerabilities and OWASP Top 10
-                        </div>
-                        <div className="text-xs text-[#4493f8] mt-1 font-semibold">
-                          {scannerRemaining("zap")} credits remaining
-                        </div>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Target */}
-                <div className="space-y-2">
-                  <label
-                    htmlFor="target-input"
-                    className="block text-sm font-semibold text-[#e6edf5] mb-2"
-                  >
-                    Target to Scan
-                  </label>
-                  <input
-                    id="target-input"
-                    type="text"
-                    placeholder="example.com, 192.168.1.1, or https://example.com"
-                    value={targetInput}
-                    onChange={(e) => setTargetInput(e.target.value)}
-                    className="w-full px-4 py-3 border border-[#161b24] rounded-lg bg-[#11161f] text-[#e6edf5] placeholder:text-[#5b6675] focus:ring-2 focus:ring-[#0366d6] focus:border-transparent"
-                  />
-                  {savedTargets.length > 0 && (
-                    <div className="flex items-center gap-2 pt-1">
-                      <span className="text-xs text-[#9aa5b6]">
-                        Or use a saved target:
-                      </span>
+                  {frequency === "weekly" && (
+                    <label className="flex flex-col gap-1">
+                      <span className="text-xs text-[#697080]">Day</span>
                       <select
-                        className="px-2 py-1 text-xs border border-[#161b24] rounded-md bg-[#11161f] text-[#e6edf5] focus:ring-2 focus:ring-[#0366d6] focus:border-transparent"
-                        value=""
-                        onChange={(e) => {
-                          const t = savedTargets.find(
-                            (x) => x.id === e.target.value,
-                          );
-                          if (t) setTargetInput(t.value);
-                        }}
+                        value={dayOfWeek}
+                        onChange={(e) => setDayOfWeek(Number(e.target.value))}
+                        className={fieldCls}
                       >
-                        <option value="">— pick one —</option>
-                        {savedTargets.map((t) => (
-                          <option key={t.id} value={t.id}>
-                            {t.name} ({t.value})
+                        {WEEKDAYS.map((d, i) => (
+                          <option key={d} value={i}>
+                            {d}
                           </option>
                         ))}
                       </select>
-                      <a
-                        href="/app/targets"
-                        className="text-xs text-[#4493f8] underline hover:text-[#0366d6] ml-auto"
-                      >
-                        Manage saved targets
-                      </a>
-                    </div>
+                    </label>
                   )}
-                  {savedTargets.length === 0 && (
-                    <p className="text-xs text-[#5b6675] pt-1">
-                      Tip:{" "}
-                      <a
-                        href="/app/targets"
-                        className="text-[#4493f8] underline hover:text-[#0366d6]"
+                  {frequency === "monthly" && (
+                    <label className="flex flex-col gap-1">
+                      <span className="text-xs text-[#697080]">
+                        Day of month
+                      </span>
+                      <select
+                        value={dayOfMonth}
+                        onChange={(e) => setDayOfMonth(Number(e.target.value))}
+                        className={fieldCls}
                       >
-                        save targets
-                      </a>{" "}
-                      to reuse them across scans.
-                    </p>
+                        {Array.from({ length: 28 }, (_, i) => i + 1).map(
+                          (d) => (
+                            <option key={d} value={d}>
+                              {d}
+                            </option>
+                          ),
+                        )}
+                      </select>
+                    </label>
                   )}
-                </div>
 
-                {/* ZAP always runs a full active scan (spider + active scan);
-                    no user-selectable profile. */}
-                {selectedScanners.includes("zap") && (
-                  <div className="rounded-lg border border-[#0366d6]/30 bg-[#0366d6]/10 p-4">
-                    <p className="text-sm text-[#e6edf5]">
-                      <strong>OWASP ZAP:</strong> runs a full active scan
-                      (spider + active scan) for the most thorough coverage.
-                    </p>
-                  </div>
-                )}
-
-                {/* Remaining Scans */}
-                <div className="bg-[#0366d6]/10 border border-[#0366d6]/30 rounded-lg p-4">
-                  <p className="text-sm text-[#e6edf5] mb-2">
-                    <strong>Scans Remaining:</strong>
-                  </p>
-                  {selectedScanners?.map((scanner) => (
-                    <p key={scanner} className="text-sm text-[#9aa5b6] ml-2">
-                      • {scanner.toUpperCase()}: {scannerRemaining(scanner)}{" "}
-                      credits remaining
-                    </p>
-                  ))}
-                </div>
-
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full px-5 py-3 bg-[#0366d6] text-white font-semibold rounded-lg hover:bg-[#4493f8] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  <FontAwesomeIcon icon={faJetFighterUp} />
-                  {submitting ? "Launching..." : "Launch Scan"}
-                </button>
-
-                {submitError && (
-                  <div className="text-red-400 text-sm font-medium">
-                    {submitError}
-                  </div>
-                )}
-                {submitSuccess && (
-                  <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
-                    <div className="text-green-400 text-sm font-medium mb-2">
-                      ✓ {submitSuccess}
-                    </div>
-                    <Link
-                      href="/app/history"
-                      className="text-[#4493f8] hover:text-[#0366d6] text-sm font-semibold underline"
+                  <label className="flex flex-col gap-1">
+                    <span className="text-xs text-[#697080]">Time (UTC)</span>
+                    <select
+                      value={hourUTC}
+                      onChange={(e) => setHourUTC(Number(e.target.value))}
+                      className={fieldCls}
                     >
-                      View results in Scan History →
-                    </Link>
-                  </div>
-                )}
-              </form>
+                      {Array.from({ length: 24 }, (_, i) => i).map((h) => (
+                        <option key={h} value={h}>
+                          {String(h).padStart(2, "0")}:00
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              )}
+            </section>
+          </div>
+
+          {/* ── Summary column ────────────────────────────── */}
+          <aside className="lg:sticky lg:top-6 bg-[#0d1117] border border-[#161b24] rounded-xl p-6 space-y-4">
+            <h2 className="text-sm font-semibold text-[#e6edf5]">Summary</h2>
+
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between gap-3">
+                <span className="text-[#697080]">Target</span>
+                <span className="text-[#e6edf5] font-mono text-xs truncate max-w-[60%] text-right">
+                  {target || "—"}
+                </span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-[#697080]">Scanners</span>
+                <span className="text-[#e6edf5] text-right">
+                  {selectedScanners.map((s) => s.toUpperCase()).join(", ")}
+                </span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-[#697080]">When</span>
+                <span className="text-[#e6edf5] text-right">
+                  {runMode === "now" ? "Immediately" : scheduleLabel()}
+                </span>
+              </div>
+              <div className="flex justify-between gap-3 border-t border-[#161b24] pt-3">
+                <span className="text-[#697080]">Credits</span>
+                <span className="text-[#e6edf5] text-right">
+                  {runMode === "now"
+                    ? `${selectedScanners.length} now`
+                    : "1 / scanner / run"}
+                </span>
+              </div>
             </div>
-          )}
-        </div>
+
+            {runMode === "now" && !selectedHaveCredits && (
+              <Link
+                href="/app/dashboard?purchase=true"
+                className="block text-center text-xs text-[#4493f8] hover:underline"
+              >
+                Out of credits — buy more
+              </Link>
+            )}
+
+            <button
+              type="submit"
+              disabled={launchDisabled}
+              className="w-full px-5 py-3 bg-[#0366d6] text-white font-semibold rounded-lg hover:bg-[#4493f8] transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FontAwesomeIcon
+                icon={runMode === "now" ? faJetFighterUp : faClock}
+              />
+              {submitting
+                ? runMode === "now"
+                  ? "Launching…"
+                  : "Scheduling…"
+                : runMode === "now"
+                  ? "Launch scan"
+                  : "Schedule scan"}
+            </button>
+
+            {submitError && (
+              <div className="text-red-400 text-sm">{submitError}</div>
+            )}
+            {submitSuccess && (
+              <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3">
+                <div className="text-green-400 text-sm font-medium mb-1">
+                  ✓ {submitSuccess}
+                </div>
+                <Link
+                  href={runMode === "now" ? "/app/history" : "/app/scheduled"}
+                  className="text-[#4493f8] hover:underline text-sm font-semibold"
+                >
+                  {runMode === "now"
+                    ? "View in Scan History →"
+                    : "View scheduled scans →"}
+                </Link>
+              </div>
+            )}
+          </aside>
+        </form>
       </div>
     </DashboardLayout>
   );
