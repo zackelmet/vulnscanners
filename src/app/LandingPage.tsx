@@ -794,12 +794,12 @@ export default function LandingPage() {
                 <i />
               </span>
               <span className={styles.rvTitle}>
-                acme-corp.com — Vulnerability Report.pdf
+                acme-corp.com — Security Assessment.pdf
               </span>
               <span className={styles.rvPages}>scroll ↓</span>
             </div>
             <div className={styles.rvScroll}>
-              {[1, 2, 3, 4, 5, 6].map((n) => (
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   key={n}

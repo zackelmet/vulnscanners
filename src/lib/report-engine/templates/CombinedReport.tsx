@@ -41,9 +41,9 @@ export interface CombinedReportData {
 }
 
 const COVERAGE_LABEL: Record<ScannerType, string> = {
-  zap: "Web App Vulnerabilities",
-  nmap: "Network / Port Findings",
-  nuclei: "Nuclei Vulnerabilities",
+  zap: "Web App Findings",
+  nmap: "Network Findings",
+  nuclei: "Nuclei Findings",
 };
 
 function emptyCounts(): Record<Severity, number> {
@@ -94,7 +94,8 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
     if (ofType.length === 0) return null;
     const counts = emptyCounts();
     const items = ofType.flatMap((s) => {
-      for (const k of SEVERITY_ORDER) counts[k] += s.data.severityCounts[k] || 0;
+      for (const k of SEVERITY_ORDER)
+        counts[k] += s.data.severityCounts[k] || 0;
       return s.data.findings.map((finding) => ({
         finding,
         target: s.target,
@@ -184,8 +185,8 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
         <SectionH1 num={2}>Vulnerabilities By Target</SectionH1>
         <Lead>
           This section contains the vulnerability findings for each scanned
-          target. Prioritization should be given to the targets with the
-          highest severity vulnerabilities.
+          target. Prioritization should be given to the targets with the highest
+          severity vulnerabilities.
         </Lead>
 
         <SectionH2 num="2.1">Targets Summary</SectionH2>
@@ -198,10 +199,16 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
         />
 
         <SectionH2 num="2.2">Target Breakdowns</SectionH2>
-        <Lead>Details for the potential vulnerabilities found for each target.</Lead>
+        <Lead>
+          Details for the potential vulnerabilities found for each target.
+        </Lead>
         {byTarget.map((t) => (
-          <View key={t.target} style={{ marginTop: 14 }} wrap={false}>
-            <SeverityCards counts={t.counts} />
+          <View key={t.target} style={{ marginTop: 14 }}>
+            {/* Keep the cards together, but let the (potentially long) table
+                flow across pages — its rows are individually wrap={false}. */}
+            <View wrap={false}>
+              <SeverityCards counts={t.counts} />
+            </View>
             <View style={{ marginTop: 6 }}>
               <BreakdownTable findings={t.findings} />
             </View>
