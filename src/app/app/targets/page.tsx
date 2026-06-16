@@ -4,12 +4,10 @@ import { useState, useEffect, FormEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPlus,
-  faEdit,
   faTrash,
   faServer,
   faGlobe,
   faLink,
-  faHeartPulse,
 } from "@fortawesome/free-solid-svg-icons";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useAuth } from "@/lib/context/AuthContext";
@@ -18,9 +16,21 @@ import { Target, TargetType } from "@/lib/types/target";
 const EMPTY_FORM = {
   name: "",
   value: "",
-  type: "domain" as TargetType,
   tags: "",
 };
+
+// Infer the target type from the value so the user never has to pick one.
+// ZAP needs a URL; Nmap needs a host/IP — the scanner layer keys off this.
+function detectTargetType(value: string): TargetType {
+  const v = value.trim();
+  if (/^https?:\/\//i.test(v)) return "url";
+  if (
+    /^\d{1,3}(\.\d{1,3}){3}(:\d+)?$/.test(v) ||
+    /^[0-9a-f]*:[0-9a-f:]+$/i.test(v)
+  )
+    return "ip";
+  return "domain";
+}
 
 export default function TargetsPage() {
   const { currentUser } = useAuth();
@@ -85,7 +95,7 @@ export default function TargetsPage() {
         body: JSON.stringify({
           name: formState.name,
           value: formState.value,
-          type: formState.type,
+          type: detectTargetType(formState.value),
           tags: parsedTags,
         }),
       });
@@ -149,7 +159,7 @@ export default function TargetsPage() {
           onSubmit={handleSubmit}
         >
           <h2 className="text-xl font-semibold text-[#e6edf5]">Add Target</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <label className="flex flex-col">
               <span className="text-sm font-semibold text-[#9aa5b6]">Name</span>
               <input
@@ -170,21 +180,9 @@ export default function TargetsPage() {
                 required
                 value={formState.value}
                 onChange={(e) => handleInputChange("value", e.target.value)}
-                placeholder="192.168.1.1 or api.example.com"
+                placeholder="192.168.1.1 or https://api.example.com"
                 className="mt-2 px-3 py-2 border border-[#161b24] rounded-lg bg-[#11161f] font-mono text-sm text-[#e6edf5] focus:outline-none focus:ring-2 focus:ring-[#0366d6]"
               />
-            </label>
-            <label className="flex flex-col">
-              <span className="text-sm font-semibold text-[#9aa5b6]">Type</span>
-              <select
-                value={formState.type}
-                onChange={(e) => handleInputChange("type", e.target.value)}
-                className="mt-2 px-3 py-2 border border-[#161b24] rounded-lg bg-[#11161f] text-[#e6edf5] focus:outline-none focus:ring-2 focus:ring-[#0366d6]"
-              >
-                <option value="domain">Domain Name</option>
-                <option value="ip">IP Address</option>
-                <option value="url">URL (e.g. for ZAP)</option>
-              </select>
             </label>
           </div>
           <div>
@@ -228,7 +226,6 @@ export default function TargetsPage() {
                 <tr className="bg-[#11161f] border-b border-[#161b24] text-sm text-[#9aa5b6]">
                   <th className="p-4 font-semibold">Target</th>
                   <th className="p-4 font-semibold">Type</th>
-                  <th className="p-4 font-semibold">Health Score</th>
                   <th className="p-4 font-semibold">Tags</th>
                   <th className="p-4 font-semibold text-right">Actions</th>
                 </tr>
@@ -236,13 +233,13 @@ export default function TargetsPage() {
               <tbody className="divide-y divide-[#161b24]">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="p-6 text-center text-[#9aa5b6]">
+                    <td colSpan={4} className="p-6 text-center text-[#9aa5b6]">
                       Loading targets...
                     </td>
                   </tr>
                 ) : targets.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-6 text-center text-[#9aa5b6]">
+                    <td colSpan={4} className="p-6 text-center text-[#9aa5b6]">
                       No targets found. Add one above.
                     </td>
                   </tr>
@@ -267,21 +264,6 @@ export default function TargetsPage() {
                           <FontAwesomeIcon icon={getTargetIcon(t.type)} />
                           {t.type.toUpperCase()}
                         </span>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <FontAwesomeIcon
-                            icon={faHeartPulse}
-                            className={
-                              t.healthScore === 100
-                                ? "text-green-400"
-                                : "text-yellow-400"
-                            }
-                          />
-                          <span className="font-semibold text-[#e6edf5]">
-                            {t.healthScore ?? 100}/100
-                          </span>
-                        </div>
                       </td>
                       <td className="p-4">
                         <div className="flex flex-wrap gap-1">
