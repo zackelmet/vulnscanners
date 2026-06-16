@@ -14,10 +14,7 @@ import { mapNmapReport } from "@/lib/report-engine/mappers/nmap-mapper";
 import { mapNucleiReport } from "@/lib/report-engine/mappers/nuclei-mapper";
 import { mapZapReport } from "@/lib/report-engine/mappers/zap-mapper";
 import { ScanReportData } from "@/lib/report-engine/report-data";
-import {
-  Severity,
-  SEVERITY_ORDER,
-} from "@/lib/report-engine/templates/_theme";
+import { Severity, SEVERITY_ORDER } from "@/lib/report-engine/templates/_theme";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,12 +24,13 @@ type ScannerType = "nmap" | "nuclei" | "zap";
 
 // Most recent completed scans to parse for risk aggregation (bounds latency).
 const PARSE_CAP = 40;
-// Severity → health-score penalty weight.
+// Severity → health-score penalty weight. Deliberately lenient so a clean-ish
+// posture still scores well (a single critical ≈ 88, not 75).
 const WEIGHT: Record<Severity, number> = {
-  critical: 25,
-  high: 10,
-  medium: 3,
-  low: 1,
+  critical: 12,
+  high: 5,
+  medium: 1.5,
+  low: 0.5,
   info: 0,
   accepted: 0,
 };
@@ -56,7 +54,11 @@ function buildReportData(
   if (scannerType === "nmap")
     return mapNmapReport({ ...common, parsed: parseNmapOutput(raw) });
   if (scannerType === "nuclei")
-    return mapNucleiReport({ ...common, parsed: parseNucleiOutput(raw), command });
+    return mapNucleiReport({
+      ...common,
+      parsed: parseNucleiOutput(raw),
+      command,
+    });
   return mapZapReport({ ...common, parsed: parseZapOutput(raw), command });
 }
 
@@ -117,7 +119,8 @@ export async function GET(request: NextRequest) {
       label: SCANNER_LABEL[(s.scannerType || s.type) as ScannerType] || "Scan",
       target: s.target || s.targetValue || "—",
       status: s.status,
-      completedAtMs: s.endTime?.toMillis?.() ?? s.startTime?.toMillis?.() ?? null,
+      completedAtMs:
+        s.endTime?.toMillis?.() ?? s.startTime?.toMillis?.() ?? null,
     }));
 
     // Parse the most recent completed scans for severity-classified risks.
@@ -155,7 +158,8 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      for (const k of SEVERITY_ORDER) riskCounts[k] += data.severityCounts[k] || 0;
+      for (const k of SEVERITY_ORDER)
+        riskCounts[k] += data.severityCounts[k] || 0;
 
       const tCounts = targetMap.get(target) ?? emptyCounts();
       for (const k of SEVERITY_ORDER) tCounts[k] += data.severityCounts[k] || 0;
@@ -210,7 +214,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       riskCounts,
       totalRisks,
-      closed: 0,
       healthScore,
       grade: gradeFor(healthScore),
       inProgress,

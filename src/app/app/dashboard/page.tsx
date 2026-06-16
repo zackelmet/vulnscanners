@@ -30,9 +30,27 @@ interface CreditPack {
 }
 
 const CREDIT_PACKS: CreditPack[] = [
-  { id: "essential", name: "Essential", price: 10, credits: 10, priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ESSENTIAL || "" },
-  { id: "pro", name: "Pro", price: 50, credits: 100, priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO || "" },
-  { id: "scale", name: "Scale", price: 200, credits: 1000, priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_SCALE || "" },
+  {
+    id: "essential",
+    name: "Essential",
+    price: 10,
+    credits: 10,
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ESSENTIAL || "",
+  },
+  {
+    id: "pro",
+    name: "Pro",
+    price: 50,
+    credits: 100,
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO || "",
+  },
+  {
+    id: "scale",
+    name: "Scale",
+    price: 200,
+    credits: 1000,
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_SCALE || "",
+  },
 ];
 
 /* ─── Severity UI (dark theme) ───────────────────────────── */
@@ -40,22 +58,50 @@ const CREDIT_PACKS: CreditPack[] = [
 type Sev = "critical" | "high" | "medium" | "low" | "info" | "accepted";
 
 const SEV_UI: Record<
-  Sev | "closed",
+  Sev,
   { label: string; color: string; bg: string; border: string }
 > = {
-  critical: { label: "Critical", color: "#e879f9", bg: "rgba(192,38,211,0.12)", border: "rgba(192,38,211,0.35)" },
-  high: { label: "High", color: "#f87171", bg: "rgba(239,68,68,0.12)", border: "rgba(239,68,68,0.35)" },
-  medium: { label: "Medium", color: "#fbbf24", bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.30)" },
-  low: { label: "Low", color: "#eab308", bg: "rgba(234,179,8,0.10)", border: "rgba(234,179,8,0.28)" },
-  info: { label: "Info", color: "#9ca3af", bg: "rgba(156,163,175,0.10)", border: "rgba(156,163,175,0.22)" },
-  accepted: { label: "Accepted", color: "#34d399", bg: "rgba(34,197,94,0.12)", border: "rgba(34,197,94,0.30)" },
-  closed: { label: "Closed", color: "#9aa5b6", bg: "rgba(154,165,182,0.06)", border: "#161b24" },
+  critical: {
+    label: "Critical",
+    color: "#e879f9",
+    bg: "rgba(192,38,211,0.12)",
+    border: "rgba(192,38,211,0.35)",
+  },
+  high: {
+    label: "High",
+    color: "#f87171",
+    bg: "rgba(239,68,68,0.12)",
+    border: "rgba(239,68,68,0.35)",
+  },
+  medium: {
+    label: "Medium",
+    color: "#fbbf24",
+    bg: "rgba(245,158,11,0.12)",
+    border: "rgba(245,158,11,0.30)",
+  },
+  low: {
+    label: "Low",
+    color: "#eab308",
+    bg: "rgba(234,179,8,0.10)",
+    border: "rgba(234,179,8,0.28)",
+  },
+  info: {
+    label: "Info",
+    color: "#9ca3af",
+    bg: "rgba(156,163,175,0.10)",
+    border: "rgba(156,163,175,0.22)",
+  },
+  accepted: {
+    label: "Accepted",
+    color: "#34d399",
+    bg: "rgba(34,197,94,0.12)",
+    border: "rgba(34,197,94,0.30)",
+  },
 };
 
 interface DashboardData {
   riskCounts: Record<Sev, number>;
   totalRisks: number;
-  closed: number;
   healthScore: number;
   grade: string;
   inProgress: number;
@@ -67,7 +113,12 @@ interface DashboardData {
     status: string;
     completedAtMs: number | null;
   }[];
-  recentRisks: { title: string; severity: Sev; scannerType: string; target: string }[];
+  recentRisks: {
+    title: string;
+    severity: Sev;
+    scannerType: string;
+    target: string;
+  }[];
   targets: { target: string; total: number }[];
   totalTargets: number;
 }
@@ -98,7 +149,13 @@ function HealthGauge({ score, grade }: { score: number; grade: string }) {
   const end = polar(score / 100);
   const full = polar(1);
   const gradeColor =
-    score >= 75 ? "#34d399" : score >= 60 ? "#eab308" : score >= 40 ? "#f59e0b" : "#f87171";
+    score >= 75
+      ? "#34d399"
+      : score >= 60
+        ? "#eab308"
+        : score >= 40
+          ? "#f59e0b"
+          : "#f87171";
   return (
     <svg viewBox="0 0 220 130" width="220" height="130">
       <path
@@ -115,7 +172,14 @@ function HealthGauge({ score, grade }: { score: number; grade: string }) {
         strokeWidth="14"
         strokeLinecap="round"
       />
-      <text x={cx} y={cy - 14} textAnchor="middle" fontSize="40" fontWeight="700" fill={gradeColor}>
+      <text
+        x={cx}
+        y={cy - 14}
+        textAnchor="middle"
+        fontSize="40"
+        fontWeight="700"
+        fill={gradeColor}
+      >
         {grade}
       </text>
       <text x={cx} y={cy + 6} textAnchor="middle" fontSize="11" fill="#9aa5b6">
@@ -193,7 +257,10 @@ export default function DashboardPage() {
       const token = await currentUser.getIdToken();
       const res = await fetch("/api/stripe/create-checkout-session", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           priceId: selectedPack.priceId,
           email: currentUser.email,
@@ -232,7 +299,10 @@ export default function DashboardPage() {
               {data?.inProgress ?? 0} scans in progress
             </span>
             <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0d1117] border border-[#161b24] text-sm text-[#9aa5b6]">
-              <FontAwesomeIcon icon={faCalendarCheck} className="text-xs text-[#697080]" />
+              <FontAwesomeIcon
+                icon={faCalendarCheck}
+                className="text-xs text-[#697080]"
+              />
               {data?.scheduled ?? 0} scans scheduled
             </span>
             <Link
@@ -249,7 +319,9 @@ export default function DashboardPage() {
           <span className="text-sm text-[#697080] mr-1">Scan credits</span>
           {(["nmap", "nuclei", "zap"] as const).map((k) => (
             <span key={k} className="text-sm text-[#e6edf5]">
-              <span className="uppercase text-[#697080] text-xs mr-1.5">{k}</span>
+              <span className="uppercase text-[#697080] text-xs mr-1.5">
+                {k}
+              </span>
               {credits[k]}
             </span>
           ))}
@@ -265,9 +337,14 @@ export default function DashboardPage() {
         <div className="grid lg:grid-cols-2 gap-6 mb-6">
           {/* Health score */}
           <div className="bg-[#0d1117] border border-[#161b24] rounded-xl p-6">
-            <h2 className="text-sm font-medium text-[#9aa5b6] mb-4">Health Score</h2>
+            <h2 className="text-sm font-medium text-[#9aa5b6] mb-4">
+              Health Score
+            </h2>
             <div className="flex items-center gap-6">
-              <HealthGauge score={data?.healthScore ?? 100} grade={data?.grade ?? "A"} />
+              <HealthGauge
+                score={data?.healthScore ?? 100}
+                grade={data?.grade ?? "A"}
+              />
               <div className="flex-1 min-w-0">
                 <p className="text-[#e6edf5] font-medium mb-1">
                   {(data?.healthScore ?? 100) >= 75
@@ -288,9 +365,12 @@ export default function DashboardPage() {
           {/* Risks detected */}
           <div className="bg-[#0d1117] border border-[#161b24] rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-medium text-[#9aa5b6]">Risks detected</h2>
+              <h2 className="text-sm font-medium text-[#9aa5b6]">
+                Risks detected
+              </h2>
               <span className="text-sm text-[#697080]">
-                Total: <span className="text-[#e6edf5]">{data?.totalRisks ?? 0}</span>
+                Total:{" "}
+                <span className="text-[#e6edf5]">{data?.totalRisks ?? 0}</span>
               </span>
             </div>
             <div className="grid grid-cols-5 gap-2 mb-2.5">
@@ -302,28 +382,15 @@ export default function DashboardPage() {
                     className="rounded-lg px-2 py-3 text-center border"
                     style={{ backgroundColor: ui.bg, borderColor: ui.border }}
                   >
-                    <div className="text-[10px] text-[#9aa5b6] mb-1">{ui.label}</div>
-                    <div className="text-2xl font-bold" style={{ color: ui.color }}>
+                    <div className="text-[10px] text-[#9aa5b6] mb-1">
+                      {ui.label}
+                    </div>
+                    <div
+                      className="text-2xl font-bold"
+                      style={{ color: ui.color }}
+                    >
                       {data?.riskCounts?.[k] ?? 0}
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {(["accepted", "closed"] as const).map((k) => {
-                const ui = SEV_UI[k];
-                const val = k === "closed" ? (data?.closed ?? 0) : (data?.riskCounts?.accepted ?? 0);
-                return (
-                  <div
-                    key={k}
-                    className="flex items-center justify-between rounded-lg px-3 py-2 border"
-                    style={{ backgroundColor: ui.bg, borderColor: ui.border }}
-                  >
-                    <span className="text-xs" style={{ color: ui.color }}>
-                      {ui.label}
-                    </span>
-                    <span className="text-sm font-semibold text-[#e6edf5]">{val}</span>
                   </div>
                 );
               })}
@@ -334,7 +401,11 @@ export default function DashboardPage() {
         {/* Recent activity */}
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Recent scans */}
-          <Panel title="Recent Scans" href="/app/history" linkLabel="See all scans">
+          <Panel
+            title="Recent Scans"
+            href="/app/history"
+            linkLabel="See all scans"
+          >
             {data?.recentScans?.length ? (
               data.recentScans.map((s) => (
                 <Link
@@ -344,12 +415,22 @@ export default function DashboardPage() {
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm text-[#e6edf5] truncate">{s.label}</p>
-                      <p className="text-xs text-[#9aa5b6] truncate">{s.target}</p>
-                      <p className="text-xs text-[#697080] mt-0.5">{timeAgo(s.completedAtMs)}</p>
+                      <p className="text-sm text-[#e6edf5] truncate">
+                        {s.label}
+                      </p>
+                      <p className="text-xs text-[#9aa5b6] truncate">
+                        {s.target}
+                      </p>
+                      <p className="text-xs text-[#697080] mt-0.5">
+                        {timeAgo(s.completedAtMs)}
+                      </p>
                     </div>
                     <span className="inline-flex items-center gap-1.5 text-xs text-[#4493f8] shrink-0">
-                      <FontAwesomeIcon icon={faFileLines} className="text-[10px]" /> Report
+                      <FontAwesomeIcon
+                        icon={faFileLines}
+                        className="text-[10px]"
+                      />{" "}
+                      Report
                     </span>
                   </div>
                 </Link>
@@ -360,7 +441,11 @@ export default function DashboardPage() {
           </Panel>
 
           {/* Recent risks */}
-          <Panel title="Recent Risks" href="/app/history" linkLabel="See all risks">
+          <Panel
+            title="Recent Risks"
+            href="/app/history"
+            linkLabel="See all risks"
+          >
             {data?.recentRisks?.length ? (
               data.recentRisks.map((r, i) => (
                 <div
@@ -423,14 +508,21 @@ export default function DashboardPage() {
           <div className="bg-[#0d1117] border border-[#161b24] rounded-xl p-8 max-w-lg w-full shadow-2xl">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h2 className="text-3xl font-bold text-[#e6edf5] mb-1">Buy Credits</h2>
-                <p className="text-[#9aa5b6]">Works across Nmap, Nuclei, and ZAP</p>
+                <h2 className="text-3xl font-bold text-[#e6edf5] mb-1">
+                  Buy Credits
+                </h2>
+                <p className="text-[#9aa5b6]">
+                  Works across Nmap, Nuclei, and ZAP
+                </p>
               </div>
               <button
                 onClick={() => setShowModal(false)}
                 className="p-2 hover:bg-[#11161f] rounded-lg transition-colors"
               >
-                <FontAwesomeIcon icon={faXmark} className="text-[#9aa5b6] hover:text-[#e6edf5] text-xl" />
+                <FontAwesomeIcon
+                  icon={faXmark}
+                  className="text-[#9aa5b6] hover:text-[#e6edf5] text-xl"
+                />
               </button>
             </div>
             <div className="space-y-3 mb-6">
@@ -447,11 +539,14 @@ export default function DashboardPage() {
                   <div className="text-left">
                     <p className="font-bold text-[#e6edf5]">{pack.name}</p>
                     <p className="text-sm text-[#9aa5b6]">
-                      {(pack.credits * 3).toLocaleString()} scans · {pack.credits.toLocaleString()} per scanner
+                      {(pack.credits * 3).toLocaleString()} scans ·{" "}
+                      {pack.credits.toLocaleString()} per scanner
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-black text-[#e6edf5]">${pack.price}</p>
+                    <p className="text-2xl font-black text-[#e6edf5]">
+                      ${pack.price}
+                    </p>
                     <p className="text-xs text-[#697080]">
                       ${(pack.price / (pack.credits * 3)).toFixed(2)}/scan
                     </p>
@@ -464,7 +559,9 @@ export default function DashboardPage() {
               disabled={loadingCheckout}
               className="w-full py-4 bg-[#0366d6] hover:bg-[#4493f8] text-white font-bold rounded-lg text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
-              {loadingCheckout ? "Processing…" : `Proceed to Checkout — $${selectedPack.price}`}
+              {loadingCheckout
+                ? "Processing…"
+                : `Proceed to Checkout — $${selectedPack.price}`}
             </button>
           </div>
         </div>
@@ -503,7 +600,8 @@ function Panel({
           href={href}
           className="inline-flex items-center gap-1 text-xs text-[#697080] hover:text-[#4493f8] transition-colors"
         >
-          {linkLabel} <FontAwesomeIcon icon={faArrowRight} className="text-[9px]" />
+          {linkLabel}{" "}
+          <FontAwesomeIcon icon={faArrowRight} className="text-[9px]" />
         </Link>
       </div>
       <div className="space-y-2">{children}</div>
@@ -525,10 +623,15 @@ function PurchaseParamHandler({ openModal }: { openModal: () => void }) {
     const success = searchParams.get("success");
     const canceled = searchParams.get("canceled");
     if (success === "true") {
-      toast.success("Payment successful! Your credits will appear shortly.", { duration: 6000 });
+      toast.success("Payment successful! Your credits will appear shortly.", {
+        duration: 6000,
+      });
       router.replace("/app/dashboard", { scroll: false });
     } else if (canceled === "true") {
-      toast("Purchase canceled — no charge was made.", { icon: "ℹ️", duration: 5000 });
+      toast("Purchase canceled — no charge was made.", {
+        icon: "ℹ️",
+        duration: 5000,
+      });
       router.replace("/app/dashboard", { scroll: false });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
