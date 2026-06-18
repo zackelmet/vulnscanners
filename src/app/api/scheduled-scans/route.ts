@@ -25,7 +25,9 @@ async function authUid(
   const authHeader = request.headers.get("authorization");
   if (!authHeader?.startsWith("Bearer ")) return null;
   try {
-    const decoded = await admin.auth().verifyIdToken(authHeader.split("Bearer ")[1]);
+    const decoded = await admin
+      .auth()
+      .verifyIdToken(authHeader.split("Bearer ")[1]);
     return decoded.uid;
   } catch {
     return null;
@@ -75,6 +77,7 @@ export async function POST(request: NextRequest) {
   const {
     name,
     type,
+    types,
     target,
     targetId,
     options = {},
@@ -85,9 +88,17 @@ export async function POST(request: NextRequest) {
     dayOfMonth,
   } = body || {};
 
-  if (!SCANNERS.includes(type)) {
+  // Accept either `types` (array — one schedule can fan out to several
+  // scanners) or the legacy single `type`. De-dupe and validate every entry.
+  const requestedTypes: unknown[] = Array.isArray(types)
+    ? types
+    : type
+      ? [type]
+      : [];
+  const scanTypes = Array.from(new Set(requestedTypes)) as ScanScannerType[];
+  if (scanTypes.length === 0 || !scanTypes.every((t) => SCANNERS.includes(t))) {
     return NextResponse.json(
-      { error: "type must be nmap, nuclei, or zap" },
+      { error: "Select at least one scanner (nmap, nuclei, or zap)" },
       { status: 400 },
     );
   }
@@ -103,7 +114,10 @@ export async function POST(request: NextRequest) {
       .doc(targetId)
       .get();
     if (!tDoc.exists) {
-      return NextResponse.json({ error: "Saved target not found" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Saved target not found" },
+        { status: 400 },
+      );
     }
     targetValue = tDoc.data()?.value;
   }
@@ -113,18 +127,22 @@ export async function POST(request: NextRequest) {
       { status: 400 },
     );
   }
-  const normalized = normalizeScanTarget(type, targetValue);
-  if (!normalized) {
-    return NextResponse.json(
-      {
-        error: `Invalid target format: ${targetValue}. ${
-          type === "zap"
-            ? "Must be a valid URL"
-            : "Must be a valid IP address or domain name"
-        }`,
-      },
-      { status: 400 },
-    );
+  // The same target must be valid for every selected scanner. zap wants a URL,
+  // nmap/nuclei want a host/IP — normalizeScanTarget coerces each, so reject
+  // only if a scanner genuinely can't use this target.
+  for (const t of scanTypes) {
+    if (!normalizeScanTarget(t, targetValue)) {
+      return NextResponse.json(
+        {
+          error: `Invalid target format for ${t}: ${targetValue}. ${
+            t === "zap"
+              ? "Must be a valid URL"
+              : "Must be a valid IP address or domain name"
+          }`,
+        },
+        { status: 400 },
+      );
+    }
   }
 
   const cfg: ScheduleConfig = {
@@ -144,8 +162,12 @@ export async function POST(request: NextRequest) {
   const docData: Record<string, unknown> = {
     userId,
     name: typeof name === "string" && name.trim() ? name.trim() : null,
-    type,
-    target: normalized,
+    // `types` is the source of truth; `type` kept as the first entry for
+    // backward compatibility with older readers. The launcher re-normalizes the
+    // target per scanner, so store the raw (trimmed) target here.
+    types: scanTypes,
+    type: scanTypes[0],
+    target: targetValue.trim(),
     options,
     frequency,
     hourUTC,

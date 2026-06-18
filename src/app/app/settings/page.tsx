@@ -156,25 +156,6 @@ export default function SettingsPage() {
                 <div className="w-11 h-6 bg-[#11161f] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#0366d6] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#697080] after:border-[#161b24] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0366d6] peer-checked:after:bg-white"></div>
               </label>
             </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-semibold text-[#e6edf5]">
-                  Security Alerts
-                </div>
-                <div className="text-sm text-[#9aa5b6]">
-                  Important security notifications
-                </div>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  defaultChecked
-                />
-                <div className="w-11 h-6 bg-[#11161f] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#0366d6] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-[#697080] after:border-[#161b24] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0366d6] peer-checked:after:bg-white"></div>
-              </label>
-            </div>
           </div>
         </div>
       </div>

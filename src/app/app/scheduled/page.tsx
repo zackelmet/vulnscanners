@@ -18,10 +18,13 @@ import {
   ScheduleFrequency,
 } from "@/lib/scans/schedule";
 
+type ScannerType = "nmap" | "nuclei" | "zap";
+
 interface Schedule {
   id: string;
   name: string | null;
-  type: "nmap" | "nuclei" | "zap";
+  type: ScannerType;
+  types?: ScannerType[];
   target: string;
   frequency: ScheduleFrequency;
   hourUTC: number;
@@ -49,8 +52,8 @@ export default function ScheduledScansPage() {
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  // form state
-  const [type, setType] = useState<"nmap" | "nuclei" | "zap">("nmap");
+  // form state — a schedule can run several scanners on each fire.
+  const [types, setTypes] = useState<ScannerType[]>(["nmap"]);
   const [target, setTarget] = useState("");
   const [name, setName] = useState("");
   const [frequency, setFrequency] = useState<ScheduleFrequency>("weekly");
@@ -92,8 +95,13 @@ export default function ScheduledScansPage() {
     load();
   }, [load]);
 
+  const toggleType = (t: ScannerType) =>
+    setTypes((prev) =>
+      prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t],
+    );
+
   const resetForm = () => {
-    setType("nmap");
+    setTypes(["nmap"]);
     setTarget("");
     setName("");
     setFrequency("weekly");
@@ -108,11 +116,15 @@ export default function ScheduledScansPage() {
       alert("Enter a target.");
       return;
     }
+    if (types.length === 0) {
+      alert("Select at least one scanner.");
+      return;
+    }
     setSaving(true);
     try {
       const body: any = {
         name: name.trim() || undefined,
-        type,
+        types,
         target: target.trim(),
         frequency,
         hourUTC,
@@ -179,7 +191,7 @@ export default function ScheduledScansPage() {
             </h1>
             <p className="text-[#9aa5b6] mt-1">
               Run recurring scans automatically. Times are in UTC; each run uses
-              one scan credit for the chosen scanner.
+              one scan credit per selected scanner.
             </p>
           </div>
           <button
@@ -197,19 +209,28 @@ export default function ScheduledScansPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <label className="flex flex-col gap-1">
                 <span className="text-xs font-semibold text-[#9aa5b6] uppercase">
-                  Scanner
+                  Scanners
                 </span>
-                <select
-                  value={type}
-                  onChange={(e) => setType(e.target.value as any)}
-                  className={inputCls}
-                >
-                  {SCANNERS.map((s) => (
-                    <option key={s.value} value={s.value}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex flex-wrap gap-2">
+                  {SCANNERS.map((s) => {
+                    const active = types.includes(s.value);
+                    return (
+                      <button
+                        key={s.value}
+                        type="button"
+                        onClick={() => toggleType(s.value)}
+                        aria-pressed={active}
+                        className={`px-3 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                          active
+                            ? "bg-[#0366d6] border-[#0366d6] text-white"
+                            : "bg-[#0d1117] border-[#21262d] text-[#9aa5b6] hover:border-[#0366d6]"
+                        }`}
+                      >
+                        {s.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </label>
               <label className="flex flex-col gap-1">
                 <span className="text-xs font-semibold text-[#9aa5b6] uppercase">
@@ -219,7 +240,9 @@ export default function ScheduledScansPage() {
                   value={target}
                   onChange={(e) => setTarget(e.target.value)}
                   placeholder={
-                    type === "zap" ? "https://example.com" : "example.com or IP"
+                    types.includes("zap")
+                      ? "https://example.com"
+                      : "example.com or IP"
                   }
                   className={inputCls}
                 />
@@ -391,9 +414,16 @@ export default function ScheduledScansPage() {
                   {schedules.map((s) => (
                     <tr key={s.id} className="hover:bg-[#11161f]">
                       <td className="px-6 py-4">
-                        <span className="px-2 py-1 bg-[#0366d6] text-white text-xs font-semibold rounded uppercase">
-                          {s.type}
-                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          {(s.types?.length ? s.types : [s.type]).map((t) => (
+                            <span
+                              key={t}
+                              className="px-2 py-1 bg-[#0366d6] text-white text-xs font-semibold rounded uppercase"
+                            >
+                              {t}
+                            </span>
+                          ))}
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-[#e6edf5]">
                         {s.target}

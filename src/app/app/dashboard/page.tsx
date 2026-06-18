@@ -119,9 +119,17 @@ interface DashboardData {
     scannerType: string;
     target: string;
   }[];
-  targets: { target: string; total: number }[];
+  targets: {
+    target: string;
+    total: number;
+    healthScore: number;
+    grade: string;
+  }[];
   totalTargets: number;
+  completedCount?: number;
 }
+
+const ALL_TARGETS = "__all__";
 
 function timeAgo(ms: number | null): string {
   if (!ms) return "—";
@@ -203,6 +211,9 @@ export default function DashboardPage() {
 
   const [data, setData] = useState<DashboardData | null>(null);
   const [loadingData, setLoadingData] = useState(true);
+  // Which target's health score is shown. Defaults to the worst-scoring target
+  // once data loads (the API returns targets sorted worst-health-first).
+  const [selectedTarget, setSelectedTarget] = useState<string>(ALL_TARGETS);
   const [showModal, setShowModal] = useState(false);
   const [selectedPack, setSelectedPack] = useState<CreditPack>(CREDIT_PACKS[1]);
   const [loadingCheckout, setLoadingCheckout] = useState(false);
@@ -237,6 +248,25 @@ export default function DashboardPage() {
       cancelled = true;
     };
   }, [currentUser]);
+
+  // Once data lands, focus the health score on the worst target by default.
+  useEffect(() => {
+    if (data?.targets?.length) setSelectedTarget(data.targets[0].target);
+    else setSelectedTarget(ALL_TARGETS);
+  }, [data]);
+
+  // Health score for the current selection (a specific target, or all targets).
+  const health = useMemo(() => {
+    if (!data) return null;
+    if (selectedTarget !== ALL_TARGETS) {
+      const t = data.targets.find((x) => x.target === selectedTarget);
+      if (t) return { score: t.healthScore, grade: t.grade };
+    }
+    return { score: data.healthScore, grade: data.grade };
+  }, [data, selectedTarget]);
+
+  const hasHealthData =
+    !!data && (data.targets.length > 0 || !!data.completedCount);
 
   const openModal = (pack: CreditPack = CREDIT_PACKS[1]) => {
     setSelectedPack(pack);
@@ -337,29 +367,56 @@ export default function DashboardPage() {
         <div className="grid lg:grid-cols-2 gap-6 mb-6">
           {/* Health score */}
           <div className="bg-[#0d1117] border border-[#161b24] rounded-xl p-6">
-            <h2 className="text-sm font-medium text-[#9aa5b6] mb-4">
-              Health Score
-            </h2>
-            <div className="flex items-center gap-6">
-              <HealthGauge
-                score={data?.healthScore ?? 100}
-                grade={data?.grade ?? "A"}
-              />
-              <div className="flex-1 min-w-0">
-                <p className="text-[#e6edf5] font-medium mb-1">
-                  {(data?.healthScore ?? 100) >= 75
-                    ? "Good Health"
-                    : (data?.healthScore ?? 100) >= 60
-                      ? "Fair Health"
-                      : "Needs Attention"}
-                </p>
-                <p className="text-sm text-[#697080] leading-relaxed">
-                  Score is weighted by the severity of open findings across your
-                  scanned targets. Resolve higher-severity risks first to raise
-                  it.
-                </p>
-              </div>
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <h2 className="text-sm font-medium text-[#9aa5b6]">
+                Health Score
+              </h2>
+              {!loadingData && data && data.targets.length > 0 && (
+                <select
+                  value={selectedTarget}
+                  onChange={(e) => setSelectedTarget(e.target.value)}
+                  className="max-w-[55%] truncate bg-[#11161f] border border-[#161b24] rounded-lg px-2.5 py-1.5 text-xs text-[#e6edf5] focus:border-[#0366d6] outline-none"
+                >
+                  <option value={ALL_TARGETS}>All targets</option>
+                  {data.targets.map((t) => (
+                    <option key={t.target} value={t.target}>
+                      {t.target}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
+
+            {loadingData ? (
+              // Loading state — never show a placeholder grade before the
+              // score is actually computed.
+              <div className="flex items-center justify-center gap-3 h-[130px] text-[#697080]">
+                <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+                <span className="text-sm">Calculating health…</span>
+              </div>
+            ) : hasHealthData && health ? (
+              <div className="flex items-center gap-6">
+                <HealthGauge score={health.score} grade={health.grade} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[#e6edf5] font-medium mb-1">
+                    {health.score >= 75
+                      ? "Good Health"
+                      : health.score >= 60
+                        ? "Fair Health"
+                        : "Needs Attention"}
+                  </p>
+                  <p className="text-sm text-[#697080] leading-relaxed">
+                    {selectedTarget === ALL_TARGETS
+                      ? "Score is weighted by the severity of open findings across all your scanned targets. Pick a target to see its individual health."
+                      : `Score for ${selectedTarget}, weighted by the severity of its open findings. Resolve higher-severity risks first to raise it.`}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-[130px] text-center text-sm text-[#697080] px-4">
+                Run a scan on a target to see its security health score.
+              </div>
+            )}
           </div>
 
           {/* Risks detected */}

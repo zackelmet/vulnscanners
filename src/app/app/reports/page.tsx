@@ -7,6 +7,7 @@ import {
   faSpinner,
   faSatelliteDish,
   faEnvelope,
+  faCheck,
 } from "@fortawesome/free-solid-svg-icons";
 import { useUserScans } from "@/lib/hooks/useUserScans";
 import { useAuth } from "@/lib/context/AuthContext";
@@ -21,6 +22,8 @@ export default function ReportsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [generating, setGenerating] = useState(false);
   const [emailing, setEmailing] = useState(false);
+  // Confirmation shown inline on the button itself (no browser alert/notification).
+  const [emailSent, setEmailSent] = useState(false);
 
   // Only completed scans can go into a report.
   const completed = useMemo(
@@ -122,7 +125,9 @@ export default function ReportsPage() {
         alert(data?.error || "Failed to email report");
         return;
       }
-      alert(`Report emailed to ${data.sentTo}.`);
+      // Confirm inline on the button rather than via a browser alert.
+      setEmailSent(true);
+      setTimeout(() => setEmailSent(false), 4000);
     } catch (err: any) {
       alert(err?.message || "Failed to email report");
     } finally {
@@ -160,13 +165,17 @@ export default function ReportsPage() {
             <button
               onClick={emailReport}
               disabled={emailing || generating || selected.size === 0}
-              className="flex items-center gap-2 px-4 py-2 border border-[#21262d] hover:border-[#0366d6] text-[#e6edf5] text-sm font-semibold rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
+              className={`flex items-center gap-2 px-4 py-2 border text-sm font-semibold rounded-lg disabled:opacity-40 disabled:cursor-not-allowed ${
+                emailSent
+                  ? "border-green-500/40 text-green-400"
+                  : "border-[#21262d] hover:border-[#0366d6] text-[#e6edf5]"
+              }`}
             >
               <FontAwesomeIcon
-                icon={emailing ? faSpinner : faEnvelope}
+                icon={emailing ? faSpinner : emailSent ? faCheck : faEnvelope}
                 className={emailing ? "animate-spin" : ""}
               />
-              {emailing ? "Sending…" : "Email it to me"}
+              {emailing ? "Sending…" : emailSent ? "Sent ✓" : "Email it to me"}
             </button>
           </div>
         </div>
@@ -184,8 +193,8 @@ export default function ReportsPage() {
                 className="text-5xl text-[#697080] mb-4"
               />
               <p className="text-[#9aa5b6]">
-                No completed scans yet. Run a scan first, then come back to build
-                a combined report.
+                No completed scans yet. Run a scan first, then come back to
+                build a combined report.
               </p>
             </div>
           ) : (

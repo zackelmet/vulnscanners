@@ -70,6 +70,20 @@ function gradeFor(score: number): string {
   return "F";
 }
 
+// Severity-weighted health score + letter grade for a set of risk counts.
+// Used both for the overall posture and per-target.
+function scoreFor(counts: Record<Severity, number>): {
+  healthScore: number;
+  grade: string;
+} {
+  const penalty = SEVERITY_ORDER.reduce(
+    (sum, k) => sum + counts[k] * WEIGHT[k],
+    0,
+  );
+  const healthScore = Math.max(0, Math.min(100, 100 - penalty));
+  return { healthScore, grade: gradeFor(healthScore) };
+}
+
 const SCANNER_LABEL: Record<ScannerType, string> = {
   nmap: "Nmap Network Scan",
   nuclei: "Nuclei Vulnerability Scan",
@@ -185,11 +199,7 @@ export async function GET(request: NextRequest) {
       0,
     );
 
-    const penalty = SEVERITY_ORDER.reduce(
-      (sum, k) => sum + riskCounts[k] * WEIGHT[k],
-      0,
-    );
-    const healthScore = Math.max(0, Math.min(100, 100 - penalty));
+    const { healthScore, grade } = scoreFor(riskCounts);
 
     // Scheduled scans (enabled).
     let scheduled = 0;
@@ -209,13 +219,15 @@ export async function GET(request: NextRequest) {
         (s, k) => s + counts[k],
         0,
       ),
-    })).sort((a, b) => b.total - a.total);
+      // Per-target health score so the dashboard can show health by target.
+      ...scoreFor(counts),
+    })).sort((a, b) => a.healthScore - b.healthScore);
 
     return NextResponse.json({
       riskCounts,
       totalRisks,
       healthScore,
-      grade: gradeFor(healthScore),
+      grade,
       inProgress,
       scheduled,
       recentScans,

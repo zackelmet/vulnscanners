@@ -9,9 +9,13 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
+        // Match the page-title (h2) font everywhere. Titles render in IBM Plex
+        // Sans (loaded via next/font in app/layout.tsx and exposed as
+        // --font-ibm-plex-sans), so point every Tailwind font utility —
+        // including font-mono — at the same family for a consistent look.
         sans: [
-          '"Share Tech Mono"',
-          "Inter",
+          "var(--font-ibm-plex-sans)",
+          '"IBM Plex Sans"',
           "ui-sans-serif",
           "system-ui",
           "-apple-system",
@@ -19,7 +23,20 @@ const config: Config = {
           "Segoe UI",
           "sans-serif",
         ],
-        serif: ['"Roboto Slab"', "ui-serif", "Georgia", "serif"],
+        serif: [
+          "var(--font-ibm-plex-sans)",
+          '"IBM Plex Sans"',
+          "ui-serif",
+          "Georgia",
+          "serif",
+        ],
+        mono: [
+          "var(--font-ibm-plex-sans)",
+          '"IBM Plex Sans"',
+          "ui-sans-serif",
+          "system-ui",
+          "sans-serif",
+        ],
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",

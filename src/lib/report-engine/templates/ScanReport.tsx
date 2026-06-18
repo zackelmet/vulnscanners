@@ -18,16 +18,12 @@ import {
   GlossaryTwoCol,
   BackCover,
   SCANNER_SECTION_TITLE,
+  findingNoun,
 } from "./_hosted";
-
-const COVERAGE_LABEL: Record<string, string> = {
-  zap: "Web App Vulnerabilities",
-  nmap: "Network / Port Findings",
-  nuclei: "Nuclei Vulnerabilities",
-};
 
 export function ScanReport({ data }: { data: ScanReportData }) {
   const total = data.findings.length;
+  const noun = findingNoun(data.scannerType);
 
   const tocEntries = [
     { num: 1, title: "Executive Summary" },
@@ -61,12 +57,8 @@ export function ScanReport({ data }: { data: ScanReportData }) {
           confidentiality, integrity, or availability of the target.
         </Lead>
 
-        <SectionH2 num="1.1">Total Vulnerabilities</SectionH2>
-        <Lead>
-          Below are the total number of vulnerabilities found by severity.
-          Critical vulnerabilities are the most severe and should be evaluated
-          first.
-        </Lead>
+        <SectionH2 num="1.1">{noun.total}</SectionH2>
+        <Lead>{noun.totalLead}</Lead>
         <SeverityCards counts={data.severityCounts} />
 
         <SectionH2 num="1.2">Report Coverage</SectionH2>
@@ -77,7 +69,7 @@ export function ScanReport({ data }: { data: ScanReportData }) {
         <StatPanel
           items={[
             { value: 1, label: "Total Targets" },
-            { value: total, label: COVERAGE_LABEL[data.scannerType] },
+            { value: total, label: noun.coverage },
           ]}
         />
       </HostedPage>

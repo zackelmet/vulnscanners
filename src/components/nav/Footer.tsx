@@ -62,13 +62,22 @@ export default function Footer() {
             >
               Scanners
             </Link>
+            <Link
+              href="/assessments/vulnerability"
+              className="hover:text-[#0366d6] transition px-4"
+            >
+              Vulnerability Assessment
+            </Link>
+            <Link
+              href="/assessments/attack-surface"
+              className="hover:text-[#0366d6] transition px-4"
+            >
+              Attack Surface
+            </Link>
             <Link href="/blog" className="hover:text-[#0366d6] transition px-4">
               Blog
             </Link>
-            <Link
-              href="/mssp"
-              className="hover:text-[#0366d6] transition px-4"
-            >
+            <Link href="/mssp" className="hover:text-[#0366d6] transition px-4">
               For MSPs &amp; MSSPs
             </Link>
             <Link

@@ -13,7 +13,7 @@ import Link from "next/link";
 export const metadata = {
   title: "Help Center | VulnScanners",
   description:
-    "Get started with VulnScanners — running scans, understanding Nmap, Nuclei, and OWASP ZAP, reading reports, managing credits, scheduling, troubleshooting, and our trust & safety practices.",
+    "Get started with VulnScanners: running Nmap, Nuclei, and OWASP ZAP scans, reading reports, managing credits, scheduling, and troubleshooting.",
 };
 
 type Block =
@@ -270,7 +270,10 @@ export default function HelpCenterPage() {
               href={`#${s.id}`}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0d1117] border border-[#161b24] text-sm text-[#9aa5b6] hover:border-[#0366d6] hover:text-[#e6edf5] transition-colors"
             >
-              <FontAwesomeIcon icon={s.icon} className="text-xs text-[#4493f8]" />
+              <FontAwesomeIcon
+                icon={s.icon}
+                className="text-xs text-[#4493f8]"
+              />
               {s.title}
             </a>
           ))}

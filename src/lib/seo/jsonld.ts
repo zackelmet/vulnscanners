@@ -73,9 +73,13 @@ export function websiteJsonLd() {
 }
 
 /**
- * Convenience: render multiple JSON-LD objects into a single string for one
- * <script> tag, or call repeatedly for separate tags.
+ * Render JSON-LD for a single <script type="application/ld+json"> tag.
+ *
+ * A JSON-LD script must contain exactly ONE JSON value. Emitting several
+ * top-level objects concatenated (`{…}\n{…}`) is invalid JSON and fails
+ * schema.org validation, so when given multiple nodes we wrap them in a JSON
+ * array (which schema.org permits as a top-level graph of nodes).
  */
 export function jsonLdString(...objs: object[]) {
-  return objs.map((o) => JSON.stringify(o)).join("\n");
+  return JSON.stringify(objs.length === 1 ? objs[0] : objs);
 }

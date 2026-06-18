@@ -76,7 +76,12 @@ export async function GET(request: NextRequest) {
     const userId: string = sched.userId || doc.ref.parent.parent?.id;
 
     if (!userId) {
-      results.push({ scheduleId, userId: "?", status: "error", reason: "no userId" });
+      results.push({
+        scheduleId,
+        userId: "?",
+        status: "error",
+        reason: "no userId",
+      });
       continue;
     }
 
@@ -93,35 +98,49 @@ export async function GET(request: NextRequest) {
       computeNextRun(cfg, new Date()),
     );
 
-    try {
-      const { scanId } = await launchScan(admin, firestore, {
-        userId,
-        type: sched.type as ScanScannerType,
-        target: sched.target,
-        targetId: sched.targetId,
-        options: sched.options || {},
-        source: "scheduled",
-        extra: { scheduleId },
-      });
-      await doc.ref.update({
-        nextRunAt,
-        lastRunAt: now,
-        lastScanId: scanId,
-        lastError: null,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-      results.push({ scheduleId, userId, status: "launched", scanId });
-    } catch (err: any) {
-      const reason =
-        err instanceof ScanLaunchError ? err.code : err?.message || "error";
-      await doc.ref.update({
-        nextRunAt,
-        lastRunAt: now,
-        lastError: reason,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-      results.push({ scheduleId, userId, status: "skipped", reason });
+    // A schedule can fan out to several scanners. Launch each independently so
+    // one failure (e.g. out of credits for one scanner) doesn't block the rest.
+    const types: ScanScannerType[] =
+      Array.isArray(sched.types) && sched.types.length
+        ? sched.types
+        : [sched.type];
+
+    const launchedIds: string[] = [];
+    const errors: string[] = [];
+    for (const t of types) {
+      try {
+        const { scanId } = await launchScan(admin, firestore, {
+          userId,
+          type: t as ScanScannerType,
+          target: sched.target,
+          targetId: sched.targetId,
+          options: sched.options || {},
+          source: "scheduled",
+          extra: { scheduleId },
+        });
+        launchedIds.push(scanId);
+        results.push({ scheduleId, userId, status: "launched", scanId });
+      } catch (err: any) {
+        const reason =
+          err instanceof ScanLaunchError ? err.code : err?.message || "error";
+        errors.push(`${t}: ${reason}`);
+        results.push({
+          scheduleId,
+          userId,
+          status: "skipped",
+          reason: `${t}: ${reason}`,
+        });
+      }
     }
+
+    await doc.ref.update({
+      nextRunAt,
+      lastRunAt: now,
+      lastScanId: launchedIds[launchedIds.length - 1] ?? null,
+      lastScanIds: launchedIds,
+      lastError: errors.length ? errors.join("; ") : null,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
   }
 
   return NextResponse.json({

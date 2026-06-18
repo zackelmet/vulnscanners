@@ -229,11 +229,17 @@ export function SevTag({ severity }: { severity: Severity }) {
 
 // ── Vulnerabilities breakdown table ──────────────────────────────────────────
 
-export function BreakdownTable({ findings }: { findings: ReportFinding[] }) {
+export function BreakdownTable({
+  findings,
+  emptyLabel = "No vulnerabilities detected",
+}: {
+  findings: ReportFinding[];
+  emptyLabel?: string;
+}) {
   if (findings.length === 0) {
     return (
       <View style={st.table}>
-        <Text style={st.emptyRow}>No vulnerabilities detected</Text>
+        <Text style={st.emptyRow}>{emptyLabel}</Text>
       </View>
     );
   }
@@ -531,6 +537,47 @@ export const SCANNER_SECTION_TITLE: Record<ScannerKind, string> = {
   nuclei: "Nuclei Vulnerabilities",
 };
 
+// Nmap surfaces open ports, not vulnerabilities — so its report sections read
+// "Open Ports" throughout rather than calling every exposed port a "vuln".
+export interface FindingNoun {
+  total: string;
+  totalLead: string;
+  breakdown: string;
+  breakdownLead: string;
+  details: string;
+  detailsLead: string;
+  empty: string;
+  /** Label for the count stat on the coverage panel. */
+  coverage: string;
+}
+
+export function findingNoun(scannerType: ScannerKind): FindingNoun {
+  if (scannerType === "nmap") {
+    return {
+      total: "Total Open Ports",
+      totalLead: "Total number of open ports found by severity.",
+      breakdown: "Open Ports Breakdown",
+      breakdownLead: "Summary list of all detected open ports.",
+      details: "Open Port Details",
+      detailsLead:
+        "Detailed information about each open port found by the scan.",
+      empty: "No open ports detected",
+      coverage: "Open Ports",
+    };
+  }
+  return {
+    total: "Total Vulnerabilities",
+    totalLead: "Total number of vulnerabilities found by severity.",
+    breakdown: "Vulnerabilities Breakdown",
+    breakdownLead: "Summary list of all detected vulnerabilities.",
+    details: "Vulnerability Details",
+    detailsLead:
+      "Detailed information about each potential vulnerability found by the scan.",
+    empty: "No vulnerabilities detected",
+    coverage: "Vulnerabilities",
+  };
+}
+
 export const SCANNER_INTRO: Record<ScannerKind, string> = {
   zap: "The OWASP ZAP scan crawls the pages of a website or web application and inspects each request and response, checking for issues such as cross-domain misconfigurations, missing security headers, injection, and insecure cookies.",
   nmap: "The Nmap TCP port scan discovers open ports and the services running on them, and flags exposed or insecurely configured services on the scanned hosts.",
@@ -564,6 +611,7 @@ export function ScannerSection({
   group: ScannerGroup;
 }) {
   const findings = group.items.map((i) => i.finding);
+  const noun = findingNoun(group.scannerType);
   return (
     <View>
       <SectionH1 num={num}>
@@ -571,21 +619,18 @@ export function ScannerSection({
       </SectionH1>
       <Lead>{SCANNER_INTRO[group.scannerType]}</Lead>
 
-      <SectionH2 num={`${num}.1`}>Total Vulnerabilities</SectionH2>
-      <Lead>Total number of vulnerabilities found by severity.</Lead>
+      <SectionH2 num={`${num}.1`}>{noun.total}</SectionH2>
+      <Lead>{noun.totalLead}</Lead>
       <SeverityCards counts={group.counts} />
 
-      <SectionH2 num={`${num}.2`}>Vulnerabilities Breakdown</SectionH2>
-      <Lead>Summary list of all detected vulnerabilities.</Lead>
-      <BreakdownTable findings={findings} />
+      <SectionH2 num={`${num}.2`}>{noun.breakdown}</SectionH2>
+      <Lead>{noun.breakdownLead}</Lead>
+      <BreakdownTable findings={findings} emptyLabel={noun.empty} />
 
       {group.items.length > 0 && (
         <View>
-          <SectionH2 num={`${num}.3`}>Vulnerability Details</SectionH2>
-          <Lead>
-            Detailed information about each potential vulnerability found by the
-            scan.
-          </Lead>
+          <SectionH2 num={`${num}.3`}>{noun.details}</SectionH2>
+          <Lead>{noun.detailsLead}</Lead>
           {group.items.map((it, i) => (
             <FindingDetail
               key={`${it.finding.id}-${i}`}
