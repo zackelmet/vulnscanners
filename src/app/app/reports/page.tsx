@@ -13,18 +13,7 @@ import { useUserScans } from "@/lib/hooks/useUserScans";
 import { useAuth } from "@/lib/context/AuthContext";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { ScannerBadge } from "@/components/scans/ScannerBadge";
-
-// Reports group scans by host so every scanner from one launch sits together.
-// Per-scanner storage differs (ZAP keeps the https:// prefix, Nmap/Nuclei strip
-// it), so we normalize to a bare host for grouping: lowercase, drop the scheme,
-// a leading "www.", and any trailing slash. Port and path are kept distinct.
-function normalizeReportHost(raw: string): string {
-  let h = (raw || "").trim().toLowerCase();
-  h = h.replace(/^[a-z][a-z0-9+.-]*:\/\//, ""); // scheme://
-  h = h.replace(/^www\./, "");
-  h = h.replace(/\/+$/, ""); // trailing slash(es)
-  return h || "Unknown target";
-}
+import { normalizeHost } from "@/lib/scans/host";
 
 export default function ReportsPage() {
   const { currentUser } = useAuth();
@@ -48,7 +37,7 @@ export default function ReportsPage() {
   const groups = useMemo(() => {
     const map = new Map<string, any[]>();
     for (const s of completed) {
-      const key = normalizeReportHost(s.target || s.targetValue || "");
+      const key = normalizeHost(s.target || s.targetValue || "");
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(s);
     }

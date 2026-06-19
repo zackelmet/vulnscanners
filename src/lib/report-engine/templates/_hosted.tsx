@@ -4,7 +4,7 @@
 // single-scan and combined report templates.
 
 import React from "react";
-import { Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
+import { Page, View, Text, Image, Link, StyleSheet } from "@react-pdf/renderer";
 import path from "node:path";
 import { C, T, Severity, SEVERITY_ORDER, SEVERITY_LABEL } from "./_theme";
 import { ReportFinding } from "../report-data";
@@ -55,12 +55,14 @@ export function HostedPage({
 export function SectionH1({
   num,
   children,
+  id,
 }: {
   num: number | string;
   children: React.ReactNode;
+  id?: string;
 }) {
   return (
-    <View style={st.h1Row}>
+    <View style={st.h1Row} id={id}>
       <View style={st.h1Rule} />
       <Text style={st.h1Num}>{num}</Text>
       <Text style={st.h1}>{children}</Text>
@@ -71,12 +73,14 @@ export function SectionH1({
 export function SectionH2({
   num,
   children,
+  id,
 }: {
   num: string;
   children: React.ReactNode;
+  id?: string;
 }) {
   return (
-    <Text style={st.h2}>
+    <Text style={st.h2} id={id}>
       <Text style={st.h2Num}>{num} </Text>
       {children}
     </Text>
@@ -564,20 +568,29 @@ export function FindingDetail({
 
 // ── Table of contents ────────────────────────────────────────────────────────
 
-export function TableOfContents({
-  entries,
-}: {
-  entries: { num: number; title: string }[];
-}) {
+export interface TocEntry {
+  id: string;
+  label: string;
+  title: string;
+  sub?: boolean;
+}
+
+export function TableOfContents({ entries }: { entries: TocEntry[] }) {
   return (
     <View>
       <Text style={st.tocTitle}>Table of Contents</Text>
       <View style={st.tocRule} />
       {entries.map((e) => (
-        <View key={e.num} style={st.tocRow}>
-          <Text style={st.tocNum}>{e.num}</Text>
-          <Text style={st.tocText}>{e.title}</Text>
-        </View>
+        <Link key={e.id} src={`#${e.id}`} style={st.tocLink}>
+          <View style={[st.tocRow, e.sub ? st.tocRowSub : {}]}>
+            <Text style={[st.tocNum, e.sub ? st.tocNumSub : {}]}>
+              {e.label}
+            </Text>
+            <Text style={[st.tocText, e.sub ? st.tocTextSub : {}]}>
+              {e.title}
+            </Text>
+          </View>
+        </Link>
       ))}
     </View>
   );
@@ -724,22 +737,28 @@ export function ScannerSection({
   const noun = findingNoun(group.scannerType);
   return (
     <View>
-      <SectionH1 num={num}>
+      <SectionH1 num={num} id={`s${num}`}>
         {SCANNER_SECTION_TITLE[group.scannerType]}
       </SectionH1>
       <Lead>{SCANNER_INTRO[group.scannerType]}</Lead>
 
-      <SectionH2 num={`${num}.1`}>{noun.total}</SectionH2>
+      <SectionH2 num={`${num}.1`} id={`s${num}-1`}>
+        {noun.total}
+      </SectionH2>
       <Lead>{noun.totalLead}</Lead>
       <SeverityCards counts={group.counts} />
 
-      <SectionH2 num={`${num}.2`}>{noun.breakdown}</SectionH2>
+      <SectionH2 num={`${num}.2`} id={`s${num}-2`}>
+        {noun.breakdown}
+      </SectionH2>
       <Lead>{noun.breakdownLead}</Lead>
       <BreakdownTable findings={findings} emptyLabel={noun.empty} />
 
       {group.items.length > 0 && (
         <View>
-          <SectionH2 num={`${num}.3`}>{noun.details}</SectionH2>
+          <SectionH2 num={`${num}.3`} id={`s${num}-3`}>
+            {noun.details}
+          </SectionH2>
           <Lead>{noun.detailsLead}</Lead>
           {group.items.map((it, i) => (
             <FindingDetail
@@ -1025,14 +1044,18 @@ const st = StyleSheet.create({
     borderBottomColor: C.divider,
     marginBottom: 8,
   },
+  tocLink: { textDecoration: "none", color: C.ink },
   tocRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
-    paddingVertical: 11,
+    gap: 12,
+    paddingVertical: 6,
   },
-  tocNum: { fontSize: 13, color: C.blueLight, width: 16 },
-  tocText: { fontSize: 13, color: C.ink, fontWeight: 500 },
+  tocRowSub: { paddingLeft: 24, paddingVertical: 3 },
+  tocNum: { fontSize: 12, color: C.blueLight, width: 30, fontWeight: 600 },
+  tocText: { fontSize: 12, color: C.ink, fontWeight: 500 },
+  tocNumSub: { fontSize: 10.5, color: C.ink4, fontWeight: 400 },
+  tocTextSub: { fontSize: 10.5, color: C.ink2, fontWeight: 400 },
 
   // glossary
   glossaryRow: { flexDirection: "row", gap: 28, marginTop: 8 },

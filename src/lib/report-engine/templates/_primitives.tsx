@@ -100,7 +100,7 @@ const coverStyles = StyleSheet.create({
   },
   center: {
     position: "absolute",
-    top: 230,
+    top: 312,
     left: 56,
     right: 56,
     alignItems: "flex-start",

@@ -21,6 +21,7 @@ import {
   BackCover,
   SCANNER_SECTION_TITLE,
   findingNoun,
+  TocEntry,
 } from "./_hosted";
 
 const SEV_RANK: Record<string, number> = {
@@ -40,10 +41,24 @@ export function ScanReport({ data }: { data: ScanReportData }) {
     .slice(0, 3)
     .map((f) => ({ title: f.title, severity: f.severity }));
 
-  const tocEntries = [
-    { num: 1, title: "Executive Summary" },
-    { num: 2, title: SCANNER_SECTION_TITLE[data.scannerType] },
-    { num: 3, title: "Glossary" },
+  const tocEntries: TocEntry[] = [
+    { id: "s1", label: "1", title: "Executive Summary" },
+    { id: "s1-1", label: "1.1", title: noun.total, sub: true },
+    { id: "s1-2", label: "1.2", title: "Report Coverage", sub: true },
+    { id: "s2", label: "2", title: SCANNER_SECTION_TITLE[data.scannerType] },
+    { id: "s2-1", label: "2.1", title: noun.total, sub: true },
+    { id: "s2-2", label: "2.2", title: noun.breakdown, sub: true },
+    ...(total > 0
+      ? [
+          {
+            id: "s2-3",
+            label: "2.3",
+            title: noun.details,
+            sub: true,
+          } as TocEntry,
+        ]
+      : []),
+    { id: "s3", label: "3", title: "Glossary" },
   ];
 
   return (
@@ -65,7 +80,9 @@ export function ScanReport({ data }: { data: ScanReportData }) {
 
       {/* 1. Executive Summary */}
       <HostedPage sectionName="Executive Summary" date={data.completedAt}>
-        <SectionH1 num={1}>Executive Summary</SectionH1>
+        <SectionH1 num={1} id="s1">
+          Executive Summary
+        </SectionH1>
         <Lead>
           A vulnerability scan was conducted on {data.target}. This report
           contains the discovered potential vulnerabilities, classified by
@@ -75,12 +92,16 @@ export function ScanReport({ data }: { data: ScanReportData }) {
 
         <KeyRisksCallout risks={topRisks} />
 
-        <SectionH2 num="1.1">{noun.total}</SectionH2>
+        <SectionH2 num="1.1" id="s1-1">
+          {noun.total}
+        </SectionH2>
         <Lead>{noun.totalLead}</Lead>
         <SeverityCards counts={data.severityCounts} />
         <SeverityBarChart counts={data.severityCounts} />
 
-        <SectionH2 num="1.2">Report Coverage</SectionH2>
+        <SectionH2 num="1.2" id="s1-2">
+          Report Coverage
+        </SectionH2>
         <Lead>
           This report includes findings for 1 target scanned. Each target is a
           single URL, IP address, or fully qualified domain name (FQDN).
@@ -115,7 +136,9 @@ export function ScanReport({ data }: { data: ScanReportData }) {
 
       {/* 3. Glossary */}
       <HostedPage sectionName="Glossary" date={data.completedAt}>
-        <SectionH1 num={3}>Glossary</SectionH1>
+        <SectionH1 num={3} id="s3">
+          Glossary
+        </SectionH1>
         <GlossaryTwoCol rows={data.glossary} />
       </HostedPage>
 

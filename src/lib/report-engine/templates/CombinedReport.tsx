@@ -6,7 +6,8 @@ import React from "react";
 import { Document, View, Text } from "@react-pdf/renderer";
 import { ScanReportData, Severity } from "../report-data";
 import { ScannerType } from "../types";
-import { SEVERITY_ORDER } from "./_theme";
+import { normalizeHost } from "../../scans/host";
+import { C, SEVERITY_ORDER } from "./_theme";
 import { CoverPage } from "./_primitives";
 import {
   HostedPage,
@@ -27,6 +28,8 @@ import {
   SCANNER_INTRO,
   SCANNER_ORDER,
   ScannerGroup,
+  TocEntry,
+  findingNoun,
 } from "./_hosted";
 
 export interface CombinedReportScan {
@@ -64,7 +67,11 @@ function emptyCounts(): Record<Severity, number> {
 }
 
 export function CombinedReport({ data }: { data: CombinedReportData }) {
-  const targets = Array.from(new Set(data.scans.map((s) => s.target)));
+  // Group by normalized host so the same target stored differently per scanner
+  // (ZAP keeps https://, Nmap/Nuclei strip it) counts and renders as one.
+  const targets = Array.from(
+    new Set(data.scans.map((s) => normalizeHost(s.target))),
+  );
   const subtitle = `${data.scans.length} ${
     data.scans.length === 1 ? "scan" : "scans"
   } across ${targets.length} ${targets.length === 1 ? "target" : "targets"}`;
@@ -72,7 +79,7 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
 
   // Per-target aggregate severity counts (for the by-target table + breakdowns).
   const byTarget = targets.map((t) => {
-    const scans = data.scans.filter((s) => s.target === t);
+    const scans = data.scans.filter((s) => normalizeHost(s.target) === t);
     const counts = emptyCounts();
     for (const s of scans)
       for (const k of SEVERITY_ORDER)
@@ -120,7 +127,7 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
       s.data.findings.map((f) => ({
         title: f.title,
         severity: f.severity,
-        target: s.target,
+        target: normalizeHost(s.target),
       })),
     )
     .sort(
@@ -144,7 +151,7 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
         counts[k] += s.data.severityCounts[k] || 0;
       return s.data.findings.map((finding) => ({
         finding,
-        target: s.target,
+        target: normalizeHost(s.target),
         completedAt: s.data.completedAt,
       }));
     });
@@ -155,14 +162,39 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
   const scannerStart = 3;
   const glossaryNum = scannerStart + groups.length;
 
-  const tocEntries = [
-    { num: 1, title: "Executive Summary" },
-    { num: 2, title: "Vulnerabilities By Target" },
-    ...groups.map((g, i) => ({
-      num: scannerStart + i,
-      title: SCANNER_SECTION_TITLE[g.scannerType],
-    })),
-    { num: glossaryNum, title: "Glossary" },
+  const tocEntries: TocEntry[] = [
+    { id: "s1", label: "1", title: "Executive Summary" },
+    { id: "s1-1", label: "1.1", title: "Assessment Methodology", sub: true },
+    { id: "s1-2", label: "1.2", title: "Total Vulnerabilities", sub: true },
+    { id: "s1-3", label: "1.3", title: "Report Coverage", sub: true },
+    { id: "s2", label: "2", title: "Vulnerabilities By Target" },
+    { id: "s2-1", label: "2.1", title: "Targets Summary", sub: true },
+    { id: "s2-2", label: "2.2", title: "Target Breakdowns", sub: true },
+    ...groups.flatMap((g, i) => {
+      const n = scannerStart + i;
+      const noun = findingNoun(g.scannerType);
+      const subs: TocEntry[] = [
+        { id: `s${n}-1`, label: `${n}.1`, title: noun.total, sub: true },
+        { id: `s${n}-2`, label: `${n}.2`, title: noun.breakdown, sub: true },
+      ];
+      if (g.items.length > 0) {
+        subs.push({
+          id: `s${n}-3`,
+          label: `${n}.3`,
+          title: noun.details,
+          sub: true,
+        });
+      }
+      return [
+        {
+          id: `s${n}`,
+          label: `${n}`,
+          title: SCANNER_SECTION_TITLE[g.scannerType],
+        },
+        ...subs,
+      ];
+    }),
+    { id: `s${glossaryNum}`, label: `${glossaryNum}`, title: "Glossary" },
   ];
 
   // Merge glossaries (de-dupe by term).
@@ -185,7 +217,7 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
         scannerType={anyScanner}
         target={subtitle}
         date={data.generatedAt}
-        titleOverride="Combined Security Assessment"
+        titleOverride="Combined Vulnerability Assessment"
         confidentialFor={confidentialFor}
         metaRows={[
           {
@@ -203,9 +235,7 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
           },
           {
             label: "Scans",
-            value: `${data.scans.length} ${
-              data.scans.length === 1 ? "scan" : "scans"
-            }`,
+            value: `${data.scans.length} — ${toolList.join(", ")}`,
           },
         ]}
       />
@@ -216,7 +246,9 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
 
       {/* 1. Executive Summary */}
       <HostedPage sectionName="Executive Summary" date={data.generatedAt}>
-        <SectionH1 num={1}>Executive Summary</SectionH1>
+        <SectionH1 num={1} id="s1">
+          Executive Summary
+        </SectionH1>
         <Lead>
           This report consolidates the results of {data.scans.length}{" "}
           {data.scans.length === 1 ? "scan" : "scans"} performed with{" "}
@@ -230,7 +262,9 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
 
         <KeyRisksCallout risks={topRisks} />
 
-        <SectionH2 num="1.1">Assessment Methodology</SectionH2>
+        <SectionH2 num="1.1" id="s1-1">
+          Assessment Methodology
+        </SectionH2>
         <Lead>
           {toolList.length === 1
             ? "This assessment used a single scanning tool"
@@ -255,16 +289,24 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
           );
         })}
 
-        <SectionH2 num="1.2">Total Vulnerabilities</SectionH2>
-        <Lead>
-          Below are the total number of vulnerabilities found by severity.
-          Critical vulnerabilities are the most severe and should be evaluated
-          first.
-        </Lead>
-        <SeverityCards counts={data.aggregateSeverityCounts} />
-        <SeverityBarChart counts={data.aggregateSeverityCounts} />
+        {/* Start the distribution on a fresh page so the cards + bar chart stay
+            together instead of the chart orphaning to the top of a page. */}
+        <View break wrap={false}>
+          <SectionH2 num="1.2" id="s1-2">
+            Total Vulnerabilities
+          </SectionH2>
+          <Lead>
+            Below are the total number of vulnerabilities found by severity.
+            Critical vulnerabilities are the most severe and should be evaluated
+            first.
+          </Lead>
+          <SeverityCards counts={data.aggregateSeverityCounts} />
+          <SeverityBarChart counts={data.aggregateSeverityCounts} />
+        </View>
 
-        <SectionH2 num="1.3">Report Coverage</SectionH2>
+        <SectionH2 num="1.3" id="s1-3">
+          Report Coverage
+        </SectionH2>
         <Lead>
           This report includes findings for {targets.length}{" "}
           {targets.length === 1 ? "target" : "targets"} scanned. Each target is
@@ -278,14 +320,18 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
         sectionName="Vulnerabilities By Target"
         date={data.generatedAt}
       >
-        <SectionH1 num={2}>Vulnerabilities By Target</SectionH1>
+        <SectionH1 num={2} id="s2">
+          Vulnerabilities By Target
+        </SectionH1>
         <Lead>
           This section contains the vulnerability findings for each scanned
           target. Prioritization should be given to the targets with the highest
           severity vulnerabilities.
         </Lead>
 
-        <SectionH2 num="2.1">Targets Summary</SectionH2>
+        <SectionH2 num="2.1" id="s2-1">
+          Targets Summary
+        </SectionH2>
         <Lead>
           The number of potential vulnerabilities found for each target by
           severity.
@@ -294,7 +340,9 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
           rows={byTarget.map((t) => ({ target: t.target, counts: t.counts }))}
         />
 
-        <SectionH2 num="2.2">Target Breakdowns</SectionH2>
+        <SectionH2 num="2.2" id="s2-2">
+          Target Breakdowns
+        </SectionH2>
         <Lead>
           Details for the potential vulnerabilities found for each target.
         </Lead>
@@ -303,6 +351,16 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
             {/* Keep the cards together, but let the (potentially long) table
                 flow across pages — its rows are individually wrap={false}. */}
             <View wrap={false}>
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: C.ink,
+                  marginBottom: 6,
+                }}
+              >
+                {t.target}
+              </Text>
               <SeverityCards counts={t.counts} />
             </View>
             <View style={{ marginTop: 6 }}>
@@ -325,7 +383,9 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
 
       {/* Glossary */}
       <HostedPage sectionName="Glossary" date={data.generatedAt}>
-        <SectionH1 num={glossaryNum}>Glossary</SectionH1>
+        <SectionH1 num={glossaryNum} id={`s${glossaryNum}`}>
+          Glossary
+        </SectionH1>
         <GlossaryTwoCol rows={glossary} />
       </HostedPage>
 
