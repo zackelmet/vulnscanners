@@ -12,6 +12,19 @@ import {
 import { useUserScans } from "@/lib/hooks/useUserScans";
 import { useAuth } from "@/lib/context/AuthContext";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import { ScannerBadge } from "@/components/scans/ScannerBadge";
+
+// Reports group scans by host so every scanner from one launch sits together.
+// Per-scanner storage differs (ZAP keeps the https:// prefix, Nmap/Nuclei strip
+// it), so we normalize to a bare host for grouping: lowercase, drop the scheme,
+// a leading "www.", and any trailing slash. Port and path are kept distinct.
+function normalizeReportHost(raw: string): string {
+  let h = (raw || "").trim().toLowerCase();
+  h = h.replace(/^[a-z][a-z0-9+.-]*:\/\//, ""); // scheme://
+  h = h.replace(/^www\./, "");
+  h = h.replace(/\/+$/, ""); // trailing slash(es)
+  return h || "Unknown target";
+}
 
 export default function ReportsPage() {
   const { currentUser } = useAuth();
@@ -35,9 +48,9 @@ export default function ReportsPage() {
   const groups = useMemo(() => {
     const map = new Map<string, any[]>();
     for (const s of completed) {
-      const target = s.target || s.targetValue || "Unknown target";
-      if (!map.has(target)) map.set(target, []);
-      map.get(target)!.push(s);
+      const key = normalizeReportHost(s.target || s.targetValue || "");
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(s);
     }
     return Array.from(map, ([target, scans]) => ({ target, scans }));
   }, [completed]);
@@ -246,9 +259,7 @@ export default function ReportsPage() {
                               onChange={() => toggle(scan.scanId)}
                               className="w-4 h-4 accent-[#0366d6] cursor-pointer"
                             />
-                            <span className="px-2 py-0.5 bg-[#0366d6] text-white text-xs font-semibold rounded uppercase">
-                              {scan.type}
-                            </span>
+                            <ScannerBadge type={scan.type} />
                             <span className="text-sm text-[#9aa5b6] group-hover:text-[#e6edf5]">
                               {formatDate(scan.startTime || scan.createdAt)}
                             </span>

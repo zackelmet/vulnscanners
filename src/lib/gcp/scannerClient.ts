@@ -12,24 +12,17 @@ export interface ScanJob {
  * Prefers HETZNER_* env vars and falls back to legacy GCP_* names.
  */
 export async function enqueueScanJob(job: ScanJob): Promise<void> {
-  const baseUrl = (
-    process.env.HETZNER_SCANNER_URL ||
-    process.env.GCP_SCANNER_URL ||
-    ""
-  )
+  const baseUrl = (process.env.HETZNER_SCANNER_URL || "")
     .trim()
     .replace(/\/$/, "");
 
   if (!baseUrl) {
-    throw new Error(
-      "HETZNER_SCANNER_URL (or legacy GCP_SCANNER_URL) is not configured.",
-    );
+    throw new Error("HETZNER_SCANNER_URL is not configured.");
   }
 
   const scannerToken =
     process.env.HETZNER_SCANNER_AUTH_TOKEN ||
-    process.env.GCP_SCANNER_AUTH_TOKEN ||
-    process.env.GCP_WEBHOOK_SECRET ||
+    process.env.HETZNER_WEBHOOK_SECRET ||
     "";
   const endpoint = `${baseUrl}/scan`;
 

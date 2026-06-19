@@ -3,7 +3,7 @@
 // back cover.
 
 import React from "react";
-import { Document, View } from "@react-pdf/renderer";
+import { Document, View, Text } from "@react-pdf/renderer";
 import { ScanReportData, Severity } from "../report-data";
 import { ScannerType } from "../types";
 import { SEVERITY_ORDER } from "./_theme";
@@ -22,6 +22,7 @@ import {
   GlossaryTwoCol,
   BackCover,
   SCANNER_SECTION_TITLE,
+  SCANNER_INTRO,
   SCANNER_ORDER,
   ScannerGroup,
 } from "./_hosted";
@@ -44,6 +45,13 @@ const COVERAGE_LABEL: Record<ScannerType, string> = {
   zap: "Web App Findings",
   nmap: "Network Findings",
   nuclei: "Nuclei Findings",
+};
+
+// Friendly tool names for the Executive Summary methodology write-up.
+const TOOL_LABEL: Record<ScannerType, string> = {
+  zap: "OWASP ZAP",
+  nmap: "Nmap",
+  nuclei: "Nuclei",
 };
 
 function emptyCounts(): Record<Severity, number> {
@@ -86,6 +94,23 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
       label: COVERAGE_LABEL[type],
     })),
   ];
+
+  // Methodology: which tools actually ran, with their scan + finding counts, in
+  // fixed display order. Drives the verbose "what we ran and why" write-up.
+  const scanCountByType = new Map<ScannerType, number>();
+  for (const s of data.scans)
+    scanCountByType.set(
+      s.scannerType,
+      (scanCountByType.get(s.scannerType) || 0) + 1,
+    );
+  const usedScanners = SCANNER_ORDER.filter((t) => scanCountByType.has(t));
+  const toolList = usedScanners.map((t) => TOOL_LABEL[t]);
+  const toolsSentence =
+    toolList.length === 1
+      ? toolList[0]
+      : toolList.length === 2
+        ? `${toolList[0]} and ${toolList[1]}`
+        : `${toolList.slice(0, -1).join(", ")}, and ${toolList[toolList.length - 1]}`;
 
   // Group scans by scanner TYPE (not per scan) into fixed-order sections, so
   // e.g. three ZAP scans share one "Web Application Vulnerabilities" section.
@@ -152,7 +177,8 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
         <SectionH1 num={1}>Executive Summary</SectionH1>
         <Lead>
           This report consolidates the results of {data.scans.length}{" "}
-          {data.scans.length === 1 ? "scan" : "scans"} across {targets.length}{" "}
+          {data.scans.length === 1 ? "scan" : "scans"} performed with{" "}
+          {toolsSentence} across {targets.length}{" "}
           {targets.length === 1 ? "target" : "targets"}. In aggregate the
           assessment surfaced {data.totalFindings}{" "}
           {data.totalFindings === 1 ? "finding" : "findings"}. Higher severity
@@ -160,7 +186,32 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
           availability of the targets.
         </Lead>
 
-        <SectionH2 num="1.1">Total Vulnerabilities</SectionH2>
+        <SectionH2 num="1.1">Assessment Methodology</SectionH2>
+        <Lead>
+          {toolList.length === 1
+            ? "This assessment used a single scanning tool"
+            : `This assessment combined ${toolList.length} complementary scanning tools`}{" "}
+          to examine the {targets.length === 1 ? "target" : "targets"} from
+          different angles. Each tool inspects a distinct layer of the attack
+          surface — network exposure, web-application behavior, and
+          known-vulnerability signatures — so together they give a broader and
+          more reliable picture than any single scan. The findings below are
+          organized first by target, then by the tool that produced them.
+        </Lead>
+        {usedScanners.map((t) => {
+          const scanN = scanCountByType.get(t) || 0;
+          const findN = typeTotals.get(t) || 0;
+          return (
+            <Lead key={t}>
+              <Text style={{ fontWeight: 700 }}>{TOOL_LABEL[t]}</Text>
+              {` — ${scanN} ${scanN === 1 ? "scan" : "scans"}, ${findN} ${
+                findN === 1 ? "finding" : "findings"
+              }. ${SCANNER_INTRO[t]}`}
+            </Lead>
+          );
+        })}
+
+        <SectionH2 num="1.2">Total Vulnerabilities</SectionH2>
         <Lead>
           Below are the total number of vulnerabilities found by severity.
           Critical vulnerabilities are the most severe and should be evaluated
@@ -168,7 +219,7 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
         </Lead>
         <SeverityCards counts={data.aggregateSeverityCounts} />
 
-        <SectionH2 num="1.2">Report Coverage</SectionH2>
+        <SectionH2 num="1.3">Report Coverage</SectionH2>
         <Lead>
           This report includes findings for {targets.length}{" "}
           {targets.length === 1 ? "target" : "targets"} scanned. Each target is

@@ -2,7 +2,7 @@ import { SubscriptionModalProvider } from "@/lib/context/SubscriptionModalContex
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "A better vulnerability scanner — VulnScanners",
+  title: "Hosted Nmap, Nuclei & OWASP ZAP scanning — VulnScanners",
   description:
     "Vulnerability Scanning: Zero Install. Maximum Impact. Hosted Nmap and Nuclei services on fast, optimized servers.",
 };

@@ -1,13 +1,7 @@
 // Shared report primitives — used by ScanReport.tsx and any future templates.
 
 import React from "react";
-import {
-  Page,
-  View,
-  Text,
-  Image,
-  StyleSheet,
-} from "@react-pdf/renderer";
+import { Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
 import path from "node:path";
 import { C, T, S, Severity } from "./_theme";
 import { RadialFlourish } from "./_radial-flourish";
@@ -73,7 +67,7 @@ const coverStyles = StyleSheet.create({
   page: {
     backgroundColor: C.navy,
     color: C.white,
-    fontFamily: "Helvetica",
+    fontFamily: "IBM Plex Sans",
   },
   topBar: {
     position: "absolute",
@@ -87,7 +81,7 @@ const coverStyles = StyleSheet.create({
   wordmark: {
     color: C.white,
     fontSize: 12,
-    fontWeight: 700,
+    fontWeight: 600,
     letterSpacing: 0.2,
   },
   center: {
@@ -109,8 +103,8 @@ const coverStyles = StyleSheet.create({
   title: {
     color: C.white,
     fontSize: T.cover.title,
-    fontWeight: 700,
-    letterSpacing: -0.5,
+    fontWeight: 300,
+    letterSpacing: 0.2,
     marginBottom: 8,
   },
   subtitle: { color: C.whiteMute, fontSize: T.cover.subtitle },
@@ -394,7 +388,8 @@ export function SeverityChart({
   ];
   const max = Math.max(1, ...buckets.map((b) => counts[b.key] ?? 0));
   // Round the Y axis to a nice ceiling (1, 3, 7, 10, ...).
-  const nice = max <= 1 ? 1 : max <= 3 ? 3 : max <= 7 ? 7 : Math.ceil(max / 10) * 10;
+  const nice =
+    max <= 1 ? 1 : max <= 3 ? 3 : max <= 7 ? 7 : Math.ceil(max / 10) * 10;
   const chartH = 100;
   const colW = 88;
   const gap = 8;

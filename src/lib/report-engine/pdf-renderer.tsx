@@ -17,6 +17,9 @@ import { mapNucleiReport } from "./mappers/nuclei-mapper";
 import { mapZapReport } from "./mappers/zap-mapper";
 import { ScanReportData, Severity } from "./report-data";
 import { ScannerType } from "./types";
+import { registerReportFonts } from "./templates/_fonts";
+
+registerReportFonts();
 
 export interface RenderArgs {
   scanId: string;
@@ -38,7 +41,10 @@ export function buildReportData(args: RenderArgs): ScanReportData {
   };
   switch (args.scannerType) {
     case "nmap":
-      return mapNmapReport({ ...common, parsed: parseNmapOutput(args.rawOutput) });
+      return mapNmapReport({
+        ...common,
+        parsed: parseNmapOutput(args.rawOutput),
+      });
     case "nuclei":
       return mapNucleiReport({
         ...common,
@@ -61,7 +67,14 @@ export async function renderScanReport(args: RenderArgs): Promise<Buffer> {
 
 // ── Combined multi-scan report ────────────────────────────────────────────────
 
-const SEVERITIES: Severity[] = ["critical", "high", "medium", "low", "info", "accepted"];
+const SEVERITIES: Severity[] = [
+  "critical",
+  "high",
+  "medium",
+  "low",
+  "info",
+  "accepted",
+];
 
 /** One scan's inputs for a combined report (same shape as RenderArgs). */
 export type CombinedScanArgs = RenderArgs;

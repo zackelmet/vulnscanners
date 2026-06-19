@@ -76,7 +76,7 @@ export const C = {
 
 // Type scale — keep in points (react-pdf uses 1pt = 1/72 inch)
 export const T = {
-  cover: { title: 36, subtitle: 14, datePill: 10, logo: 12 },
+  cover: { title: 27, subtitle: 13, datePill: 10, logo: 12 },
   h1: 24,
   h2: 16,
   h3: 12,

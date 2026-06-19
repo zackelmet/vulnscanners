@@ -190,6 +190,9 @@ export async function POST(request: NextRequest) {
     .collection("scheduledScans")
     .add(docData);
 
+  // The schedule fires at its chosen time via the runner (swept every minute by
+  // the always-on worker box). The first run is the next occurrence of the
+  // chosen time — today if it's still ahead, otherwise the next matching day.
   return NextResponse.json(
     {
       success: true,

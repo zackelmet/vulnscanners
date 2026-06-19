@@ -61,9 +61,8 @@ export function SectionH1({
 }) {
   return (
     <View style={st.h1Row}>
-      <View style={st.h1Chip}>
-        <Text style={st.h1ChipText}>{num}</Text>
-      </View>
+      <View style={st.h1Rule} />
+      <Text style={st.h1Num}>{num}</Text>
       <Text style={st.h1}>{children}</Text>
     </View>
   );
@@ -689,18 +688,21 @@ const st = StyleSheet.create({
   h1Row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
     marginBottom: 10,
   },
-  h1Chip: {
-    width: 30,
-    height: 30,
-    borderRadius: 7,
+  h1Rule: {
+    width: 3,
+    height: 22,
+    borderRadius: 1.5,
     backgroundColor: C.blue,
-    alignItems: "center",
-    justifyContent: "center",
+    marginRight: 12,
   },
-  h1ChipText: { fontSize: 15, color: C.white, fontWeight: 700 },
+  h1Num: {
+    fontSize: 18,
+    color: C.blue,
+    fontWeight: 400,
+    marginRight: 10,
+  },
   h1: { fontSize: 22, color: C.ink, fontWeight: 700 },
   h2: {
     fontSize: T.h2,

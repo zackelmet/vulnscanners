@@ -171,7 +171,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 data-tour={item.tour}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                   isActive
-                    ? "bg-[#0366d6]/20 text-[#4493f8] font-semibold"
+                    ? "bg-[#0366d6]/20 text-[#4493f8]"
                     : "text-[#9aa5b6] hover:bg-[#11161f] hover:text-[#e6edf5]"
                 }`}
                 onClick={() => setSidebarOpen(false)}
@@ -188,7 +188,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               data-tour="admin"
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                 pathname === "/admin"
-                  ? "bg-[#0366d6]/20 text-[#4493f8] font-semibold"
+                  ? "bg-[#0366d6]/20 text-[#4493f8]"
                   : "text-[#9aa5b6] hover:bg-[#11161f] hover:text-[#e6edf5]"
               }`}
               onClick={() => setSidebarOpen(false)}

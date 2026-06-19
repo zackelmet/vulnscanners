@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faClock,
@@ -9,14 +10,17 @@ import {
   faSpinner,
   faPlay,
   faPause,
+  faFileArrowDown,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "@/lib/context/AuthContext";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import { ScannerBadge } from "@/components/scans/ScannerBadge";
 import {
   describeSchedule,
   WEEKDAY_LABELS,
   ScheduleFrequency,
 } from "@/lib/scans/schedule";
+import { Target } from "@/lib/types/target";
 
 type ScannerType = "nmap" | "nuclei" | "zap";
 
@@ -52,15 +56,21 @@ export default function ScheduledScansPage() {
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
 
+  const [savedTargets, setSavedTargets] = useState<Target[]>([]);
+
   // form state — a schedule can run several scanners on each fire.
   const [types, setTypes] = useState<ScannerType[]>(["nmap"]);
   const [target, setTarget] = useState("");
+  // When a saved target is picked, link the schedule to it; cleared on manual edit.
+  const [targetId, setTargetId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [frequency, setFrequency] = useState<ScheduleFrequency>("weekly");
   const [hourUTC, setHourUTC] = useState(9);
   const [minuteUTC, setMinuteUTC] = useState(0);
   const [dayOfWeek, setDayOfWeek] = useState(1);
   const [dayOfMonth, setDayOfMonth] = useState(1);
+  // Per-scan report download (by lastScanId).
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const authedFetch = useCallback(
     async (url: string, init?: RequestInit) => {
@@ -95,6 +105,20 @@ export default function ScheduledScansPage() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    const loadTargets = async () => {
+      if (!currentUser) return;
+      try {
+        const res = await authedFetch("/api/targets");
+        const data = await res.json();
+        if (data.success && data.targets) setSavedTargets(data.targets);
+      } catch {
+        setSavedTargets([]);
+      }
+    };
+    loadTargets();
+  }, [currentUser, authedFetch]);
+
   const toggleType = (t: ScannerType) =>
     setTypes((prev) =>
       prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t],
@@ -103,6 +127,7 @@ export default function ScheduledScansPage() {
   const resetForm = () => {
     setTypes(["nmap"]);
     setTarget("");
+    setTargetId(null);
     setName("");
     setFrequency("weekly");
     setHourUTC(9);
@@ -130,6 +155,7 @@ export default function ScheduledScansPage() {
         hourUTC,
         minuteUTC,
       };
+      if (targetId) body.targetId = targetId;
       if (frequency === "weekly") body.dayOfWeek = dayOfWeek;
       if (frequency === "monthly") body.dayOfMonth = dayOfMonth;
 
@@ -174,6 +200,32 @@ export default function ScheduledScansPage() {
     }
   };
 
+  // Download the report PDF for a schedule's most recent scan. The report API
+  // requires an auth header, so we fetch the blob and trigger a download rather
+  // than using a plain <a href>.
+  const downloadReport = async (s: Schedule) => {
+    if (!s.lastScanId) return;
+    setDownloadingId(s.id);
+    try {
+      const res = await authedFetch(`/api/scans/${s.lastScanId}/report`);
+      if (!res.ok) {
+        alert("Report not available for the last run yet.");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `report-${s.lastScanId.slice(0, 8)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Failed to download report.");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
   const fmt = (iso: string | null) =>
     iso ? new Date(iso).toLocaleString() : "—";
 
@@ -190,8 +242,10 @@ export default function ScheduledScansPage() {
               Scheduled Scans
             </h1>
             <p className="text-[#9aa5b6] mt-1">
-              Run recurring scans automatically. Times are in UTC; each run uses
-              one scan credit per selected scanner.
+              Run recurring scans automatically at your chosen time (UTC). The
+              first run is the next occurrence of that time — today when that
+              time is still ahead. Each run uses one scan credit per selected
+              scanner.
             </p>
           </div>
           <button
@@ -238,7 +292,10 @@ export default function ScheduledScansPage() {
                 </span>
                 <input
                   value={target}
-                  onChange={(e) => setTarget(e.target.value)}
+                  onChange={(e) => {
+                    setTarget(e.target.value);
+                    setTargetId(null);
+                  }}
                   placeholder={
                     types.includes("zap")
                       ? "https://example.com"
@@ -246,6 +303,48 @@ export default function ScheduledScansPage() {
                   }
                   className={inputCls}
                 />
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  {savedTargets.length > 0 ? (
+                    <>
+                      <span className="text-xs text-[#697080]">Saved:</span>
+                      {savedTargets.slice(0, 6).map((t) => (
+                        <button
+                          type="button"
+                          key={t.id}
+                          onClick={() => {
+                            setTarget(t.value);
+                            setTargetId(t.id);
+                          }}
+                          className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                            targetId === t.id
+                              ? "border-[#0366d6] bg-[#0366d6]/10 text-[#4493f8]"
+                              : "border-[#161b24] bg-[#11161f] text-[#9aa5b6] hover:border-[#2a3242]"
+                          }`}
+                          title={t.value}
+                        >
+                          {t.name}
+                        </button>
+                      ))}
+                      <Link
+                        href="/app/targets"
+                        className="text-xs text-[#4493f8] hover:underline ml-auto"
+                      >
+                        Manage targets
+                      </Link>
+                    </>
+                  ) : (
+                    <p className="text-xs text-[#5b6675]">
+                      Tip:{" "}
+                      <Link
+                        href="/app/targets"
+                        className="text-[#4493f8] hover:underline"
+                      >
+                        save targets
+                      </Link>{" "}
+                      to reuse them here.
+                    </p>
+                  )}
+                </div>
               </label>
               <label className="flex flex-col gap-1">
                 <span className="text-xs font-semibold text-[#9aa5b6] uppercase">
@@ -398,6 +497,7 @@ export default function ScheduledScansPage() {
                       "Cadence",
                       "Next run",
                       "Last run",
+                      "Last result",
                       "Status",
                       "",
                     ].map((h) => (
@@ -416,12 +516,7 @@ export default function ScheduledScansPage() {
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1">
                           {(s.types?.length ? s.types : [s.type]).map((t) => (
-                            <span
-                              key={t}
-                              className="px-2 py-1 bg-[#0366d6] text-white text-xs font-semibold rounded uppercase"
-                            >
-                              {t}
-                            </span>
+                            <ScannerBadge key={t} type={t} />
                           ))}
                         </div>
                       </td>
@@ -443,6 +538,30 @@ export default function ScheduledScansPage() {
                           <div className="text-xs text-amber-400">
                             {s.lastError}
                           </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-sm">
+                        {s.lastScanId ? (
+                          <button
+                            onClick={() => downloadReport(s)}
+                            disabled={downloadingId === s.id}
+                            className="inline-flex items-center gap-1.5 text-[#4493f8] hover:text-[#0366d6] disabled:opacity-50"
+                            title="Download report for the last run"
+                          >
+                            <FontAwesomeIcon
+                              icon={
+                                downloadingId === s.id
+                                  ? faSpinner
+                                  : faFileArrowDown
+                              }
+                              className={
+                                downloadingId === s.id ? "animate-spin" : ""
+                              }
+                            />
+                            Report
+                          </button>
+                        ) : (
+                          <span className="text-[#697080]">—</span>
                         )}
                       </td>
                       <td className="px-6 py-4">

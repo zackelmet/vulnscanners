@@ -12,6 +12,7 @@ import {
 import { useUserScans } from "@/lib/hooks/useUserScans";
 import { useAuth } from "@/lib/context/AuthContext";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import { ScannerBadge } from "@/components/scans/ScannerBadge";
 
 export default function HistoryPage() {
   const { currentUser } = useAuth();
@@ -170,9 +171,7 @@ export default function HistoryPage() {
                       className={`hover:bg-[#11161f] ${scan.batchId ? "border-l-4 border-l-[#0366d6]" : ""}`}
                     >
                       <td className="px-6 py-4">
-                        <span className="px-2 py-1 bg-[#0366d6] text-white text-xs font-semibold rounded uppercase">
-                          {scan.type}
-                        </span>
+                        <ScannerBadge type={scan.type} />
                         {scan.batchId && (
                           <div className="text-xs text-[#4493f8] mt-1">
                             batch: {scan.batchId.substring(0, 8)}
@@ -267,7 +266,9 @@ export default function HistoryPage() {
                             onClick={() =>
                               deleteScan(
                                 scan.scanId,
-                                scan.target || scan.targetValue || "this target",
+                                scan.target ||
+                                  scan.targetValue ||
+                                  "this target",
                               )
                             }
                             disabled={deletingScan === scan.scanId}
