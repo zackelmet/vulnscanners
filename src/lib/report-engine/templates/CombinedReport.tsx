@@ -4,7 +4,7 @@
 
 import React from "react";
 import { Document, View, Text } from "@react-pdf/renderer";
-import { ScanReportData, Severity } from "../report-data";
+import { ScanReportData, Severity, ReportFinding } from "../report-data";
 import { ScannerType } from "../types";
 import { normalizeHost } from "../../scans/host";
 import { C, SEVERITY_ORDER } from "./_theme";
@@ -157,6 +157,16 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
     });
     return { scannerType: type, counts, items };
   }).filter((g): g is ScannerGroup => g !== null);
+
+  // Give each finding a unique detail anchor so breakdown rows — both in the
+  // per-scanner sections and the by-target section — link down to its detail.
+  const anchorByFinding = new Map<ReportFinding, string>();
+  groups.forEach((g, gi) => {
+    g.items.forEach((it, ii) => {
+      it.anchor = `find-${gi}-${ii}`;
+      anchorByFinding.set(it.finding, it.anchor);
+    });
+  });
 
   // Section numbering: 1 Exec, 2 By Target, 3..N scanner types, last Glossary.
   const scannerStart = 3;
@@ -364,7 +374,10 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
               <SeverityCards counts={t.counts} />
             </View>
             <View style={{ marginTop: 6 }}>
-              <BreakdownTable findings={t.findings} />
+              <BreakdownTable
+                findings={t.findings}
+                linkResolver={(f) => anchorByFinding.get(f)}
+              />
             </View>
           </View>
         ))}

@@ -341,9 +341,12 @@ export function SevTag({ severity }: { severity: Severity }) {
 export function BreakdownTable({
   findings,
   emptyLabel = "No vulnerabilities detected",
+  linkResolver,
 }: {
   findings: ReportFinding[];
   emptyLabel?: string;
+  /** Maps a finding to the anchor id of its detail block, making the row a link. */
+  linkResolver?: (f: ReportFinding) => string | undefined;
 }) {
   if (findings.length === 0) {
     return (
@@ -358,24 +361,33 @@ export function BreakdownTable({
         <Text style={[st.tCell, st.colTitle, st.tHeadText]}>Title</Text>
         <Text style={[st.tCell, st.colSev, st.tHeadText]}>Severity</Text>
       </View>
-      {findings.map((f, i) => (
-        <View
-          key={f.id}
-          style={[
-            st.tRow,
-            i % 2 === 1 ? { backgroundColor: C.panel } : {},
-            i === findings.length - 1
-              ? {}
-              : { borderBottomWidth: 0.5, borderBottomColor: C.panelBorder },
-          ]}
-          wrap={false}
-        >
-          <Text style={[st.tCell, st.colTitle, st.link]}>{f.title}</Text>
-          <View style={[st.tCell, st.colSev]}>
-            <SevTag severity={f.severity} />
+      {findings.map((f, i) => {
+        const anchor = linkResolver?.(f);
+        return (
+          <View
+            key={`${f.id}-${i}`}
+            style={[
+              st.tRow,
+              i % 2 === 1 ? { backgroundColor: C.panel } : {},
+              i === findings.length - 1
+                ? {}
+                : { borderBottomWidth: 0.5, borderBottomColor: C.panelBorder },
+            ]}
+            wrap={false}
+          >
+            {anchor ? (
+              <Link src={`#${anchor}`} style={[st.tCell, st.colTitle, st.link]}>
+                {f.title}
+              </Link>
+            ) : (
+              <Text style={[st.tCell, st.colTitle, st.link]}>{f.title}</Text>
+            )}
+            <View style={[st.tCell, st.colSev]}>
+              <SevTag severity={f.severity} />
+            </View>
           </View>
-        </View>
-      ))}
+        );
+      })}
     </View>
   );
 }
@@ -462,10 +474,12 @@ export function FindingDetail({
   finding,
   target,
   completedAt,
+  id,
 }: {
   finding: ReportFinding;
   target: string;
   completedAt: Date;
+  id?: string;
 }) {
   const dateStr = completedAt.toLocaleDateString("en-US", {
     year: "numeric",
@@ -474,6 +488,7 @@ export function FindingDetail({
   });
   return (
     <View
+      id={id}
       style={[st.detail, { borderLeftColor: C.sevColor[finding.severity] }]}
     >
       {/* Title + severity tag */}
@@ -716,6 +731,8 @@ export interface ScannerGroupItem {
   finding: ReportFinding;
   target: string;
   completedAt: Date;
+  /** Anchor id for its detail block, so breakdown rows can link to it. */
+  anchor?: string;
 }
 
 /** All scans of one scanner type, aggregated into a single section. */
@@ -735,6 +752,8 @@ export function ScannerSection({
 }) {
   const findings = group.items.map((i) => i.finding);
   const noun = findingNoun(group.scannerType);
+  // Map each finding to its detail anchor so the breakdown rows link down to it.
+  const anchorOf = new Map(group.items.map((it) => [it.finding, it.anchor]));
   return (
     <View>
       <SectionH1 num={num} id={`s${num}`}>
@@ -752,7 +771,11 @@ export function ScannerSection({
         {noun.breakdown}
       </SectionH2>
       <Lead>{noun.breakdownLead}</Lead>
-      <BreakdownTable findings={findings} emptyLabel={noun.empty} />
+      <BreakdownTable
+        findings={findings}
+        emptyLabel={noun.empty}
+        linkResolver={(f) => anchorOf.get(f)}
+      />
 
       {group.items.length > 0 && (
         <View>
@@ -766,6 +789,7 @@ export function ScannerSection({
               finding={it.finding}
               target={it.target}
               completedAt={it.completedAt}
+              id={it.anchor}
             />
           ))}
         </View>
@@ -1052,7 +1076,7 @@ const st = StyleSheet.create({
     paddingVertical: 6,
   },
   tocRowSub: { paddingLeft: 24, paddingVertical: 3 },
-  tocNum: { fontSize: 12, color: C.blueLight, width: 30, fontWeight: 600 },
+  tocNum: { fontSize: 12, color: C.ink3, width: 30, fontWeight: 600 },
   tocText: { fontSize: 12, color: C.ink, fontWeight: 500 },
   tocNumSub: { fontSize: 10.5, color: C.ink4, fontWeight: 400 },
   tocTextSub: { fontSize: 10.5, color: C.ink2, fontWeight: 400 },

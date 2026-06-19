@@ -125,10 +125,11 @@ export function ScanReport({ data }: { data: ScanReportData }) {
           group={{
             scannerType: data.scannerType,
             counts: data.severityCounts,
-            items: data.findings.map((finding) => ({
+            items: data.findings.map((finding, i) => ({
               finding,
               target: data.target,
               completedAt: data.completedAt,
+              anchor: `find-${i}`,
             })),
           }}
         />
