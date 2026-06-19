@@ -15,6 +15,7 @@ import { mapNucleiReport } from "@/lib/report-engine/mappers/nuclei-mapper";
 import { mapZapReport } from "@/lib/report-engine/mappers/zap-mapper";
 import { ScanReportData } from "@/lib/report-engine/report-data";
 import { Severity, SEVERITY_ORDER } from "@/lib/report-engine/templates/_theme";
+import { normalizeHost } from "@/lib/scans/host";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -80,7 +81,15 @@ function scoreFor(counts: Record<Severity, number>): {
     (sum, k) => sum + counts[k] * WEIGHT[k],
     0,
   );
-  const healthScore = Math.max(0, Math.min(100, 100 - penalty));
+  let healthScore = Math.max(0, Math.min(100, 100 - penalty));
+  // Grade caps: a single serious finding shouldn't leave an "all clear" grade,
+  // so the headline reflects real exposure. Only low/info (or clean) can be an
+  // A. Info never affects the score (weight 0 + no cap).
+  if (counts.critical > 0)
+    healthScore = Math.min(healthScore, 55); // ≤ D
+  else if (counts.high > 0)
+    healthScore = Math.min(healthScore, 72); // ≤ C
+  else if (counts.medium > 0) healthScore = Math.min(healthScore, 88); // ≤ B
   return { healthScore, grade: gradeFor(healthScore) };
 }
 
@@ -131,7 +140,7 @@ export async function GET(request: NextRequest) {
       scanId: s.id,
       scannerType: (s.scannerType || s.type) as ScannerType,
       label: SCANNER_LABEL[(s.scannerType || s.type) as ScannerType] || "Scan",
-      target: s.target || s.targetValue || "—",
+      target: normalizeHost(s.target || s.targetValue || "") || "—",
       status: s.status,
       completedAtMs:
         s.endTime?.toMillis?.() ?? s.startTime?.toMillis?.() ?? null,
@@ -150,7 +159,9 @@ export async function GET(request: NextRequest) {
     for (const s of completed.slice(0, PARSE_CAP)) {
       const scannerType = (s.scannerType || s.type) as ScannerType;
       if (!["nmap", "nuclei", "zap"].includes(scannerType)) continue;
-      const target = s.target || s.targetValue || "—";
+      // Normalize so the same host stored differently per scanner (ZAP keeps
+      // https://, Nmap/Nuclei strip it) is one target in the by-target rollup.
+      const target = normalizeHost(s.target || s.targetValue || "");
       let raw = "";
       try {
         raw = await resolveRawOutput(admin, s, scannerType);

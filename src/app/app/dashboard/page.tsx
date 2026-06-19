@@ -121,6 +121,7 @@ interface DashboardData {
   }[];
   targets: {
     target: string;
+    counts: Record<Sev, number>;
     total: number;
     healthScore: number;
     grade: string;
@@ -145,6 +146,15 @@ function timeAgo(ms: number | null): string {
 
 /* ─── Health gauge (semicircular) ────────────────────────── */
 
+// Each letter grade gets its own distinct color (A green → F red).
+const GRADE_COLOR: Record<string, string> = {
+  A: "#34d399", // emerald
+  B: "#a3e635", // lime
+  C: "#facc15", // yellow
+  D: "#fb923c", // orange
+  F: "#f87171", // red
+};
+
 function HealthGauge({ score, grade }: { score: number; grade: string }) {
   const cx = 110,
     cy = 110,
@@ -156,14 +166,7 @@ function HealthGauge({ score, grade }: { score: number; grade: string }) {
   const start = polar(0);
   const end = polar(score / 100);
   const full = polar(1);
-  const gradeColor =
-    score >= 75
-      ? "#34d399"
-      : score >= 60
-        ? "#eab308"
-        : score >= 40
-          ? "#f59e0b"
-          : "#f87171";
+  const gradeColor = GRADE_COLOR[grade] ?? "#9aa5b6";
   return (
     <svg viewBox="0 0 220 130" width="220" height="130">
       <path
@@ -255,15 +258,28 @@ export default function DashboardPage() {
     else setSelectedTarget(ALL_TARGETS);
   }, [data]);
 
-  // Health score for the current selection (a specific target, or all targets).
-  const health = useMemo(() => {
+  // The current selection (a specific target, or all targets). Drives BOTH the
+  // health gauge and the risk breakdown so they always agree.
+  const selected = useMemo(() => {
     if (!data) return null;
     if (selectedTarget !== ALL_TARGETS) {
       const t = data.targets.find((x) => x.target === selectedTarget);
-      if (t) return { score: t.healthScore, grade: t.grade };
+      if (t)
+        return {
+          score: t.healthScore,
+          grade: t.grade,
+          counts: t.counts,
+          total: t.total,
+        };
     }
-    return { score: data.healthScore, grade: data.grade };
+    return {
+      score: data.healthScore,
+      grade: data.grade,
+      counts: data.riskCounts,
+      total: data.totalRisks,
+    };
   }, [data, selectedTarget]);
+  const health = selected;
 
   const hasHealthData =
     !!data && (data.targets.length > 0 || !!data.completedCount);
@@ -372,18 +388,21 @@ export default function DashboardPage() {
                 Health Score
               </h2>
               {!loadingData && data && data.targets.length > 0 && (
-                <select
-                  value={selectedTarget}
-                  onChange={(e) => setSelectedTarget(e.target.value)}
-                  className="max-w-[55%] truncate bg-[#11161f] border border-[#161b24] rounded-lg px-2.5 py-1.5 text-xs text-[#e6edf5] focus:border-[#0366d6] outline-none"
-                >
-                  <option value={ALL_TARGETS}>All targets</option>
-                  {data.targets.map((t) => (
-                    <option key={t.target} value={t.target}>
-                      {t.target}
-                    </option>
-                  ))}
-                </select>
+                <label className="flex items-center gap-1.5 shrink-0 max-w-[60%]">
+                  <span className="text-xs text-[#697080]">Target</span>
+                  <select
+                    value={selectedTarget}
+                    onChange={(e) => setSelectedTarget(e.target.value)}
+                    className="truncate bg-[#11161f] border border-[#2a3242] rounded-lg px-2.5 py-1.5 text-xs text-[#e6edf5] hover:border-[#0366d6] focus:border-[#0366d6] outline-none cursor-pointer"
+                  >
+                    <option value={ALL_TARGETS}>All targets</option>
+                    {data.targets.map((t) => (
+                      <option key={t.target} value={t.target}>
+                        {t.target}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               )}
             </div>
 
@@ -424,10 +443,15 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-medium text-[#9aa5b6]">
                 Risks detected
+                <span className="ml-2 text-xs text-[#697080]">
+                  {selectedTarget === ALL_TARGETS
+                    ? "· all targets"
+                    : `· ${selectedTarget}`}
+                </span>
               </h2>
               <span className="text-sm text-[#697080]">
                 Total:{" "}
-                <span className="text-[#e6edf5]">{data?.totalRisks ?? 0}</span>
+                <span className="text-[#e6edf5]">{selected?.total ?? 0}</span>
               </span>
             </div>
             <div className="grid grid-cols-5 gap-2 mb-2.5">
@@ -446,7 +470,7 @@ export default function DashboardPage() {
                       className="text-2xl font-bold"
                       style={{ color: ui.color }}
                     >
-                      {data?.riskCounts?.[k] ?? 0}
+                      {selected?.counts?.[k] ?? 0}
                     </div>
                   </div>
                 );
