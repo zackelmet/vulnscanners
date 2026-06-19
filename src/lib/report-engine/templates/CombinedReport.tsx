@@ -165,7 +165,27 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
         target={subtitle}
         date={data.generatedAt}
         titleOverride="Combined Security Assessment"
-        subtitleOverride={subtitle}
+        metaRows={[
+          {
+            label: "Targets",
+            value:
+              targets.length === 1 ? targets[0] : `${targets.length} targets`,
+          },
+          {
+            label: "Date",
+            value: data.generatedAt.toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            }),
+          },
+          {
+            label: "Scans",
+            value: `${data.scans.length} ${
+              data.scans.length === 1 ? "scan" : "scans"
+            }`,
+          },
+        ]}
       />
 
       <HostedPage sectionName="Table of Contents" date={data.generatedAt}>

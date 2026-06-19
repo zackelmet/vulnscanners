@@ -650,7 +650,7 @@ const st = StyleSheet.create({
   page: {
     backgroundColor: C.page,
     color: C.ink,
-    fontFamily: "Helvetica",
+    fontFamily: "IBM Plex Sans",
     paddingTop: 52,
     paddingBottom: 50,
     paddingHorizontal: 56,
@@ -907,7 +907,7 @@ const st = StyleSheet.create({
   // back cover
   backPage: {
     backgroundColor: C.page,
-    fontFamily: "Helvetica",
+    fontFamily: "IBM Plex Sans",
     alignItems: "center",
     justifyContent: "center",
   },

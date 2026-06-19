@@ -17,15 +17,15 @@ export function CoverPage({
   target,
   date,
   titleOverride,
-  subtitleOverride,
+  metaRows,
 }: {
   scannerType: "nmap" | "nuclei" | "zap";
   target: string;
   date: Date;
   /** When set, replaces the scanner-derived title (used by combined reports). */
   titleOverride?: string;
-  /** When set, replaces the "For {target}" subtitle. */
-  subtitleOverride?: string;
+  /** Small-caps metadata rows under the title. Defaults to Target + Date. */
+  metaRows?: { label: string; value: string }[];
 }) {
   const dateStr = date.toLocaleDateString("en-US", {
     year: "numeric",
@@ -37,6 +37,10 @@ export function CoverPage({
     nuclei: "Vulnerability Scan Report",
     zap: "Web Application Scan Report",
   };
+  const rows = metaRows ?? [
+    { label: "Target", value: target },
+    { label: "Date", value: dateStr },
+  ];
   return (
     <Page size="LETTER" style={coverStyles.page}>
       <RadialFlourish />
@@ -47,17 +51,20 @@ export function CoverPage({
         <Text style={coverStyles.wordmark}>vulnscanners</Text>
       </View>
 
-      {/* Centered title block */}
+      {/* Title + hairline rule + small-caps metadata */}
       <View style={coverStyles.center}>
-        <View style={coverStyles.datePill}>
-          <Text style={coverStyles.datePillText}>{dateStr}</Text>
-        </View>
         <Text style={coverStyles.title}>
           {titleOverride ?? titles[scannerType]}
         </Text>
-        <Text style={coverStyles.subtitle}>
-          {subtitleOverride ?? `For ${target}`}
-        </Text>
+        <View style={coverStyles.rule} />
+        <View style={coverStyles.metaBlock}>
+          {rows.map((r) => (
+            <View key={r.label} style={coverStyles.metaRow}>
+              <Text style={coverStyles.metaLabel}>{r.label.toUpperCase()}</Text>
+              <Text style={coverStyles.metaValue}>{r.value}</Text>
+            </View>
+          ))}
+        </View>
       </View>
     </Page>
   );
@@ -86,28 +93,34 @@ const coverStyles = StyleSheet.create({
   },
   center: {
     position: "absolute",
-    top: 240,
-    left: 0,
-    right: 0,
-    alignItems: "center",
+    top: 230,
+    left: 56,
+    right: 56,
+    alignItems: "flex-start",
   },
-  datePill: {
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: C.blueBorder,
-    marginBottom: 18,
-  },
-  datePillText: { color: C.blueLight, fontSize: T.cover.datePill },
   title: {
     color: C.white,
     fontSize: T.cover.title,
     fontWeight: 300,
     letterSpacing: 0.2,
-    marginBottom: 8,
+    marginBottom: 14,
   },
-  subtitle: { color: C.whiteMute, fontSize: T.cover.subtitle },
+  rule: {
+    width: 300,
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    marginBottom: 20,
+  },
+  metaBlock: {},
+  metaRow: { flexDirection: "row", marginBottom: 7 },
+  metaLabel: {
+    width: 72,
+    fontSize: 8.5,
+    letterSpacing: 1.5,
+    color: C.whiteMute,
+    fontWeight: 600,
+  },
+  metaValue: { fontSize: 11, color: C.whiteSoft },
 });
 
 // ── Footer (content pages) ───────────────────────────────────────────────────
@@ -202,7 +215,7 @@ const contentStyles = StyleSheet.create({
   page: {
     backgroundColor: C.page,
     color: C.ink,
-    fontFamily: "Helvetica",
+    fontFamily: "IBM Plex Sans",
     paddingTop: S.page.top,
     paddingBottom: S.page.bottom + 30, // leave room for fixed footer
     paddingLeft: S.page.left,
@@ -365,140 +378,6 @@ export function BulletList({ items }: { items: React.ReactNode[] }) {
           </Text>
         </View>
       ))}
-    </View>
-  );
-}
-
-// ── Severity-distribution bar chart ──────────────────────────────────────────
-
-export function SeverityChart({
-  counts,
-}: {
-  counts: Record<Severity, number>;
-}) {
-  // Show every severity so info-heavy scans (e.g. nuclei, where most findings
-  // are informational detections) still populate the distribution instead of
-  // rendering four empty bars.
-  const buckets: { key: Severity; label: string; color: string }[] = [
-    { key: "critical", label: "Critical", color: C.chart.critical },
-    { key: "high", label: "High", color: C.chart.high },
-    { key: "medium", label: "Medium", color: C.chart.medium },
-    { key: "low", label: "Low", color: C.chart.low },
-    { key: "info", label: "Info", color: C.chart.info },
-  ];
-  const max = Math.max(1, ...buckets.map((b) => counts[b.key] ?? 0));
-  // Round the Y axis to a nice ceiling (1, 3, 7, 10, ...).
-  const nice =
-    max <= 1 ? 1 : max <= 3 ? 3 : max <= 7 ? 7 : Math.ceil(max / 10) * 10;
-  const chartH = 100;
-  const colW = 88;
-  const gap = 8;
-  const totalW = buckets.length * colW + (buckets.length - 1) * gap;
-
-  return (
-    <View style={{ marginVertical: 8 }}>
-      {/* Plot area */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "flex-end",
-          height: chartH,
-          paddingLeft: 20,
-        }}
-      >
-        {/* Y-axis ticks (drawn as text on the left) */}
-        <View
-          style={{
-            position: "absolute",
-            left: 0,
-            top: 0,
-            bottom: 0,
-            width: 18,
-            justifyContent: "space-between",
-            alignItems: "flex-end",
-            paddingRight: 4,
-          }}
-        >
-          <Text style={{ fontSize: 7.5, color: C.ink4 }}>{nice}</Text>
-          <Text style={{ fontSize: 7.5, color: C.ink4 }}>
-            {Math.round(nice / 2)}
-          </Text>
-          <Text style={{ fontSize: 7.5, color: C.ink4 }}>0</Text>
-        </View>
-        {/* Bars */}
-        {buckets.map((b, i) => {
-          const value = counts[b.key] ?? 0;
-          const h = Math.max(value === 0 ? 0 : 6, (value / nice) * chartH);
-          return (
-            <View
-              key={b.key}
-              style={{
-                width: colW,
-                marginLeft: i === 0 ? 0 : gap,
-                alignItems: "center",
-                justifyContent: "flex-end",
-                height: chartH,
-              }}
-            >
-              <View
-                style={{
-                  width: 40,
-                  height: h,
-                  backgroundColor: b.color,
-                  borderRadius: 1,
-                }}
-              />
-            </View>
-          );
-        })}
-      </View>
-      {/* Labels row */}
-      <View
-        style={{
-          flexDirection: "row",
-          marginTop: 0,
-          paddingLeft: 20,
-          backgroundColor: C.panel,
-          borderTopWidth: 0.5,
-          borderTopColor: C.panelBorder,
-          borderBottomWidth: 0.5,
-          borderBottomColor: C.panelBorder,
-        }}
-      >
-        {buckets.map((b, i) => (
-          <View
-            key={b.key}
-            style={{
-              width: colW,
-              marginLeft: i === 0 ? 0 : gap,
-              paddingVertical: 8,
-              alignItems: "center",
-            }}
-          >
-            <Text style={{ fontSize: T.body, color: C.ink, fontWeight: 500 }}>
-              {b.label}
-            </Text>
-          </View>
-        ))}
-      </View>
-      {/* Counts row */}
-      <View style={{ flexDirection: "row", paddingLeft: 20 }}>
-        {buckets.map((b, i) => (
-          <View
-            key={b.key}
-            style={{
-              width: colW,
-              marginLeft: i === 0 ? 0 : gap,
-              paddingVertical: 10,
-              alignItems: "center",
-            }}
-          >
-            <Text style={{ fontSize: T.body, color: C.ink2 }}>
-              {counts[b.key] ?? 0}
-            </Text>
-          </View>
-        ))}
-      </View>
     </View>
   );
 }
