@@ -18,6 +18,7 @@ export function CoverPage({
   date,
   titleOverride,
   metaRows,
+  confidentialFor,
 }: {
   scannerType: "nmap" | "nuclei" | "zap";
   target: string;
@@ -26,6 +27,8 @@ export function CoverPage({
   titleOverride?: string;
   /** Small-caps metadata rows under the title. Defaults to Target + Date. */
   metaRows?: { label: string; value: string }[];
+  /** Recipient for the confidentiality line. Defaults to the target. */
+  confidentialFor?: string;
 }) {
   const dateStr = date.toLocaleDateString("en-US", {
     year: "numeric",
@@ -66,6 +69,10 @@ export function CoverPage({
           ))}
         </View>
       </View>
+
+      <Text style={coverStyles.confidential}>
+        {`Confidential — prepared for ${confidentialFor ?? target}`}
+      </Text>
     </Page>
   );
 }
@@ -121,6 +128,15 @@ const coverStyles = StyleSheet.create({
     fontWeight: 600,
   },
   metaValue: { fontSize: 11, color: C.whiteSoft },
+  confidential: {
+    position: "absolute",
+    bottom: 48,
+    left: 56,
+    right: 56,
+    fontSize: 9,
+    color: C.whiteMute,
+    letterSpacing: 0.3,
+  },
 });
 
 // ── Footer (content pages) ───────────────────────────────────────────────────

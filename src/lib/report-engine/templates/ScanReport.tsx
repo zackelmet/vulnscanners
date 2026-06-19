@@ -13,6 +13,8 @@ import {
   SectionH2,
   Lead,
   SeverityCards,
+  SeverityBarChart,
+  KeyRisksCallout,
   StatPanel,
   ScannerSection,
   GlossaryTwoCol,
@@ -21,9 +23,22 @@ import {
   findingNoun,
 } from "./_hosted";
 
+const SEV_RANK: Record<string, number> = {
+  critical: 0,
+  high: 1,
+  medium: 2,
+  low: 3,
+  info: 4,
+  accepted: 5,
+};
+
 export function ScanReport({ data }: { data: ScanReportData }) {
   const total = data.findings.length;
   const noun = findingNoun(data.scannerType);
+  const topRisks = [...data.findings]
+    .sort((a, b) => SEV_RANK[a.severity] - SEV_RANK[b.severity])
+    .slice(0, 3)
+    .map((f) => ({ title: f.title, severity: f.severity }));
 
   const tocEntries = [
     { num: 1, title: "Executive Summary" },
@@ -41,6 +56,7 @@ export function ScanReport({ data }: { data: ScanReportData }) {
         scannerType={data.scannerType}
         target={data.target}
         date={data.completedAt}
+        confidentialFor={data.target}
       />
 
       <HostedPage sectionName="Table of Contents" date={data.completedAt}>
@@ -57,9 +73,12 @@ export function ScanReport({ data }: { data: ScanReportData }) {
           confidentiality, integrity, or availability of the target.
         </Lead>
 
+        <KeyRisksCallout risks={topRisks} />
+
         <SectionH2 num="1.1">{noun.total}</SectionH2>
         <Lead>{noun.totalLead}</Lead>
         <SeverityCards counts={data.severityCounts} />
+        <SeverityBarChart counts={data.severityCounts} />
 
         <SectionH2 num="1.2">Report Coverage</SectionH2>
         <Lead>
@@ -100,7 +119,7 @@ export function ScanReport({ data }: { data: ScanReportData }) {
         <GlossaryTwoCol rows={data.glossary} />
       </HostedPage>
 
-      <BackCover />
+      <BackCover confidentialFor={data.target} />
     </Document>
   );
 }

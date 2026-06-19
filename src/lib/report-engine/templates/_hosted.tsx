@@ -34,7 +34,7 @@ export function HostedPage({
             <Text style={st.runHeadCrumb}>{`   |   ${breadcrumb}`}</Text>
           ) : null}
         </Text>
-        <Text style={st.runHeadRight}>Vulnerability Scan Report</Text>
+        <Text style={st.runHeadRight}>VULNSCANNERS</Text>
       </View>
 
       <View style={st.body}>{children}</View>
@@ -176,6 +176,112 @@ export function SeverityCards({
           })}
         </View>
       )}
+    </View>
+  );
+}
+
+// ── Severity bar chart (vertical, value-on-top) ──────────────────────────────
+
+export function SeverityBarChart({
+  counts,
+}: {
+  counts: Record<Severity, number>;
+}) {
+  const buckets: { key: Severity; label: string }[] = [
+    { key: "critical", label: "Critical" },
+    { key: "high", label: "High" },
+    { key: "medium", label: "Medium" },
+    { key: "low", label: "Low" },
+    { key: "info", label: "Info" },
+  ];
+  const max = Math.max(1, ...buckets.map((b) => counts[b.key] ?? 0));
+  const nice =
+    max <= 1 ? 1 : max <= 3 ? 3 : max <= 7 ? 7 : Math.ceil(max / 10) * 10;
+  const chartH = 92;
+  return (
+    <View style={{ marginTop: 12, marginBottom: 4 }}>
+      <View
+        style={{ flexDirection: "row", alignItems: "flex-end", height: chartH }}
+      >
+        {buckets.map((b) => {
+          const v = counts[b.key] ?? 0;
+          const h = v === 0 ? 0 : Math.max(4, (v / nice) * chartH);
+          return (
+            <View
+              key={b.key}
+              style={{
+                flex: 1,
+                alignItems: "center",
+                justifyContent: "flex-end",
+                height: chartH,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 9,
+                  color: v === 0 ? C.ink4 : C.ink,
+                  fontWeight: 600,
+                  marginBottom: 3,
+                }}
+              >
+                {v}
+              </Text>
+              <View
+                style={{
+                  width: 20,
+                  height: h,
+                  backgroundColor: C.sevColor[b.key],
+                  borderTopLeftRadius: 1,
+                  borderTopRightRadius: 1,
+                }}
+              />
+            </View>
+          );
+        })}
+      </View>
+      <View style={{ height: 1, backgroundColor: C.ink, opacity: 0.5 }} />
+      <View style={{ flexDirection: "row", marginTop: 6 }}>
+        {buckets.map((b) => (
+          <View key={b.key} style={{ flex: 1, alignItems: "center" }}>
+            <Text style={{ fontSize: 8.5, color: C.ink3 }}>{b.label}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+// ── Key risks callout (top findings, front-and-center) ───────────────────────
+
+export function KeyRisksCallout({
+  risks,
+}: {
+  risks: { title: string; severity: Severity; target?: string }[];
+}) {
+  if (risks.length === 0) return null;
+  const topSev = risks[0].severity;
+  return (
+    <View
+      style={[
+        st.calloutBox,
+        {
+          backgroundColor: C.sevTint[topSev],
+          borderLeftColor: C.sevColor[topSev],
+        },
+      ]}
+    >
+      <Text style={st.calloutTitle}>KEY RISKS</Text>
+      {risks.map((r, i) => (
+        <View key={i} style={st.calloutRow}>
+          <SevDot severity={r.severity} />
+          <Text style={st.calloutText}>
+            {r.title}
+            {r.target ? (
+              <Text style={st.calloutTarget}>{`  ·  ${r.target}`}</Text>
+            ) : null}
+          </Text>
+        </View>
+      ))}
     </View>
   );
 }
@@ -504,7 +610,7 @@ export function GlossaryTwoCol({
 
 // ── Back cover ───────────────────────────────────────────────────────────────
 
-export function BackCover() {
+export function BackCover({ confidentialFor }: { confidentialFor?: string }) {
   return (
     <Page size="LETTER" style={st.backPage}>
       <View style={st.backCenter}>
@@ -521,6 +627,11 @@ export function BackCover() {
           service — launch scans, manage vulnerabilities, and deliver
           client-ready reports without standing up any tooling.
         </Text>
+        {confidentialFor ? (
+          <Text style={st.backConfidential}>
+            {`Confidential — prepared for ${confidentialFor}`}
+          </Text>
+        ) : null}
       </View>
     </Page>
   );
@@ -664,11 +775,19 @@ const st = StyleSheet.create({
     right: 56,
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     paddingBottom: 8,
+    borderBottomWidth: 0.5,
+    borderBottomColor: C.divider,
   },
-  runHeadLeft: { fontSize: T.footer, color: C.ink3 },
+  runHeadLeft: { fontSize: T.footer, color: C.ink3, letterSpacing: 0.3 },
   runHeadCrumb: { color: C.ink4 },
-  runHeadRight: { fontSize: T.footer, color: C.blueLight },
+  runHeadRight: {
+    fontSize: 7.5,
+    color: C.ink4,
+    letterSpacing: 1.2,
+    fontWeight: 600,
+  },
 
   footer: {
     position: "absolute",
@@ -703,6 +822,29 @@ const st = StyleSheet.create({
     fontWeight: 400,
     marginRight: 10,
   },
+  calloutBox: {
+    borderLeftWidth: 3,
+    borderRadius: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  calloutTitle: {
+    fontSize: 8.5,
+    fontWeight: 700,
+    color: C.ink,
+    letterSpacing: 1,
+    marginBottom: 7,
+  },
+  calloutRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    marginBottom: 4,
+  },
+  calloutText: { flex: 1, fontSize: 9.5, color: C.ink2, lineHeight: 1.35 },
+  calloutTarget: { color: C.ink4 },
   h1: { fontSize: 22, color: C.ink, fontWeight: 700 },
   h2: {
     fontSize: T.h2,
@@ -927,5 +1069,11 @@ const st = StyleSheet.create({
     color: C.ink3,
     lineHeight: 1.6,
     textAlign: "center",
+  },
+  backConfidential: {
+    marginTop: 22,
+    fontSize: 8.5,
+    color: C.ink4,
+    letterSpacing: 0.3,
   },
 });

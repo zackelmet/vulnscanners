@@ -15,6 +15,8 @@ import {
   SectionH2,
   Lead,
   SeverityCards,
+  SeverityBarChart,
+  KeyRisksCallout,
   StatPanel,
   BreakdownTable,
   TargetsSummaryTable,
@@ -112,6 +114,25 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
         ? `${toolList[0]} and ${toolList[1]}`
         : `${toolList.slice(0, -1).join(", ")}, and ${toolList[toolList.length - 1]}`;
 
+  // Top findings by severity, surfaced as the "Key Risks" callout.
+  const topRisks = data.scans
+    .flatMap((s) =>
+      s.data.findings.map((f) => ({
+        title: f.title,
+        severity: f.severity,
+        target: s.target,
+      })),
+    )
+    .sort(
+      (a, b) =>
+        SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity),
+    )
+    .slice(0, 3);
+
+  // Confidentiality recipient: a single host reads cleanly; many → generic.
+  const confidentialFor =
+    targets.length === 1 ? targets[0] : "the intended recipient";
+
   // Group scans by scanner TYPE (not per scan) into fixed-order sections, so
   // e.g. three ZAP scans share one "Web Application Vulnerabilities" section.
   const groups: ScannerGroup[] = SCANNER_ORDER.map((type) => {
@@ -165,6 +186,7 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
         target={subtitle}
         date={data.generatedAt}
         titleOverride="Combined Security Assessment"
+        confidentialFor={confidentialFor}
         metaRows={[
           {
             label: "Targets",
@@ -206,6 +228,8 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
           availability of the targets.
         </Lead>
 
+        <KeyRisksCallout risks={topRisks} />
+
         <SectionH2 num="1.1">Assessment Methodology</SectionH2>
         <Lead>
           {toolList.length === 1
@@ -238,6 +262,7 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
           first.
         </Lead>
         <SeverityCards counts={data.aggregateSeverityCounts} />
+        <SeverityBarChart counts={data.aggregateSeverityCounts} />
 
         <SectionH2 num="1.3">Report Coverage</SectionH2>
         <Lead>
@@ -304,7 +329,7 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
         <GlossaryTwoCol rows={glossary} />
       </HostedPage>
 
-      <BackCover />
+      <BackCover confidentialFor={confidentialFor} />
     </Document>
   );
 }
