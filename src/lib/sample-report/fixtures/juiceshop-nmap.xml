@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<!-- Nmap 7.94 scan initiated as: nmap -sV -T4 -p- juice-shop.demo-labs.net -oX -->
+<nmaprun scanner="nmap" args="nmap -sV -T4 -p- juice-shop.demo-labs.net" start="1781258078" startstr="Fri Jun 19 09:14:38 2026" version="7.94" xmloutputversion="1.05">
+<scaninfo type="connect" protocol="tcp" numservices="65535" services="1-65535"/>
+<verbose level="0"/>
+<debugging level="0"/>
+<host starttime="1781258078" endtime="1781258140"><status state="up" reason="syn-ack" reason_ttl="54"/>
+<address addr="203.0.113.77" addrtype="ipv4"/>
+<hostnames>
+<hostname name="juice-shop.demo-labs.net" type="user"/>
+</hostnames>
+<ports>
+<extraports state="closed" count="65530"><extrareasons reason="conn-refused" count="65530"/></extraports>
+<port protocol="tcp" portid="22"><state state="open" reason="syn-ack" reason_ttl="54"/><service name="ssh" product="OpenSSH" version="8.2p1 Ubuntu 4ubuntu0.5" extrainfo="Ubuntu Linux; protocol 2.0" method="probed" conf="10"><cpe>cpe:/a:openbsd:openssh:8.2p1</cpe></service></port>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack" reason_ttl="54"/><service name="http" product="nginx" version="1.18.0" extrainfo="Ubuntu" method="probed" conf="10"><cpe>cpe:/a:igor_sysoev:nginx:1.18.0</cpe></service></port>
+<port protocol="tcp" portid="443"><state state="open" reason="syn-ack" reason_ttl="54"/><service name="https" product="nginx" version="1.18.0" extrainfo="Ubuntu" tunnel="ssl" method="probed" conf="10"><cpe>cpe:/a:igor_sysoev:nginx:1.18.0</cpe></service></port>
+<port protocol="tcp" portid="3000"><state state="open" reason="syn-ack" reason_ttl="54"/><service name="http" product="Node.js Express framework" extrainfo="OWASP Juice Shop" method="probed" conf="10"><cpe>cpe:/a:nodejs:node.js</cpe></service></port>
+</ports>
+<times srtt="42306" rttvar="464" to="205162"/>
+</host>
+<runstats><finished time="1781258140" timestr="Fri Jun 19 09:15:40 2026" summary="Nmap done; 1 IP address (1 host up) scanned" elapsed="62.0" exit="success"/><hosts up="1" down="0" total="1"/></runstats>
+</nmaprun>

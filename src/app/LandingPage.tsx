@@ -794,7 +794,7 @@ export default function LandingPage() {
                 <i />
               </span>
               <span className={styles.rvTitle}>
-                acme-corp.com — Security Assessment.pdf
+                juice-shop.demo-labs.net — Vulnerability Assessment.pdf
               </span>
               <span className={styles.rvPages}>scroll ↓</span>
             </div>
