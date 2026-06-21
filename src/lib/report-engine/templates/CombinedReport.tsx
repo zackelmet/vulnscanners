@@ -245,7 +245,7 @@ export function CombinedReport({ data }: { data: CombinedReportData }) {
           },
           {
             label: "Scans",
-            value: `${data.scans.length} — ${toolList.join(", ")}`,
+            value: toolList.join(", "),
           },
         ]}
       />
