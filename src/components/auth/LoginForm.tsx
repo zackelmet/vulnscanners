@@ -339,7 +339,7 @@ export default function AuthForm() {
                 </a>{" "}
                 and{" "}
                 <a
-                  href="/trust-safety#privacy"
+                  href="/help-center/privacy"
                   className="underline hover:text-[#60a5fa] transition-colors"
                 >
                   Privacy Policy
